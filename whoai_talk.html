@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（B仕様：自由漂い＆キャラと離す版）-->
+<!-- FILE: /whoai_talk.html（確実にマカロンをあげられる安定版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,132 +6,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>観察モード | WhoAI（タネ）</title>
   <meta name="color-scheme" content="dark light" />
-
   <style>
-    html,body{height:50%;margin:0;overflow:hidden}
+    html,body{height:100%;margin:0;overflow:hidden}
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
-      background-image:url("space_background.png");
-      background-size:cover;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
       display:flex;align-items:center;justify-content:center;
     }
-
     .stage{
       position:relative;
-      width:min(90vw,680px);
+      width:min(92vw,700px);
       aspect-ratio:1;
-      border-radius:14px;
-      background:rgba(0,0,0,.07);
+      border-radius:20px;
+      background:rgba(0,0,0,.10);
       overflow:hidden;
+      box-shadow:0 8px 30px rgba(0,0,0,.35);
     }
 
+    /* キャラ（中央・クリック無効） */
     .char{
-      position:absolute;
-      left:50%; top:50%;
+      position:absolute;left:50%;top:50%;
       transform:translate(-50%,-50%);
-      width:40%;
+      width:48%;
       object-fit:contain;
-      animation:float 20s ease-in-out infinite;
+      animation:float 12s ease-in-out infinite;
       pointer-events:none;
+      filter:drop-shadow(0 8px 18px rgba(0,0,0,.35));
+    }
+    @keyframes float{
+      from{transform:translate(-50%,-50%) translateY(-10px)}
+      to  {transform:translate(-50%,-50%) translateY( 10px)}
     }
 
-    .bubble,.macaron-btn{
+    /* 漂うUI（吹き出し／漂うマカロン） */
+    .ui-float{
       position:absolute;
-      font-size:.8rem;
-      padding:5px 10px;
-      border-radius:10px;
-      opacity:.6;
-      transition:left 1.5s ease, top 1.5s ease;
+      font-size:.9rem;
+      padding:6px 12px;
+      border-radius:12px;
+      transition:left 1.2s ease, top 1.2s ease, opacity .4s ease;
+      opacity:.75;
+      z-index:5;
+      user-select:none;
+      -webkit-user-select:none;
     }
     .bubble{
-      background:rgba(0,0,0,.45);
+      background:rgba(0,0,0,.55);
       color:#fff;
     }
     .macaron-btn{
-      background:rgba(255,255,255,.6);
+      background:rgba(255,255,255,.75);
       color:#111;
+      font-weight:700;
+      border:none;
       cursor:pointer;
-      font-weight:600;
     }
 
-    @keyframes float{
-      from{transform:translate(-50%,-50%) translateY(-8px);}
-      to  {transform:translate(-50%,-50%) translateY(8px);}
+    /* 右下の固定“保険”ボタン（常に押せる） */
+    .safety-btn{
+      position:fixed;
+      right:14px; bottom:14px;
+      z-index:10;
+      background:rgba(255,255,255,.85);
+      color:#111;
+      border:none; border-radius:14px;
+      padding:8px 14px;
+      font-weight:700; font-size:.95rem;
+      cursor:pointer;
+      box-shadow:0 4px 14px rgba(0,0,0,.25);
+    }
+
+    /* 画面読み上げ向け（見えないけど押せる） */
+    .sr-only{
+      position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;
     }
   </style>
 </head>
 <body>
 
-<section class="stage">
-  <img  id="charImg" class="char" src="" alt="tane" />
-  <div id="bubble" class="bubble"></div>
-  <button id="feedBtn" class="macaron-btn">🍬 マカロンをあげる</button>
-</section>
+  <section class="stage" aria-live="polite">
+    <img id="charImg" class="char" src="" alt="tane character" />
 
-<script>
-// constants
-const KEY={color:'whoai_color',xp:'whoai_xp'};
-const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
-const stage = document.querySelector(".stage");
-const stageW = stage.offsetWidth;
-const stageH = stage.offsetHeight;
+    <div id="bubble" class="ui-float bubble" aria-live="polite"></div>
+    <button id="floatFeedBtn" class="ui-float macaron-btn" type="button">🍬 マカロンをあげる</button>
+  </section>
 
-// === キャラ ===
-const charImg=document.getElementById('charImg');
-const color=localStorage.getItem(KEY.color)||'pink';
-charImg.src=`/WHOAI2/tane_${color}.png`;
+  <!-- 押しにくい時の固定ボタン（どんな状況でも押せる） -->
+  <button id="safetyBtn" class="safety-btn" type="button" aria-describedby="safetyHelp">🍬 マカロン</button>
+  <span id="safetyHelp" class="sr-only">右下固定のマカロンボタン。押すと経験値が増えます。</span>
 
-// === 関数：キャラから一定距離以上離れたランダム座標を返す ===
-function getRandomFarPosition(minDistPx){
-  let x,y;
-  const cx = stageW/2, cy = stageH/2;
-  do {
-    x = Math.random()*stageW;
-    y = Math.random()*stageH;
-  } while (Math.hypot(x-cx,y-cy) < minDistPx);
-  return {left:x, top:y};
-}
+  <script>
+    // 定数
+    const KEY={color:'whoai_color',xp:'whoai_xp'};
+    const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
+    const stage=document.querySelector('.stage');
+    let stageW=stage.offsetWidth, stageH=stage.offsetHeight;
+    window.addEventListener('resize',()=>{stageW=stage.offsetWidth; stageH=stage.offsetHeight;});
 
-// === 吹き出し ===
-const bubble=document.getElementById('bubble');
-function showLine(t){
-  bubble.textContent=t;
-  bubble.style.opacity=.6;
-  const pos = getRandomFarPosition(140);
-  bubble.style.left = pos.left+'px';
-  bubble.style.top  = pos.top +'px';
-  setTimeout(()=>bubble.style.opacity=0,2000);
-}
-showLine(r(I18N.ja.lines));
-setInterval(()=>showLine(r(I18N.ja.lines)),4000);
+    // キャラ画像（GitHub Pagesの /WHOAI2/ 配下）
+    const charImg=document.getElementById('charImg');
+    const color=localStorage.getItem(KEY.color)||'pink';
+    charImg.src=`/WHOAI2/tane_${color}.png`;
 
-// === マカロン ===
-const feedBtn=document.getElementById('feedBtn');
-let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-const XP_TO_EVOLVE=3;
-function saveXP(){localStorage.setItem(KEY.xp,xp)}
+    // キャラ中心（ステージ中央）から一定距離以上のランダム座標
+    function getFarPos(minDistPx, marginPx=12){
+      const cx=stageW/2, cy=stageH/2;
+      const minX=marginPx, maxX=stageW-marginPx;
+      const minY=marginPx, maxY=stageH-marginPx;
+      let x,y,guard=0;
+      do{
+        x = Math.random()*(maxX-minX)+minX;
+        y = Math.random()*(maxY-minY)+minY;
+        guard++;
+        if(guard>200) break; // 念のため
+      }while(Math.hypot(x-cx,y-cy)<minDistPx);
+      return {left:x, top:y};
+    }
 
-// 初期位置をキャラから離れたランダム位置に
-(function(){ 
-  const pos = getRandomFarPosition(140);
-  feedBtn.style.left=pos.left+'px'; 
-  feedBtn.style.top =pos.top+'px';
-})();
+    // 独り言：キャラから離して出現→自動で薄くなる
+    const bubble=document.getElementById('bubble');
+    function r(a){return a[Math.floor(Math.random()*a.length)]}
+    function showLine(t){
+      bubble.textContent=t;
+      bubble.style.opacity=.85;
+      const pos=getFarPos(140);
+      bubble.style.left=pos.left+'px';
+      bubble.style.top =pos.top +'px';
+      setTimeout(()=>bubble.style.opacity=0,2000);
+    }
+    // 初回は0.8秒後、以降は4秒周期
+    setTimeout(()=>showLine(r(I18N.ja.lines)),800);
+    setInterval(()=>showLine(r(I18N.ja.lines)),4000);
 
-feedBtn.addEventListener('click',()=>{
-  xp++; saveXP();
-  showLine('ぱあっ！');
-  const pos = getRandomFarPosition(140);
-  feedBtn.style.left = pos.left+'px';
-  feedBtn.style.top  = pos.top +'px';
-  if(xp>=XP_TO_EVOLVE){
-    setTimeout(()=>location.href='macaron_select.html',800);
-  }
-});
+    // マカロン（漂うボタン＋右下固定ボタンの両方で加算）
+    const floatFeedBtn=document.getElementById('floatFeedBtn');
+    const safetyBtn=document.getElementById('safetyBtn');
+    let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+    const XP_TO_EVOLVE=3;
+    function saveXP(){ localStorage.setItem(KEY.xp, String(xp)); }
+    function placeFloatBtn(){
+      const pos=getFarPos(150);
+      floatFeedBtn.style.left=pos.left+'px';
+      floatFeedBtn.style.top =pos.top +'px';
+    }
+    // 初期配置（見失わないように1秒後に配置）
+    setTimeout(placeFloatBtn, 1000);
 
-function r(a){return a[Math.floor(Math.random()*a.length)]}
-</script>
-
+    function feedOnce(){
+      xp++; saveXP();
+      showLine('ぱあっ！');
+      placeFloatBtn();
+      if(xp>=XP_TO_EVOLVE){
+        setTimeout(()=>{ location.href='macaron_select.html'; }, 600);
+      }
+    }
+    floatFeedBtn.addEventListener('click', feedOnce);
+    safetyBtn.addEventListener('click', feedOnce);
+    // キーボードの M でも給餌できるように（操作保険）
+    window.addEventListener('keydown', (e)=>{
+      if(e.key.toLowerCase()==='m'){ feedOnce(); }
+    });
+  </script>
 </body>
 </html>
