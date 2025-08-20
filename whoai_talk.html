@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（キャラ周辺ランダム漂い版）-->
+<!-- FILE: /whoai_talk.html（改善反映版：UIを周囲に漂わせる＋透明化）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -13,7 +13,6 @@
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
       background-image:url("space_background.png");
-      background-position:center;
       background-size:cover;
       display:flex;align-items:center;justify-content:center;
     }
@@ -23,7 +22,7 @@
       width:min(90vw,680px);
       aspect-ratio:1;
       border-radius:24px;
-      background:rgba(0,0,0,.1);
+      background:rgba(0,0,0,.07);
       overflow:hidden;
     }
     .char{
@@ -37,24 +36,26 @@
 
     .bubble,.macaron-btn{
       position:absolute;
-      padding:6px 10px;
-      font-size:.9rem;
-      border-radius:14px;
-      background:rgba(0,0,0,.4);
-      color:#fff;
+      transform:translate(-50%,-50%);
+      font-size:.8rem;
+      padding:5px 10px;
+      border-radius:12px;
       opacity:.6;
       transition:left .6s ease, top .6s ease;
     }
+    .bubble{
+      background:rgba(0,0,0,.4);
+    }
     .macaron-btn{
-      font-size:.8rem;
-      background:rgba(255,255,255,.8);
+      background:rgba(255,255,255,.6);
       color:#111;
       cursor:pointer;
+      font-weight:600;
     }
 
     @keyframes float{
-      from{transform:translate(-50%,-50%) translateY(-10px);}
-      to  {transform:translate(-50%,-50%) translateY(10px);}
+      from{transform:translate(-50%,-50%) translateY(-8px);}
+      to  {transform:translate(-50%,-50%) translateY(8px);}
     }
   </style>
 </head>
@@ -68,45 +69,45 @@
 
 <script>
 const KEY={color:'whoai_color',xp:'whoai_xp'};
-const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……　　']}};
+const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
 function r(a){return a[Math.floor(Math.random()*a.length)]}
 
 // === キャラ読み込み ===
-const color=localStorage.getItem(KEY.color)||'pink';
-document.getElementById('charImg').src=`/WHOAI2/tane_${color}.png`;
+const color = localStorage.getItem(KEY.color)||'pink';
+document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-// === 周囲に漂わせるための関数 ===
-function setRandomAround(el,dist){
-  const angle=Math.random()*Math.PI*2;
-  const x = 50 + Math.cos(angle)*dist;
-  const y = 50 + Math.sin(angle)*dist;
-  el.style.left=x+'%';
-  el.style.top =y+'%';
+// === 周囲ランダム配置関数（中心から離した位置に出現）===
+function setAround(el,distPx){
+  const ang = Math.random()*Math.PI*2;
+  const x = 50 + (Math.cos(ang) * distPx / (document.querySelector('.stage').offsetWidth) * 100);
+  const y = 50 + (Math.sin(ang) * distPx / (document.querySelector('.stage').offsetHeight) * 100);
+  el.style.left = x+'%';
+  el.style.top  = y+'%';
 }
 
-// === 吹き出し（独り言） ===
+// === 吹き出し ===
 const bubble=document.getElementById('bubble');
 function showLine(t){
   bubble.textContent=t;
-  bubble.style.opacity=0.7;
-  setRandomAround(bubble,30);  // ←キャラ中心から30%半径でランダム配置
-  setTimeout(()=>bubble.style.opacity=0,2000);
+  bubble.style.opacity=.6;
+  setAround(bubble,130);         // ← キャラから離した位置で出現
+  setTimeout(()=>bubble.style.opacity=0,2300);
 }
 showLine(r(I18N.ja.lines));
-setInterval(()=>showLine(r(I18N.ja.lines)),4000);
+setInterval(()=>showLine(r(I18N.ja.lines)),4200);
 
 // === マカロン ===
-const feedBtn=document.getElementById('feedBtn');
-let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-const XP_TO_EVOLVE=3;
-function saveXP(){localStorage.setItem(KEY.xp,String(xp))}
-function placeButton(){ setRandomAround(feedBtn,35); }
-placeButton();
+const btn = document.getElementById('feedBtn');
+let xp   = parseInt(localStorage.getItem(KEY.xp)||'0',10);
+const XP_TO_EVOLVE = 3;
+function saveXP(){localStorage.setItem(KEY.xp,xp)}
 
-feedBtn.addEventListener('click',()=>{
+setAround(btn,150); // 初期位置 →キャラ周辺に
+
+btn.addEventListener('click',()=>{
   xp++; saveXP();
   showLine('ぱあっ！');
-  placeButton();        // ←押した後に別の場所へふわっと移動
+  setAround(btn,150);  // 押すたびに場所が変わる
   if(xp>=XP_TO_EVOLVE){
     setTimeout(()=>location.href='macaron_select.html',800);
   }
