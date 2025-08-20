@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（クラゲ漂流・1画面版）-->
+<!-- FILE: /whoai_talk.html（クラゲ漂流アニメーション版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -17,52 +17,52 @@
       background-size:cover;
       background-repeat:no-repeat;
       background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      display:flex;align-items:center;justify-content:center;
     }
 
     .stage{
       position:relative;
       width:min(90vw,680px);
-      aspect-ratio:1/1;
+      aspect-ratio:1;
       border-radius:24px;
-      background:rgba(0,0,0,.12);
+      background:rgba(0,0,0,.10);
       border:1px solid rgba(255,255,255,.12);
       overflow:hidden;
     }
 
-    .stage img{
-      position:absolute;
-      width:55%;
-      height:55%;
-      left:50%;top:50%;
-      transform:translate(-50%,-50%);
-      object-fit:contain;
-      animation:floatY 10s ease-in-out infinite alternate,
-               floatX  12s linear       infinite alternate;
-    }
-
+    /* === キャラと吹き出しは "揺れ + 横移動" の２つのアニメーションを同時に掛ける === */
+    .stage img,
     .bubble{
       position:absolute;
-      left:50%;top:50%;
+      width:55%;
+      left:50%;
+      top:50%;
       transform:translate(-50%,-50%);
+      animation:
+        floatSmall 6s ease-in-out infinite alternate,
+        drift      30s linear      infinite alternate;
+    }
+
+    /* 吹き出し用 */
+    .bubble{
       max-width:60%;
       background:rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.15);
       border-radius:18px;
       padding:8px 12px;
       font-size:0.9rem;
       opacity:0.55;
-      animation:floatY 10s ease-in-out infinite alternate,
-               floatX  12s linear       infinite alternate;
     }
 
-    @keyframes floatY{
-      from{ transform:translate(-50%,-50%) translateY(-15px); }
-      to  { transform:translate(-50%,-50%) translateY(15px);  }
+    /* 小さなゆらぎ */
+    @keyframes floatSmall {
+      from { transform:translate(-50%,-50%) translate(-10px, -10px); }
+      to   { transform:translate(-50%,-50%) translate( 10px,  10px); }
     }
-    @keyframes floatX{
-      from{ transform:translate(-50%,-50%) translateX(-25px); }
-      to  { transform:translate(-50%,-50%) translateX(25px);  }
+    /* 大きな移動（左右）*/
+    @keyframes drift {
+      from { transform:translate(-50%,-50%) translateX(-120px); }
+      to   { transform:translate(-50%,-50%) translateX( 120px); }
     }
   </style>
 </head>
@@ -75,32 +75,23 @@
 
   <script>
     const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
-    const I18N = {
-      ja : {
-        lines:['…… きょろ きょろ','ふわふわ……','（あなたを見上げている）','きらり★','すや……']
-      }
-    };
+    const I18N = { ja:{ lines:['…… きょろ きょろ','ふわふわ……','（あなたを見上げている）','きらり★','すや……'] } };
+    function r(a){ return a[Math.floor(Math.random()*a.length)] }
 
-    function r(a){return a[Math.floor(Math.random()*a.length)]}
-
-    // === キャラ画像読み込み ===
+    // === キャラ画像 ===
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
     document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-    // === 独り言（吹き出し） ===
+    // === 独り言 ===
     const bubble = document.getElementById('bubble');
-    function showLine(text){
-      bubble.textContent = text;
-      bubble.style.opacity = 0.55;
+    function show(t){
+      bubble.textContent = t;
+      bubble.style.opacity = 0.6;
       setTimeout(()=>{ bubble.style.opacity = 0; }, 2500);
     }
-
-    // 最初の一言
-    showLine(r(I18N.ja.lines));
-
-    // 一定間隔で独り言
-    setInterval(()=> showLine(r(I18N.ja.lines)), 5000);
+    show(r(I18N.ja.lines));
+    setInterval(()=>show(r(I18N.ja.lines)), 5000);
   </script>
 
 </body>
