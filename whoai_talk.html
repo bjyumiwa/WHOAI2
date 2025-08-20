@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <!-- FILE: /whoai_talk.html (Observation mode: no user chat, feed macarons) -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>観察モード | WhoAI（タネ）</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --glass: rgba(0,0,0,.45);
+      --glass-strong: rgba(0,0,0,.6);
+      --text: #fff;
+      --accent: #8de0ff;
+      --shadow: 0 10px 40px rgba(0,0,0,.35);
+      --radius: 20px;
+    }
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Yu Gothic", sans-serif;
+      color:var(--text);
+      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:10px
+    }
+
+    .topbar{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .badge{background:var(--glass);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;padding:8px 12px;box-shadow:var(--shadow);font-weight:700}
+    .chips{display:flex;gap:8px;align-items:center}
+    .chip{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:6px 10px;font-weight:700;background:var(--glass);color:#fff}
+    .chip[aria-pressed="true"]{outline:2px solid var(--accent)}
+
+    main{margin-top:56px;display:grid;grid-template-columns:1fr;place-items:center;gap:12px;width:min(96vw,980px)}
+
+    .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);box-shadow:var(--shadow);display:grid;place-items:center;overflow:hidden}
+    .stage img{width:85%;height:85%;object-fit:contain;animation:float 5s ease-in-out infinite}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+    .log{width:min(96vw,980px);max-height:40vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px}
+    .bubble{align-self:center;max-width:720px;background:var(--glass);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px 14px}
+
+    .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 16px;font-weight:900;background:linear-gradient(135deg,#9df,#fcf);color:#111;box-shadow:var(--shadow)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+
+    .meter{height:10px;width:min(96vw,420px);border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
+    .fill{height:100%;width:0;background:linear-gradient(90deg,#9df,#bdff9d);transition:width .35s ease}
+
+    .note{font-size:12px;opacity:.85;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="badge" id="who">あなた：— ／ キャラ：—</div>
+    <div class="chips" role="group" aria-label="Language Switch">
+      <button class="chip" data-lang="ja" aria-pressed="true">日本語</button>
+      <button class="chip" data-lang="en">English</button>
+      <button class="chip" data-lang="zh-CN">简体</button>
+      <button class="chip" data-lang="zh-TW">繁體</button>
+      <button class="chip" data-lang="ko">한국어</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="stage" aria-live="polite">
+      <img id="charImg" src="" alt="tane character" onerror="this.style.display='none'" />
+    </section>
+
+    <div class="meter" aria-label="XP">
+      <div id="xpFill" class="fill"></div>
+    </div>
+
+    <section class="controls">
+      <button id="feedBtn" class="btn">🍬 マカロンをあげる</button>
+      <button id="restBtn" class="btn">💤 観察する（自動）</button>
+    </section>
+
+    <section id="log" class="log" aria-live="polite"></section>
+
+    <p id="footNote" class="note">※ 会話入力はありません。眺めて、ときどきマカロンをあげてください。一定のXPで進化イベントへ。</p>
+  </main>
+
+  <script>
+    // ===== Keys & i18n =====
+    const KEY = {
+      lang:  'whoai_lang',
+      you:   'whoai_player_name',
+      buddy: 'whoai_char_name',
+      color: 'whoai_color',
+      xp:    'whoai_xp',
+      log:   'whoai_log',
+      stage: 'whoai_stage'
+    };
+
+    const I18N = {
+      'ja': {
+        feed: '🍬 マカロンをあげる', rest: '💤 観察する（自動）',
+        lines: [
+          '…… きょろ きょろ',
+          'ふわふわ……',
+          '（あなたを見上げている）',
+          'きらり★',
+          'すや……（うとうと）'
+        ],
+        react: ['ぱあっ！','もぐもぐ','ぴょん！','にこっ'],
+        foot: '※ 会話入力はありません。眺めて、ときどきマカロンをあげてください。一定のXPで進化イベントへ。',
+        evoReady: 'そろそろ変化の予感……（マカロンをもう一つ？）',
+        evoGo: '進化の気配が満ちた！ 次へ進みます。'
+      },
+      'en': {
+        feed: '🍬 Give a macaron', rest: '💤 Observe (auto)',
+        lines: ['…looking around','floating…','(stares at you)','sparkle★','dozing…'],
+        react: ['yay!','munch munch','hop!','smile'],
+        foot: 'No chat input. Just observe and feed macarons. Evolves at certain XP.',
+        evoReady: 'Something is about to change… (one more macaron?)',
+        evoGo: 'Evolution aura is full! Moving on.'
+      },
+      'zh-CN': {
+        feed: '🍬 递一块马卡龙', rest: '💤 观察（自动）',
+        lines: ['……东张西望','轻轻飘动……','（抬头看着你）','闪闪发光★','打盹……'],
+        react: ['耶！','咀嚼咀嚼','跳！','笑'],
+        foot: '不需要对话输入。只要观察并偶尔喂马卡龙。达到一定XP会进化。',
+        evoReady: '要变化了……（再来一块？）',
+        evoGo: '进化气息满了！继续前进。'
+      },
+      'zh-TW': {
+        feed: '🍬 給一塊馬卡龍', rest: '💤 觀察（自動）',
+        lines: ['……東張西望','輕輕漂浮……','（抬頭看著你）','閃閃發亮★','打盹……'],
+        react: ['耶！','咀嚼咀嚼','跳！','笑'],
+        foot: '不需要輸入對話。只需觀察、偶爾餵馬卡龍。達到一定XP會進化。',
+        evoReady: '好像要變化了……（再餵一塊？）',
+        evoGo: '進化的氣息滿了！前往下一步。'
+      },
+      'ko': {
+        feed: '🍬 마카롱 주기', rest: '💤 관찰하기(자동)',
+        lines: ['…두리번','둥실둥실…','(당신을 올려다본다)','반짝★','졸…'],
+        react: ['와아!','냠냠','폴짝!','웃음'],
+        foot: '대화 입력은 없어요. 관찰하고 가끔 마카롱을 주세요. 일정 XP가 되면 진화합니다.',
+        evoReady: '곧 변화가 올 듯… (하나 더?)',
+        evoGo: '진화 기운이 가득! 다음으로 이동합니다.'
+      }
+    };
+
+    function r(a){return a[Math.floor(Math.random()*a.length)]}
+
+    const chips=[...document.querySelectorAll('.chip')];
+    const who=document.getElementById('who');
+    const img=document.getElementById('charImg');
+    const logEl=document.getElementById('log');
+    const feedBtn=document.getElementById('feedBtn');
+    const restBtn=document.getElementById('restBtn');
+    const xpFill=document.getElementById('xpFill');
+    const foot=document.getElementById('footNote');
+
+    // Init language
+    function detectLang(){
+      const saved=localStorage.getItem(KEY.lang); if(saved && I18N[saved]) return saved;
+      const nav=(navigator.language||'ja').toLowerCase();
+      if(nav.startsWith('ja')) return 'ja';
+      if(nav.startsWith('en')) return 'en';
+      if(nav.startsWith('zh')){ if(nav.includes('tw')||nav.includes('hk')||nav.includes('mo')) return 'zh-TW'; return 'zh-CN'; }
+      if(nav.startsWith('ko')) return 'ko';
+      return 'ja';
+    }
+
+    let lang = detectLang();
+
+    function applyLang(newLang){
+      lang=newLang; localStorage.setItem(KEY.lang, lang);
+      feedBtn.textContent = I18N[lang].feed; restBtn.textContent = I18N[lang].rest; foot.textContent = I18N[lang].foot;
+      chips.forEach(ch=>ch.setAttribute('aria-pressed',String(ch.dataset.lang===lang)));
+    }
+
+    chips.forEach(ch=>ch.addEventListener('click',()=>applyLang(ch.dataset.lang)));
+    applyLang(lang);
+
+    // Names & header
+    const you = localStorage.getItem(KEY.you)||'—';
+    const buddy = localStorage.getItem(KEY.buddy)||'—';
+    who.textContent = `あなた：${you} ／ キャラ：${buddy}`;
+
+    // Stage & assets
+    localStorage.setItem(KEY.stage,'tane');
+    const color = localStorage.getItem(KEY.color)||'pink';
+    const imgPath = `tane_${color}.png`;
+    img.src = imgPath;
+
+    // XP & log
+    let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
+    const XP_TO_EVOLVE = 3; // ★ 観察モード用の閾値（必要なら調整）
+
+    function saveXP(){ localStorage.setItem(KEY.xp, String(xp)); }
+
+    function setFill(){
+      const pct = Math.max(0, Math.min(100, Math.round((xp/XP_TO_EVOLVE)*100)));
+      xpFill.style.width = pct + '%';
+    }
+    setFill();
+
+    function pushLine(text){
+      const b = document.createElement('div'); b.className='bubble'; b.textContent=text; logEl.appendChild(b); logEl.scrollTop=logEl.scrollHeight;
+      // 追記をlog(JSON)にも保存（軽量）
+      try{
+        const arr = JSON.parse(localStorage.getItem(KEY.log)||'[]');
+        arr.push({t:Date.now(), s:'sys', msg:text});
+        localStorage.setItem(KEY.log, JSON.stringify(arr).slice(-5000));
+      }catch(e){}
+    }
+
+    // Idle auto lines
+    let autoTimer=null;
+    function startAuto(){
+      if(autoTimer) clearInterval(autoTimer);
+      autoTimer = setInterval(()=>{ pushLine(r(I18N[lang].lines)); }, 4500);
+    }
+    startAuto();
+
+    // Feed action
+    function feed(){
+      pushLine(r(I18N[lang].react));
+      xp++; setFill(); saveXP();
+      if(xp===XP_TO_EVOLVE-1){ pushLine(I18N[lang].evoReady); }
+      if(xp>=XP_TO_EVOLVE){
+        pushLine(I18N[lang].evoGo);
+        // 次の画面（2回目のマカロン選択 → 進化演出）へ
+        setTimeout(()=>{ location.href = 'macaron_select.html'; }, 1200);
+      }
+    }
+
+    feedBtn.addEventListener('click', feed);
+
+    // Restarts auto-idle narrative
+    restBtn.addEventListener('click', ()=>{ startAuto(); });
+
+    // First line greet
+    pushLine(r(I18N[lang].lines));
+  </script>
+</body>
+</html>
