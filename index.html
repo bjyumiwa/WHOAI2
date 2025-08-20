@@ -1,196 +1,51 @@
+<!-- FILE: /index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /index.html (Start Screen, no conversation) -->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI ? — Start</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    :root{
-      --glass: rgba(0,0,0,.45);
-      --glass-strong: rgba(0,0,0,.6);
-      --text: #fff;
-      --accent: #8de0ff;
-      --accent-2: #ffd6f3;
-      --shadow: 0 10px 40px rgba(0,0,0,.35);
-      --radius: 20px;
-    }
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Yu Gothic", sans-serif;
-      color:var(--text);
-      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:22px;text-align:center;padding:24px
-    }
-
-    .wrap{max-width:920px;width:min(92vw,920px);display:flex;flex-direction:column;align-items:center;gap:18px}
-
-    .badge-row{position:fixed;top:14px;right:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-
-    .chip{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:8px 12px;font-weight:700;
-      background:var(--glass);color:#fff;backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);
-      box-shadow: var(--shadow);transition:.2s transform ease, .2s background ease
-    }
-    .chip:hover{transform:translateY(-1px);background:var(--glass-strong)}
-    .chip[aria-pressed="true"]{outline:2px solid var(--accent);}
-
-    .card{background:var(--glass);backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);
-      border:1px solid rgba(255,255,255,.12);border-radius:var(--radius); padding:20px 22px; box-shadow: var(--shadow)}
-
-    h1{font-size: clamp(28px, 5vw, 56px);line-height:1.1;margin:0;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-    p.lead{margin:0;opacity:.95;line-height:1.8;font-size:clamp(14px, 2.4vw, 18px)}
-
-    .cta{
-      display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px
-    }
-
-    .btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:14px 22px;font-weight:900;font-size:18px;
-      background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#111; text-shadow:none;
-      box-shadow: 0 10px 30px rgba(0,0,0,.45); transition:.2s transform ease, .2s filter ease
-    }
-    .btn:hover{transform:translateY(-2px)}
-    .btn:active{transform:translateY(0)}
-
-    .links{display:flex;gap:14px;opacity:.9;flex-wrap:wrap;justify-content:center}
-    .links a{color:#fff;text-decoration:underline dotted}
-
-    .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    @media (max-width:480px){.badge-row{left:50%;right:auto;transform:translateX(-50%)}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WhoAI ? — Start</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+:root{--glass:rgba(0,0,0,.45);--glass-strong:rgba(0,0,0,.6);--text:#fff;--accent:#8de0ff;--accent-2:#ffd6f3;--shadow:0 10px 40px rgba(0,0,0,.35);--radius:20px}
+html,body{height:100%;margin:0}
+body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--text);background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:24px}
+.wrap{max-width:920px;width:min(92vw,920px);display:flex;flex-direction:column;align-items:center;gap:18px}
+.badge-row{position:fixed;top:14px;right:14px;display:flex;gap:8px}
+.chip{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:8px 12px;font-weight:700;background:var(--glass);color:#fff;backdrop-filter:blur(6px);box-shadow:var(--shadow);transition:.2s}
+.chip[aria-pressed="true"]{outline:2px solid var(--accent)}
+.card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+h1{font-size:clamp(28px,5vw,56px);line-height:1.1;margin:0}
+p.lead{margin:0;opacity:.95;line-height:1.8;font-size:clamp(14px,2.4vw,18px)}
+.cta{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:14px 22px;font-weight:900;font-size:18px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#111;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.links{display:flex;gap:14px;opacity:.9;flex-wrap:wrap;justify-content:center}
+</style>
 </head>
 <body>
-  <div class="badge-row" role="group" aria-label="Language Switch">
-    <button class="chip" data-lang="ja" aria-pressed="true">日本語</button>
-    <button class="chip" data-lang="en">English</button>
-    <button class="chip" data-lang="zh-CN">简体</button>
-    <button class="chip" data-lang="zh-TW">繁體</button>
-    <button class="chip" data-lang="ko">한국어</button>
-  </div>
-
-  <main class="wrap">
-    <div class="card" aria-live="polite">
-      <h1 id="title">WhoAIへようこそ</h1>
-      <p id="subtitle" class="lead">会話はしません。<strong>名前を付けて、かわいがってね。</strong> ときどきマカロンをあげると反応します。</p>
-    </div>
-
-    <div class="cta">
-      <button id="startBtn" class="btn">
-        <span id="startLabel">はじめる（名前を付ける）</span>
-      </button>
-      <span id="hint" class="card" style="font-size:14px">Enter ⏎ でも開始できます</span>
-    </div>
-
-    <div class="links">
-      <a href="#" id="aboutLink">この世界について</a>
-      <span>·</span>
-      <a href="#" id="privacyLink">プライバシー</a>
-    </div>
-  </main>
-
-  <script>
-    // ===== i18n strings =====
-    const I18N = {
-      'ja': {
-        title: 'WhoAIへようこそ',
-        subtitle: '会話はしません。名前を付けて、かわいがってね。ときどきマカロンをあげると反応します。',
-        start: 'はじめる（名前を付ける）',
-        hint: 'Enter ⏎ でも開始できます',
-        about: 'この世界について',
-        privacy: 'プライバシー'
-      },
-      'en': {
-        title: 'Welcome to WhoAI',
-        subtitle: "No chatting. Name it and care for it. It reacts when you occasionally give it a macaron.",
-        start: 'Start (Name your buddy)',
-        hint: 'Press Enter ⏎ to begin',
-        about: 'About',
-        privacy: 'Privacy'
-      },
-      'zh-CN': {
-        title: '欢迎来到 WhoAI',
-        subtitle: '不进行对话。给它取名字并好好呵护。偶尔喂一块马卡龙会有反应。',
-        start: '开始（给它命名）',
-        hint: '按 Enter ⏎ 开始',
-        about: '关于',
-        privacy: '隐私'
-      },
-      'zh-TW': {
-        title: '歡迎來到 WhoAI',
-        subtitle: '不聊天。幫它取名字並好好照顧。偶爾餵個馬卡龍會有反應。',
-        start: '開始（幫它命名）',
-        hint: '按 Enter ⏎ 開始',
-        about: '關於',
-        privacy: '隱私'
-      },
-      'ko': {
-        title: 'WhoAI에 오신 것을 환영합니다',
-        subtitle: '대화하지 않아요. 이름을 지어 주고 아껴 주세요. 가끔 마카롱을 주면 반응해요.',
-        start: '시작 (이름 정하기)',
-        hint: 'Enter ⏎ 키로 시작',
-        about: '소개',
-        privacy: '개인정보'
-      }
-    };
-
-    const els = {
-      title: document.getElementById('title'),
-      subtitle: document.getElementById('subtitle'),
-      startLabel: document.getElementById('startLabel'),
-      hint: document.getElementById('hint'),
-      about: document.getElementById('aboutLink'),
-      privacy: document.getElementById('privacyLink'),
-      chips: [...document.querySelectorAll('.chip')],
-      startBtn: document.getElementById('startBtn')
-    };
-
-    function detectLang(){
-      const saved = localStorage.getItem('whoai_lang');
-      if(saved && I18N[saved]) return saved;
-      const nav = (navigator.language || 'ja').toLowerCase();
-      if(nav.startsWith('ja')) return 'ja';
-      if(nav.startsWith('en')) return 'en';
-      if(nav.startsWith('zh')){
-        if(nav.includes('tw')||nav.includes('hk')||nav.includes('mo')) return 'zh-TW';
-        return 'zh-CN';
-      }
-      if(nav.startsWith('ko')) return 'ko';
-      return 'ja';
-    }
-
-    function applyLang(lang){
-      const t = I18N[lang] || I18N.ja;
-      document.documentElement.lang = lang;
-      els.title.textContent = t.title;
-      els.subtitle.textContent = t.subtitle;
-      els.startLabel.textContent = t.start;
-      els.hint.textContent = t.hint;
-      els.about.textContent = t.about;
-      els.privacy.textContent = t.privacy;
-      els.chips.forEach(ch => ch.setAttribute('aria-pressed', String(ch.dataset.lang === lang)));
-      localStorage.setItem('whoai_lang', lang);
-    }
-
-    const initLang = detectLang();
-    applyLang(initLang);
-
-    els.chips.forEach(chip => chip.addEventListener('click', () => applyLang(chip.dataset.lang)));
-
-    function goNext(){
-      localStorage.setItem('whoai_started', new Date().toISOString());
-      // 占いはスキップ → 直接 naming.html へ
-      location.href = 'naming.html';
-    }
-
-    els.startBtn.addEventListener('click', goNext);
-    window.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); goNext(); }});
-
-    // Preload naming.html（非同期プリフェッチ）
-    const link = document.createElement('link');
-    link.rel = 'prefetch';
-    link.href = 'naming.html';
-    document.head.appendChild(link);
-  </script>
+<div class="badge-row" role="group" aria-label="Language Switch">
+<button class="chip" data-lang="ja" aria-pressed="true">日本語</button>
+<button class="chip" data-lang="en">English</button>
+<button class="chip" data-lang="zh-CN">简体</button>
+<button class="chip" data-lang="zh-TW">繁體</button>
+<button class="chip" data-lang="ko">한국어</button>
+</div>
+<main class="wrap">
+<div class="card" aria-live="polite">
+<h1 id="title">WhoAIへようこそ</h1>
+<p id="subtitle" class="lead">会話はしません。<strong>名前を付けて、かわいがってね。</strong> ときどきマカロンをあげると反応します。</p>
+</div>
+<div class="cta">
+<button id="startBtn" class="btn"><span id="startLabel">はじめる（名前を付ける）</span></button>
+</div>
+</main>
+<script>
+const I18N={ja:{title:'WhoAIへようこそ',subtitle:'会話はしません。名前を付けて、かわいがってね。ときどきマカロンをあげると反応します。',start:'はじめる（名前を付ける）'},en:{title:'Welcome to WhoAI',subtitle:"No chatting. Name it and care for it. It reacts when you occasionally give it a macaron.",start:'Start (Name your buddy)'}};
+const els={title:document.getElementById('title'),subtitle:document.getElementById('subtitle'),startLabel:document.getElementById('startLabel'),chips:[...document.querySelectorAll('.chip')],startBtn:document.getElementById('startBtn')};
+function detect(){const s=localStorage.getItem('whoai_lang');if(s&&I18N[s])return s;const n=(navigator.language||'ja').toLowerCase();return n.startsWith('en')?'en':'ja'}
+function apply(l){const t=I18N[l]||I18N.ja;document.documentElement.lang=l;els.title.textContent=t.title;els.subtitle.textContent=t.subtitle;els.startLabel.textContent=t.start;els.chips.forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.lang===l)));localStorage.setItem('whoai_lang',l)}
+const lang=detect();apply(lang);els.chips.forEach(ch=>ch.addEventListener('click',()=>apply(ch.dataset.lang)));
+els.startBtn.addEventListener('click',()=>{location.href='naming.html'});
+</script>
 </body>
 </html>
