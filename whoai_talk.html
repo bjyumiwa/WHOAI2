@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（背景＆キャラ画像パス完全修正版）-->
+<!-- FILE: /whoai_talk.html（背景＆tane画像パス完全修正版 – /WHOAI2/ パス対応版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -60,8 +60,8 @@
     // ステージと画像
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
-    // ✅ 画像は他のファイルと同じ階層にある想定（フォルダ名を付けない）
-    img.src=`tane_${color}.png`;
+    // ✅ GitHub Pages の /WHOAI2/ 下に置かれている画像を読む
+    img.src = `/WHOAI2/tane_${color}.png`;
 
     // XP処理
     let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
@@ -82,29 +82,3 @@
         localStorage.setItem(KEY.log, JSON.stringify(arr).slice(-5000));
       }catch(e){}
     }
-
-    // 自動セリフ
-    let autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
-
-    // マカロン
-    feedBtn.addEventListener('click',()=>{
-      pushLine(r(I18N.ja.react));
-      xp++; setFill(); saveXP();
-      if(xp===XP_TO_EVOLVE-1) pushLine(I18N.ja.evoReady);
-      if(xp>=XP_TO_EVOLVE){
-        pushLine(I18N.ja.evoGo);
-        setTimeout(()=>{ location.href='macaron_select.html'; }, 1200);
-      }
-    });
-
-    // 観察（再開）
-    restBtn.addEventListener('click',()=>{
-      clearInterval(autoTimer);
-      autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
-    });
-
-    // 初回の一言
-    pushLine(r(I18N.ja.lines));
-  </script>
-</body>
-</html>
