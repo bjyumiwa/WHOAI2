@@ -1,179 +1,136 @@
+<!-- FILE: /whoai_talk_evolved.html（クラゲ漂流・進化後版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /whoai_talk_evolved.html (Observation mode after evolution → rebirth.html) -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>観察モード | WhoAI（進化後）</title>
+  <title>会話 | WhoAI（進化後）</title>
   <meta name="color-scheme" content="dark light" />
+
   <style>
-    :root{--glass:rgba(0,0,0,.45);--glass-strong:rgba(0,0,0,.6);--text:#fff;--accent:#8de0ff;--shadow:0 10px 40px rgba(0,0,0,.35);--radius:20px}
-    html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--text);background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px}
+    html,body{height:50%;margin:0;overflow:hidden}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;
+      color:#fff;
+      background-image:url("space_background.png");
+      background-size:cover;
+      display:flex;align-items:center;justify-content:center;
+    }
 
-    .topbar{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-    .badge{background:var(--glass);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:14px;padding:8px 12px;box-shadow:var(--shadow);font-weight:700}
-    .chips{display:flex;gap:8px;align-items:center}
-    .chip{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:6px 10px;font-weight:700;background:var(--glass);color:#fff}
-    .chip[aria-pressed="true"]{outline:2px solid var(--accent)}
+    .stage{
+      position:relative;
+      width:min(90vw,680px);
+      aspect-ratio:1;
+      border-radius:24px;
+      background:rgba(0,0,0,.07);
+      overflow:hidden;
+    }
 
-    main{margin-top:56px;display:grid;grid-template-columns:1fr;place-items:center;gap:12px;width:min(96vw,980px)}
+    .char{
+      position:absolute;
+      left:50%; top:50%;
+      transform:translate(-50%,-50%);
+      width:55%;
+      object-fit:contain;
+      animation:float 10s ease-in-out infinite;
+      pointer-events:none;
+    }
 
-    .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);box-shadow:var(--shadow);display:grid;place-items:center;overflow:hidden}
-    .stage img{width:85%;height:85%;object-fit:contain;animation:float 4.5s ease-in-out infinite}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .bubble,.macaron-btn{
+      position:absolute;
+      font-size:.8rem;
+      padding:5px 10px;
+      border-radius:12px;
+      opacity:.6;
+      transition:left 1.5s ease, top 1.5s ease;
+    }
+    .bubble{
+      background:rgba(0,0,0,.45);
+      color:#fff;
+    }
+    .macaron-btn{
+      background:rgba(255,255,255,.6);
+      color:#111;
+      cursor:pointer;
+      font-weight:600;
+    }
 
-    .log{width:min(96vw,980px);max-height:40vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px}
-    .bubble{align-self:center;max-width:720px;background:var(--glass);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px 14px}
-
-    .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-    .btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 16px;font-weight:900;background:linear-gradient(135deg,#9df,#fcf);color:#111;box-shadow:var(--shadow)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-
-    .meter{height:10px;width:min(96vw,420px);border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
-    .fill{height:100%;width:0;background:linear-gradient(90deg,#9df,#bdff9d);transition:width .35s ease}
-
-    .note{font-size:12px;opacity:.85;text-align:center}
+    @keyframes float{
+      from{transform:translate(-50%,-50%) translateY(-8px);}
+      to  {transform:translate(-50%,-50%) translateY(8px);}
+    }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="badge" id="who">あなた：— ／ キャラ：—（進化後）</div>
-    <div class="chips" role="group" aria-label="Language Switch">
-      <button class="chip" data-lang="ja" aria-pressed="true">日本語</button>
-      <button class="chip" data-lang="en">English</button>
-      <button class="chip" data-lang="zh-CN">简体</button>
-      <button class="chip" data-lang="zh-TW">繁體</button>
-      <button class="chip" data-lang="ko">한국어</button>
-    </div>
-  </div>
 
-  <main>
-    <section class="stage" aria-live="polite">
-      <img id="charImg" src="" alt="evolved character" />
-    </section>
+<section class="stage">
+  <img  id="charImg" class="char" src="" alt="evolved" />
+  <div id="bubble" class="bubble"></div>
+  <button id="feedBtn" class="macaron-btn">🍬 マカロンをあげる</button>
+</section>
 
-    <div class="meter" aria-label="XP">
-      <div id="xpFill" class="fill"></div>
-    </div>
+<script>
+// constants
+const KEY={color:'whoai_color',xp:'whoai_xp'};
+const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
+const stage = document.querySelector(".stage");
+const stageW = stage.offsetWidth;
+const stageH = stage.offsetHeight;
 
-    <section class="controls">
-      <button id="feedBtn" class="btn">🍬 マカロンをあげる</button>
-      <button id="restBtn" class="btn">💤 観察する（自動）</button>
-    </section>
+// === キャラ（進化後）===
+const charImg=document.getElementById('charImg');
+const color=localStorage.getItem(KEY.color)||'pink';
+charImg.src=`/WHOAI2/evolved_${color}.png`;  // ← 進化後のパスに変更
 
-    <section id="log" class="log" aria-live="polite"></section>
+// === キャラと離れたランダム位置を返す ===
+function getRandomFarPosition(minDistPx){
+  let x,y;
+  const cx = stageW/2, cy = stageH/2;
+  do {
+    x = Math.random()*stageW;
+    y = Math.random()*stageH;
+  } while (Math.hypot(x-cx,y-cy) < minDistPx);
+  return {left:x, top:y};
+}
 
-    <p id="footNote" class="note">※ 観察モード。一定のXPで「復活の儀式」へ進みます（名前変更 or 姿変更）。</p>
-  </main>
+// === 吹き出し（進化後も同じ）===
+const bubble=document.getElementById('bubble');
+function showLine(t){
+  bubble.textContent=t;
+  bubble.style.opacity=.6;
+  const pos = getRandomFarPosition(140);
+  bubble.style.left = pos.left+'px';
+  bubble.style.top  = pos.top +'px';
+  setTimeout(()=>bubble.style.opacity=0,2000);
+}
+showLine(r(I18N.ja.lines));
+setInterval(()=>showLine(r(I18N.ja.lines)),4000);
 
-  <script>
-    // ===== Keys & i18n =====
-    const KEY = {
-      lang:  'whoai_lang',
-      you:   'whoai_player_name',
-      buddy: 'whoai_char_name',
-      color: 'whoai_color',
-      xp2:   'whoai_xp_evolved',   // 進化後のXPは別カウンタに
-      log:   'whoai_log',
-      stage: 'whoai_stage'
-    };
+// === マカロン（進化後はただの会話XP加算用）===
+const feedBtn=document.getElementById('feedBtn');
+let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+const XP_TO_END=10; // ← 進化後は10回会話
+function saveXP(){localStorage.setItem(KEY.xp,xp)}
 
-    const I18N = {
-      'ja': {
-        feed: '🍬 マカロンをあげる', rest: '💤 観察する（自動）',
-        lines: [
-          '… さっきよりキラキラしてる',
-          'ふわっ（進化の余韻）',
-          '（あなたの手元を見ている）',
-          'くるり—',
-          'すや…でも耳はぴくり'
-        ],
-        react: ['きゅん！','ぱちぱち！','ぐるん！','にっこり'],
-        evoReady: '儀式の気配…（もう少しで次の選択へ）',
-        evoGo: '準備完了！ 「復活の儀式」に進みます。'
-      },
-      'en': {
-        feed: '🍬 Give a macaron', rest: '💤 Observe (auto)',
-        lines: ['…shinier than before','floating (afterglow)','(watching your hands)','twirl—','dozing, ears twitch'],
-        react: ['spark!','clap clap!','spin!','smile'],
-        evoReady: 'The ritual draws near…',
-        evoGo: 'Ready! Heading to the ritual.'
-      }
-    };
+(function(){ 
+  const pos = getRandomFarPosition(140);
+  feedBtn.style.left=pos.left+'px'; 
+  feedBtn.style.top =pos.top+'px';
+})();
 
-    function r(a){return a[Math.floor(Math.random()*a.length)]}
+feedBtn.addEventListener('click',()=>{
+  xp++; saveXP();
+  showLine('ぱあっ！');
+  const pos = getRandomFarPosition(140);
+  feedBtn.style.left = pos.left+'px';
+  feedBtn.style.top  = pos.top +'px';
+  if(xp>=XP_TO_END){
+    setTimeout(()=>location.href='rebirth.html',800);
+  }
+});
 
-    const chips=[...document.querySelectorAll('.chip')];
-    const who=document.getElementById('who');
-    const img=document.getElementById('charImg');
-    const logEl=document.getElementById('log');
-    const feedBtn=document.getElementById('feedBtn');
-    const restBtn=document.getElementById('restBtn');
-    const xpFill=document.getElementById('xpFill');
-    const foot=document.getElementById('footNote');
+function r(a){return a[Math.floor(Math.random()*a.length)]}
+</script>
 
-    function detectLang(){
-      const saved=localStorage.getItem(KEY.lang); if(saved && I18N[saved]) return saved;
-      const nav=(navigator.language||'ja').toLowerCase();
-      if(nav.startsWith('en')) return 'en';
-      return 'ja';
-    }
-
-    let lang = detectLang();
-    function applyLang(newLang){
-      lang=newLang; localStorage.setItem(KEY.lang, lang);
-      feedBtn.textContent = I18N[lang].feed; restBtn.textContent = I18N[lang].rest; foot.textContent = lang==='ja'? '※ 観察モード。一定のXPで「復活の儀式」へ進みます（名前変更 or 姿変更）。' : 'Observation mode. Reaches the ritual at certain XP (rename or change appearance).';
-      chips.forEach(ch=>ch.setAttribute('aria-pressed',String(ch.dataset.lang===lang)));
-    }
-    chips.forEach(ch=>ch.addEventListener('click',()=>applyLang(ch.dataset.lang)));
-    applyLang(lang);
-
-    // Names & header
-    const you = localStorage.getItem(KEY.you)||'—';
-    const buddy = localStorage.getItem(KEY.buddy)||'—';
-    who.textContent = `あなた：${you} ／ キャラ：${buddy}（進化後）`;
-
-    // Stage & assets
-    localStorage.setItem(KEY.stage,'evolved');
-    const color = localStorage.getItem(KEY.color)||'pink';
-    const imgPath = `assets/stage2/tane_${color}.png`; // 進化後も単一ファイル運用
-    img.src = imgPath;
-
-    // XP (進化後用に別キー)
-    let xp = parseInt(localStorage.getItem(KEY.xp2) ?? '0', 10);
-    const XP_TO_RITUAL = 10; // ★進化後フェーズの閾値（必要なら変更）
-
-    function saveXP(){ localStorage.setItem(KEY.xp2, String(xp)); }
-    function setFill(){ xpFill.style.width = Math.max(0, Math.min(100, Math.round((xp/XP_TO_RITUAL)*100))) + '%'; }
-    setFill();
-
-    function pushLine(text){
-      const b = document.createElement('div'); b.className='bubble'; b.textContent=text; logEl.appendChild(b); logEl.scrollTop=logEl.scrollHeight;
-      try{ const arr = JSON.parse(localStorage.getItem(KEY.log)||'[]'); arr.push({t:Date.now(), s:'sys', msg:text}); localStorage.setItem(KEY.log, JSON.stringify(arr).slice(-5000)); }catch(e){}
-    }
-
-    // Idle auto lines
-    let autoTimer=null;
-    function startAuto(){ if(autoTimer) clearInterval(autoTimer); autoTimer = setInterval(()=>{ pushLine(r(I18N[lang].lines)); }, 4200); }
-    startAuto();
-
-    // Feed action
-    function feed(){
-      pushLine(r(I18N[lang].react));
-      xp++; setFill(); saveXP();
-      if(xp===XP_TO_RITUAL-1){ pushLine(I18N[lang].evoReady); }
-      if(xp>=XP_TO_RITUAL){
-        pushLine(I18N[lang].evoGo);
-        setTimeout(()=>{ location.href = 'rebirth.html'; }, 1200);
-      }
-    }
-
-    feedBtn.addEventListener('click', feed);
-    restBtn.addEventListener('click', ()=>{ startAuto(); });
-
-    // First line greet
-    pushLine(r(I18N[lang].lines));
-  </script>
 </body>
 </html>
