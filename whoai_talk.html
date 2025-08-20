@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html （タネ観察モード・404対策入り）-->
+<!-- FILE: /whoai_talk.html （タネ観察モード・404対策＆バグ修正版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -14,7 +14,7 @@
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
-      /* ← 背景URLは削除。JSが後から最適な画像を設定します。 */
+      /* 背景はJSで自動設定（ここにURLは書かない） */
       display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
     }
     .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);display:grid;place-items:center}
@@ -41,10 +41,9 @@
     <section id="log" class="log" aria-live="polite"></section>
   </main>
 
-  <!-- ✅ 背景を候補から自動探索して設定（どこに置いても404を出さない） -->
+  <!-- ✅ 背景を候補から自動探索して設定（相対/絶対パス両対応） -->
   <script>
   (function () {
-    // GitHub Pages（user.github.io/repo/…）でも動くよう、絶対/相対の両方を用意
     const repo = location.pathname.split('/').filter(Boolean)[0] || '';
     const ABS = p => (repo ? `/${repo}/${p}` : `/${p}`);
     const CANDIDATES = [
@@ -55,9 +54,9 @@
       './space_background.png',
       ABS('assets/stage1/space_background.png'),
       ABS('assets/space_background.png'),
+      ABS('stage1/space_background.png'),
       ABS('space_background.png')
     ];
-
     function trySrc(src){
       return new Promise((resolve,reject)=>{
         const img=new Image();
@@ -66,7 +65,6 @@
         img.src=src;
       });
     }
-
     (async ()=>{
       for(const src of CANDIDATES){
         try{
@@ -79,7 +77,7 @@
           return;
         }catch(_){}
       }
-      // どれも無ければフェールセーフ（静的グラデ）
+      // フェールセーフ
       document.body.style.background = 'radial-gradient(ellipse at 50% 30%, #0b1735 0%, #000 60%)';
     })();
   })();
@@ -97,15 +95,18 @@
     const feedBtn=document.getElementById('feedBtn');
     const restBtn=document.getElementById('restBtn');
 
+    // ステージと画像
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
     img.src=`assets/stage2/tane_${color}.png`;
 
+    // XP処理
     let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
     const XP_TO_EVOLVE=3;
     function saveXP(){localStorage.setItem(KEY.xp,String(xp))}
     function setFill(){xpFill.style.width=Math.min(100,Math.round((xp/XP_TO_EVOLVE)*100))+"%"}; setFill();
 
+    // ログ
     function pushLine(t){
       const b=document.createElement('div');
       b.className='bubble';
@@ -119,23 +120,27 @@
       }catch(e){}
     }
 
+    // 自動セリフ
     let autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
 
+    // マカロン
     feedBtn.addEventListener('click',()=>{
       pushLine(r(I18N.ja.react));
       xp++; setFill(); saveXP();
       if(xp===XP_TO_EVOLVE-1) pushLine(I18N.ja.evoReady);
       if(xp>=XP_TO_EVOLVE){
         pushLine(I18N.ja.evoGo);
-        setTimeout(()=>location.href='macaron_select.html',1200);
+        setTimeout(()=>{ location.href='macaron_select.html'; }, 1200);
       }
     });
 
+    // 観察（再開）
     restBtn.addEventListener('click',()=>{
       clearInterval(autoTimer);
       autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
     });
 
+    // 初回の一言
     pushLine(r(I18N.ja.lines));
   </script>
 </body>
