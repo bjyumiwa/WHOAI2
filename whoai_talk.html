@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（吹き出し位置調整＋見上げセリフ削除版）-->
+<!-- FILE: /whoai_talk.html（ボタン位置・サイズ調整版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -30,6 +30,7 @@
       overflow:hidden;
     }
 
+    /* === キャラ・吹き出し === */
     .floatItem{
       position:absolute;
       left:50%;
@@ -39,35 +40,31 @@
                  drift      30s linear      infinite alternate;
     }
 
-    .stage img{
-      width:55%;
-      object-fit:contain;
-    }
+    .stage img{ width:55%;object-fit:contain; }
 
-    /* 吹き出しをキャラより少し上にオフセットして漂わせる */
     .bubble{
       max-width:60%;
+      transform:translate(-50%,-80%); /* ←キャラより少し上に固定 */
       background:rgba(0,0,0,.45);
       border:1px solid rgba(255,255,255,.15);
       border-radius:18px;
       padding:8px 12px;
       font-size:0.9rem;
       opacity:0.55;
-
-      /* 漂いながら 40px 上に浮いた位置を基準に */
-      transform:translate(-50%,-50%) translateY(-40px);
     }
 
+    /* === マカロンボタン === */
     .macaron-btn{
-      cursor:pointer;
-      background:rgba(255,255,255,.85);
+      transform:translate(-50%,30%); /* ←キャラより少し下に */
+      background:rgba(255,255,255,.8);
       color:#111;
-      padding:6px 12px;
-      border-radius:14px;
-      font-weight:700;
+      padding:4px 8px;
+      border-radius:12px;
+      font-size:0.8rem;
       border:none;
-      font-size:0.95rem;
-      margin-top:8px;
+      cursor:pointer;
+      animation: floatSmall 6s ease-in-out infinite alternate,
+                 drift      30s linear      infinite alternate;
     }
 
     @keyframes floatSmall{
@@ -82,24 +79,23 @@
 </head>
 <body>
 
-  <section class="stage" aria-live="polite">
-    <img    id="charImg"  class="floatItem" src="" alt="tane character" />
-    <div   id="bubble"   class="floatItem bubble"></div>
-    <button id="feedBtn" class="floatItem macaron-btn">🍬 マカロンをあげる</button>
+  <section class="stage">
+    <img id="charImg"  class="floatItem" src="" alt="tane character" />
+    <div id="bubble"   class="floatItem bubble"></div>
+    <button id="feedBtn" class="macaron-btn floatItem">🍬 マカロンをあげる</button>
   </section>
 
   <script>
     const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
-    // 👇 見上げ系のセリフは完全に除外したセット
     const I18N={ ja:{ lines:['…… きょろ きょろ','ふわふわ……','きらり★','すや……'] } };
     function r(a){return a[Math.floor(Math.random()*a.length)]}
 
-    // === キャラ画像 ===
+    // === キャラ ===
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
     document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-    // === 独り言 ===
+    // === 吹き出し ===
     const bubble = document.getElementById('bubble');
     function showLine(t){
       bubble.textContent = t;
