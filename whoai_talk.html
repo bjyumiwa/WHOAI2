@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html （タネ観察モード）-->
+<!-- FILE: /whoai_talk.html （タネ観察モード・404対策入り）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>観察モード | WhoAI（タネ）</title>
   <meta name="color-scheme" content="dark light" />
-  <!-- ✅ favicon 404 を回避（データURI） -->
+  <!-- ✅ favicon 404回避（データURI） -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='100%25' height='100%25' fill='%23000'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='44' fill='%23fff'%3E★%3C/text%3E%3C/svg%3E">
 
   <style>
@@ -14,7 +14,7 @@
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
-      /* ← 背景画像はJSで自動設定（404回避のためここでは指定しない） */
+      /* ← 背景URLは削除。JSが後から最適な画像を設定します。 */
       display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
     }
     .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);display:grid;place-items:center}
@@ -41,24 +41,32 @@
     <section id="log" class="log" aria-live="polite"></section>
   </main>
 
-  <!-- ✅ 背景画像を候補から自動で探して設定（404回避 & 配置差異に強い） -->
+  <!-- ✅ 背景を候補から自動探索して設定（どこに置いても404を出さない） -->
   <script>
   (function () {
+    // GitHub Pages（user.github.io/repo/…）でも動くよう、絶対/相対の両方を用意
+    const repo = location.pathname.split('/').filter(Boolean)[0] || '';
+    const ABS = p => (repo ? `/${repo}/${p}` : `/${p}`);
     const CANDIDATES = [
       'assets/stage1/space_background.png',
       'assets/space_background.png',
       'stage1/space_background.png',
       'space_background.png',
-      './space_background.png'
+      './space_background.png',
+      ABS('assets/stage1/space_background.png'),
+      ABS('assets/space_background.png'),
+      ABS('space_background.png')
     ];
+
     function trySrc(src){
       return new Promise((resolve,reject)=>{
         const img=new Image();
         img.onload=()=>resolve(src);
-        img.onerror=reject;
+        img.onerror=()=>reject(src);
         img.src=src;
       });
     }
+
     (async ()=>{
       for(const src of CANDIDATES){
         try{
@@ -69,10 +77,10 @@
           document.body.style.backgroundRepeat = 'no-repeat';
           document.body.style.backgroundAttachment = 'fixed';
           return;
-        }catch{}
+        }catch(_){}
       }
-      // フェールセーフ（画像がどこにも無い場合）
-      document.body.style.background = 'radial-gradient(ellipse at 50% 30%, #0b1735, #000 60%)';
+      // どれも無ければフェールセーフ（静的グラデ）
+      document.body.style.background = 'radial-gradient(ellipse at 50% 30%, #0b1735 0%, #000 60%)';
     })();
   })();
   </script>
@@ -107,7 +115,7 @@
       try{
         const arr=JSON.parse(localStorage.getItem(KEY.log)||'[]');
         arr.push({t:Date.now(),s:'sys',msg:t});
-        localStorage.setItem(KEY.log', JSON.stringify(arr).slice(-5000));
+        localStorage.setItem(KEY.log, JSON.stringify(arr).slice(-5000));
       }catch(e){}
     }
 
