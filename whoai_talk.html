@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html （タネ観察モード・404対策＆バグ修正版）-->
+<!-- FILE: /whoai_talk.html （タネ観察モード・404対策＆背景パス修正版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -14,7 +14,11 @@
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
-      /* 背景はJSで自動設定（ここにURLは書かない） */
+      background-image:url("space_background.png");
+      background-position:center;
+      background-size:cover;
+      background-repeat:no-repeat;
+      background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
     }
     .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);display:grid;place-items:center}
@@ -40,48 +44,6 @@
     </section>
     <section id="log" class="log" aria-live="polite"></section>
   </main>
-
-  <!-- ✅ 背景を候補から自動探索して設定（相対/絶対パス両対応） -->
-  <script>
-  (function () {
-    const repo = location.pathname.split('/').filter(Boolean)[0] || '';
-    const ABS = p => (repo ? `/${repo}/${p}` : `/${p}`);
-    const CANDIDATES = [
-      'assets/stage1/space_background.png',
-      'assets/space_background.png',
-      'stage1/space_background.png',
-      'space_background.png',
-      './space_background.png',
-      ABS('assets/stage1/space_background.png'),
-      ABS('assets/space_background.png'),
-      ABS('stage1/space_background.png'),
-      ABS('space_background.png')
-    ];
-    function trySrc(src){
-      return new Promise((resolve,reject)=>{
-        const img=new Image();
-        img.onload=()=>resolve(src);
-        img.onerror=()=>reject(src);
-        img.src=src;
-      });
-    }
-    (async ()=>{
-      for(const src of CANDIDATES){
-        try{
-          const ok=await trySrc(src);
-          document.body.style.backgroundImage = `url("${ok}")`;
-          document.body.style.backgroundPosition = 'center';
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundRepeat = 'no-repeat';
-          document.body.style.backgroundAttachment = 'fixed';
-          return;
-        }catch(_){}
-      }
-      // フェールセーフ
-      document.body.style.background = 'radial-gradient(ellipse at 50% 30%, #0b1735 0%, #000 60%)';
-    })();
-  })();
-  </script>
 
   <script>
     const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
