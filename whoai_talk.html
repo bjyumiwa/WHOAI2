@@ -1,172 +1,190 @@
-<!-- FILE: /whoai_talk.html（確実にマカロンをあげられる安定版）-->
+<!-- FILE: /whoai_talk.html（にょきっと出現→画面回遊＋安全ボタン）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>観察モード | WhoAI（タネ）</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    html,body{height:100%;margin:0;overflow:hidden}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;
-      color:#fff;
-      background:#000 url("space_background.png") center/cover fixed no-repeat;
-      display:flex;align-items:center;justify-content:center;
-    }
-    .stage{
-      position:relative;
-      width:min(92vw,700px);
-      aspect-ratio:1;
-      border-radius:20px;
-      background:rgba(0,0,0,.10);
-      overflow:hidden;
-      box-shadow:0 8px 30px rgba(0,0,0,.35);
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>観察モード | WhoAI（タネ）</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+  /* 1画面・背景だけ見せる（黒帯なし） */
+  html,body{height:100%;margin:0;overflow:hidden}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;
+    color:#fff;
+    background:#000 url("space_background.png") center/cover no-repeat fixed;
+    display:flex;align-items:center;justify-content:center;
+  }
 
-    /* キャラ（中央・クリック無効） */
-    .char{
-      position:absolute;left:50%;top:50%;
-      transform:translate(-50%,-50%);
-      width:48%;
-      object-fit:contain;
-      animation:float 12s ease-in-out infinite;
-      pointer-events:none;
-      filter:drop-shadow(0 8px 18px rgba(0,0,0,.35));
-    }
-    @keyframes float{
-      from{transform:translate(-50%,-50%) translateY(-10px)}
-      to  {transform:translate(-50%,-50%) translateY( 10px)}
-    }
+  /* 舞台は完全透明。影だけうっすら。 */
+  .stage{
+    position:relative;
+    width:min(92vw,720px);
+    aspect-ratio:1;
+    border-radius:22px;
+    background:transparent;            /* ← 黒帯を消す */
+    overflow:hidden;
+    box-shadow:0 8px 28px rgba(0,0,0,.28);
+  }
 
-    /* 漂うUI（吹き出し／漂うマカロン） */
-    .ui-float{
-      position:absolute;
-      font-size:.9rem;
-      padding:6px 12px;
-      border-radius:12px;
-      transition:left 1.2s ease, top 1.2s ease, opacity .4s ease;
-      opacity:.75;
-      z-index:5;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    .bubble{
-      background:rgba(0,0,0,.55);
-      color:#fff;
-    }
-    .macaron-btn{
-      background:rgba(255,255,255,.75);
-      color:#111;
-      font-weight:700;
-      border:none;
-      cursor:pointer;
-    }
+  /* 地平線（“にょきっ”の基準線） */
+  .horizon{
+    position:absolute;left:0;right:0;bottom:16%;
+    height:2px;
+    background:rgba(255,255,255,.35);
+    box-shadow:0 0 14px rgba(255,255,255,.35);
+    z-index:3;
+  }
+  .horizon::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:110px;
+    background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.35) 100%);
+    pointer-events:none;
+  }
 
-    /* 右下の固定“保険”ボタン（常に押せる） */
-    .safety-btn{
-      position:fixed;
-      right:14px; bottom:14px;
-      z-index:10;
-      background:rgba(255,255,255,.85);
-      color:#111;
-      border:none; border-radius:14px;
-      padding:8px 14px;
-      font-weight:700; font-size:.95rem;
-      cursor:pointer;
-      box-shadow:0 4px 14px rgba(0,0,0,.25);
-    }
+  /* キャラのラッパ：出現（emerge）→ 回遊（roamPath） */
+  .charWrap{
+    position:absolute;left:50%;top:82%;                 /* 地平線上から出る */
+    transform:translate(-50%,0) translateY(120%);        /* 地平線の下に隠しておく */
+    z-index:2;                                           /* 地平線より背面に配置 */
+    animation:
+      emerge 1600ms cubic-bezier(.17,.84,.25,1) 200ms 1 forwards,
+      roamPath 38s ease-in-out 2s infinite alternate;    /* 出現後に回遊開始 */
+  }
 
-    /* 画面読み上げ向け（見えないけど押せる） */
-    .sr-only{
-      position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;
-    }
-  </style>
+  /* 実際の画像（ふわふわの小ゆらぎはここで） */
+  .charImg{
+    width:min(48vw,320px);
+    object-fit:contain;
+    filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));
+    pointer-events:none;
+    animation:bob 7s ease-in-out infinite;
+  }
+
+  /* 漂うUI（独り言／漂うマカロン）。キャラとは離す */
+  .ui{
+    position:absolute;
+    font-size:.9rem;
+    padding:6px 12px;border-radius:12px;
+    opacity:.8;z-index:5;
+    transition:left 1.2s ease, top 1.2s ease, opacity .4s ease;
+    user-select:none;-webkit-user-select:none;
+  }
+  .bubble{ background:rgba(0,0,0,.55); color:#fff; }
+  .floatBtn{ background:rgba(255,255,255,.75); color:#111; font-weight:700; border:none; cursor:pointer; }
+
+  /* 右下の固定“保険”ボタン（必ず押せる） */
+  .safety{ position:fixed; right:14px; bottom:14px; z-index:10;
+           background:rgba(255,255,255,.9); color:#111; border:none; border-radius:14px;
+           padding:9px 14px; font-weight:700; font-size:.95rem; cursor:pointer;
+           box-shadow:0 6px 18px rgba(0,0,0,.28); }
+
+  /* アニメーション ---------------------- */
+  @keyframes emerge{               /* 地平線の下 → すっと出る */
+    0%   { transform:translate(-50%,0) translateY(120%); opacity:0; }
+    70%  { transform:translate(-50%,0) translateY(-6%);  opacity:1; }
+    100% { transform:translate(-50%,0) translateY(0);    opacity:1; }
+  }
+  @keyframes bob{                  /* 小さな上下揺れ */
+    0%,100%{ transform:translateY(-8px) }
+    50%   { transform:translateY(  8px) }
+  }
+  /* 画面中をゆっくり回遊（left/top％をゆっくり巡回）*/
+  @keyframes roamPath{
+    0%   { left:18%; top:72%; }
+    20%  { left:35%; top:58%; }
+    40%  { left:72%; top:64%; }
+    60%  { left:66%; top:28%; }
+    80%  { left:28%; top:30%; }
+    100% { left:18%; top:72%; }
+  }
+</style>
 </head>
 <body>
-
   <section class="stage" aria-live="polite">
-    <img id="charImg" class="char" src="" alt="tane character" />
+    <div class="horizon" aria-hidden="true"></div>
 
-    <div id="bubble" class="ui-float bubble" aria-live="polite"></div>
-    <button id="floatFeedBtn" class="ui-float macaron-btn" type="button">🍬 マカロンをあげる</button>
+    <!-- にょきっと出て、その後は roamPath で画面中を回遊 -->
+    <div class="charWrap">
+      <img id="charImg" class="charImg" src="" alt="tane character" />
+    </div>
+
+    <div id="bubble" class="ui bubble"></div>
+    <button id="floatFeedBtn" class="ui floatBtn" type="button">🍬 マカロンをあげる</button>
   </section>
 
-  <!-- 押しにくい時の固定ボタン（どんな状況でも押せる） -->
-  <button id="safetyBtn" class="safety-btn" type="button" aria-describedby="safetyHelp">🍬 マカロン</button>
-  <span id="safetyHelp" class="sr-only">右下固定のマカロンボタン。押すと経験値が増えます。</span>
+  <!-- どんな時でも押せる保険ボタン -->
+  <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
 
-  <script>
-    // 定数
-    const KEY={color:'whoai_color',xp:'whoai_xp'};
-    const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
-    const stage=document.querySelector('.stage');
-    let stageW=stage.offsetWidth, stageH=stage.offsetHeight;
-    window.addEventListener('resize',()=>{stageW=stage.offsetWidth; stageH=stage.offsetHeight;});
+<script>
+  // ------- 設定 -------
+  const KEY={color:'whoai_color',xp:'whoai_xp'};
+  const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
+  const XP_TO_EVOLVE=3;
 
-    // キャラ画像（GitHub Pagesの /WHOAI2/ 配下）
-    const charImg=document.getElementById('charImg');
-    const color=localStorage.getItem(KEY.color)||'pink';
-    charImg.src=`/WHOAI2/tane_${color}.png`;
+  // 画像
+  const color = localStorage.getItem(KEY.color)||'pink';
+  document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-    // キャラ中心（ステージ中央）から一定距離以上のランダム座標
-    function getFarPos(minDistPx, marginPx=12){
-      const cx=stageW/2, cy=stageH/2;
-      const minX=marginPx, maxX=stageW-marginPx;
-      const minY=marginPx, maxY=stageH-marginPx;
-      let x,y,guard=0;
-      do{
-        x = Math.random()*(maxX-minX)+minX;
-        y = Math.random()*(maxY-minY)+minY;
-        guard++;
-        if(guard>200) break; // 念のため
-      }while(Math.hypot(x-cx,y-cy)<minDistPx);
-      return {left:x, top:y};
+  // ステージサイズ
+  const stage = document.querySelector('.stage');
+  let W=stage.offsetWidth, H=stage.offsetHeight;
+  addEventListener('resize', ()=>{ W=stage.offsetWidth; H=stage.offsetHeight; });
+
+  // キャラ中心（実質 .charWrap の現在位置付近）と距離を取るための近接判定
+  function charCenter(){
+    const wrap = document.querySelector('.charWrap').getBoundingClientRect();
+    const s = stage.getBoundingClientRect();
+    return { x: wrap.left - s.left + wrap.width/2, y: wrap.top - s.top + wrap.height/2 };
+  }
+  function farPos(minDistPx, margin=14){
+    const cx=charCenter().x, cy=charCenter().y;
+    let x,y,guard=0;
+    do{
+      x = Math.random()*(W - margin*2) + margin;
+      y = Math.random()*(H - margin*2) + margin;
+      guard++; if(guard>200) break;
+    }while(Math.hypot(x-cx,y-cy) < minDistPx);
+    return {left:x, top:y};
+  }
+
+  // 独り言（出没）
+  const bubble = document.getElementById('bubble');
+  const lines = I18N.ja.lines;
+  function r(a){ return a[Math.floor(Math.random()*a.length)] }
+  function showLine(t){
+    bubble.textContent=t;
+    bubble.style.opacity=.9;
+    const p = farPos(140);
+    bubble.style.left=p.left+'px';
+    bubble.style.top =p.top +'px';
+    setTimeout(()=>bubble.style.opacity=0, 2000);
+  }
+  setTimeout(()=>showLine(r(lines)), 2200);              // にょきっと後に初回
+  setInterval(()=>showLine(r(lines)), 4200);
+
+  // マカロン：漂うボタン＋右下固定ボタン
+  const floatBtn = document.getElementById('floatFeedBtn');
+  const safetyBtn= document.getElementById('safetyBtn');
+  let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
+  function save(){ localStorage.setItem(KEY.xp,String(xp)); }
+  function placeFloatBtn(){
+    const p = farPos(160);
+    floatBtn.style.left=p.left+'px';
+    floatBtn.style.top =p.top +'px';
+  }
+  setTimeout(placeFloatBtn, 2300);                       // にょきっと後に配置
+
+  function feed(){
+    xp++; save();
+    showLine('ぱあっ！');
+    placeFloatBtn();
+    if(xp>=XP_TO_EVOLVE){
+      setTimeout(()=>location.href='macaron_select.html',700);
     }
-
-    // 独り言：キャラから離して出現→自動で薄くなる
-    const bubble=document.getElementById('bubble');
-    function r(a){return a[Math.floor(Math.random()*a.length)]}
-    function showLine(t){
-      bubble.textContent=t;
-      bubble.style.opacity=.85;
-      const pos=getFarPos(140);
-      bubble.style.left=pos.left+'px';
-      bubble.style.top =pos.top +'px';
-      setTimeout(()=>bubble.style.opacity=0,2000);
-    }
-    // 初回は0.8秒後、以降は4秒周期
-    setTimeout(()=>showLine(r(I18N.ja.lines)),800);
-    setInterval(()=>showLine(r(I18N.ja.lines)),4000);
-
-    // マカロン（漂うボタン＋右下固定ボタンの両方で加算）
-    const floatFeedBtn=document.getElementById('floatFeedBtn');
-    const safetyBtn=document.getElementById('safetyBtn');
-    let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-    const XP_TO_EVOLVE=3;
-    function saveXP(){ localStorage.setItem(KEY.xp, String(xp)); }
-    function placeFloatBtn(){
-      const pos=getFarPos(150);
-      floatFeedBtn.style.left=pos.left+'px';
-      floatFeedBtn.style.top =pos.top +'px';
-    }
-    // 初期配置（見失わないように1秒後に配置）
-    setTimeout(placeFloatBtn, 1000);
-
-    function feedOnce(){
-      xp++; saveXP();
-      showLine('ぱあっ！');
-      placeFloatBtn();
-      if(xp>=XP_TO_EVOLVE){
-        setTimeout(()=>{ location.href='macaron_select.html'; }, 600);
-      }
-    }
-    floatFeedBtn.addEventListener('click', feedOnce);
-    safetyBtn.addEventListener('click', feedOnce);
-    // キーボードの M でも給餌できるように（操作保険）
-    window.addEventListener('keydown', (e)=>{
-      if(e.key.toLowerCase()==='m'){ feedOnce(); }
-    });
-  </script>
+  }
+  floatBtn.addEventListener('click', feed);
+  safetyBtn.addEventListener('click', feed);
+  addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='m') feed(); });
+</script>
 </body>
 </html>
