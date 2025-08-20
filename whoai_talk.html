@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（改善反映版：UIを周囲に漂わせる＋透明化）-->
+<!-- FILE: /whoai_talk.html（B仕様：自由漂い＆キャラと離す版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -25,26 +25,28 @@
       background:rgba(0,0,0,.07);
       overflow:hidden;
     }
+
     .char{
       position:absolute;
       left:50%; top:50%;
-      width:55%;
       transform:translate(-50%,-50%);
+      width:55%;
       object-fit:contain;
       animation:float 10s ease-in-out infinite;
+      pointer-events:none;
     }
 
     .bubble,.macaron-btn{
       position:absolute;
-      transform:translate(-50%,-50%);
       font-size:.8rem;
       padding:5px 10px;
       border-radius:12px;
       opacity:.6;
-      transition:left .6s ease, top .6s ease;
+      transition:left 1.5s ease, top 1.5s ease;
     }
     .bubble{
-      background:rgba(0,0,0,.4);
+      background:rgba(0,0,0,.45);
+      color:#fff;
     }
     .macaron-btn{
       background:rgba(255,255,255,.6);
@@ -61,28 +63,34 @@
 </head>
 <body>
 
-<section class="stage" aria-live="polite">
+<section class="stage">
   <img  id="charImg" class="char" src="" alt="tane" />
   <div id="bubble" class="bubble"></div>
   <button id="feedBtn" class="macaron-btn">🍬 マカロンをあげる</button>
 </section>
 
 <script>
+// constants
 const KEY={color:'whoai_color',xp:'whoai_xp'};
 const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
-function r(a){return a[Math.floor(Math.random()*a.length)]}
+const stage = document.querySelector(".stage");
+const stageW = stage.offsetWidth;
+const stageH = stage.offsetHeight;
 
-// === キャラ読み込み ===
-const color = localStorage.getItem(KEY.color)||'pink';
-document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
+// === キャラ ===
+const charImg=document.getElementById('charImg');
+const color=localStorage.getItem(KEY.color)||'pink';
+charImg.src=`/WHOAI2/tane_${color}.png`;
 
-// === 周囲ランダム配置関数（中心から離した位置に出現）===
-function setAround(el,distPx){
-  const ang = Math.random()*Math.PI*2;
-  const x = 50 + (Math.cos(ang) * distPx / (document.querySelector('.stage').offsetWidth) * 100);
-  const y = 50 + (Math.sin(ang) * distPx / (document.querySelector('.stage').offsetHeight) * 100);
-  el.style.left = x+'%';
-  el.style.top  = y+'%';
+// === 関数：キャラから一定距離以上離れたランダム座標を返す ===
+function getRandomFarPosition(minDistPx){
+  let x,y;
+  const cx = stageW/2, cy = stageH/2;
+  do {
+    x = Math.random()*stageW;
+    y = Math.random()*stageH;
+  } while (Math.hypot(x-cx,y-cy) < minDistPx);
+  return {left:x, top:y};
 }
 
 // === 吹き出し ===
@@ -90,28 +98,39 @@ const bubble=document.getElementById('bubble');
 function showLine(t){
   bubble.textContent=t;
   bubble.style.opacity=.6;
-  setAround(bubble,130);         // ← キャラから離した位置で出現
-  setTimeout(()=>bubble.style.opacity=0,2300);
+  const pos = getRandomFarPosition(140);
+  bubble.style.left = pos.left+'px';
+  bubble.style.top  = pos.top +'px';
+  setTimeout(()=>bubble.style.opacity=0,2000);
 }
 showLine(r(I18N.ja.lines));
-setInterval(()=>showLine(r(I18N.ja.lines)),4200);
+setInterval(()=>showLine(r(I18N.ja.lines)),4000);
 
 // === マカロン ===
-const btn = document.getElementById('feedBtn');
-let xp   = parseInt(localStorage.getItem(KEY.xp)||'0',10);
-const XP_TO_EVOLVE = 3;
+const feedBtn=document.getElementById('feedBtn');
+let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+const XP_TO_EVOLVE=3;
 function saveXP(){localStorage.setItem(KEY.xp,xp)}
 
-setAround(btn,150); // 初期位置 →キャラ周辺に
+// 初期位置をキャラから離れたランダム位置に
+(function(){ 
+  const pos = getRandomFarPosition(140);
+  feedBtn.style.left=pos.left+'px'; 
+  feedBtn.style.top =pos.top+'px';
+})();
 
-btn.addEventListener('click',()=>{
+feedBtn.addEventListener('click',()=>{
   xp++; saveXP();
   showLine('ぱあっ！');
-  setAround(btn,150);  // 押すたびに場所が変わる
+  const pos = getRandomFarPosition(140);
+  feedBtn.style.left = pos.left+'px';
+  feedBtn.style.top  = pos.top +'px';
   if(xp>=XP_TO_EVOLVE){
     setTimeout(()=>location.href='macaron_select.html',800);
   }
 });
+
+function r(a){return a[Math.floor(Math.random()*a.length)]}
 </script>
 
 </body>
