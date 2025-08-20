@@ -1,215 +1,33 @@
-
+<!-- FILE: /naming.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /naming.html (No conversation; save names then go macaron.html) -->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>名前をつける | WhoAI</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    :root{
-      --glass: rgba(0,0,0,.45);
-      --glass-strong: rgba(0,0,0,.6);
-      --text: #fff;
-      --accent: #8de0ff;
-      --accent-2: #ffd6f3;
-      --shadow: 0 10px 40px rgba(0,0,0,.35);
-      --radius: 20px;
-    }
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", "Yu Gothic", sans-serif;
-      color:var(--text);
-      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-      gap:18px;padding:24px
-    }
-    header{margin-top:6px;text-align:center}
-    h1{font-size: clamp(26px, 4.8vw, 48px);line-height:1.1;margin:0 0 8px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-    p.lead{margin:0;opacity:.95;line-height:1.75;font-size:clamp(14px, 2.4vw, 18px);text-align:center}
-
-    .lang{position:fixed;top:12px;right:12px;display:flex;gap:8px}
-    .chip{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:8px 12px;font-weight:700;
-      background:var(--glass);color:#fff;backdrop-filter: blur(6px);-webkit-backdrop-filter: blur(6px);
-      box-shadow: var(--shadow);transition:.2s transform ease, .2s background ease}
-    .chip:hover{transform:translateY(-1px);background:var(--glass-strong)}
-    .chip[aria-pressed="true"]{outline:2px solid var(--accent)}
-
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;max-width:980px;width:min(96vw,980px)}
-    .card{background:var(--glass);backdrop-filter: blur(10px);-webkit-backdrop-filter: blur(10px);
-      border:1px solid rgba(255,255,255,.12);border-radius:var(--radius); padding:18px; box-shadow: var(--shadow)}
-
-    .field{display:flex;flex-direction:column;gap:8px;margin:6px 0}
-    label{font-size:12px;opacity:.9}
-    input{appearance:none;background:rgba(255,255,255,.94);color:#111;border:0;border-radius:12px;padding:14px 12px;font-size:16px}
-
-    .btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:14px 20px;font-weight:900;font-size:17px;
-      background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#111; box-shadow: var(--shadow);
-      transition:.2s transform ease}
-    .btn:hover{transform:translateY(-2px)}
-
-    .flex{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .note{font-size:12px;opacity:.85}
-
-    .preview{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
-    .avatar{width:min(50vw,280px);height:min(50vw,280px);border-radius:24px;background:rgba(0,0,0,.35);
-      display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
-    .avatar img{width:100%;height:100%;object-fit:contain}
-
-    .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>名前をつける | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+html,body{height:100%;margin:0}
+body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
+.card{background:rgba(0,0,0,.45);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:18px;max-width:980px;width:min(96vw,980px)}
+input{background:rgba(255,255,255,.94);color:#111;border:0;border-radius:12px;padding:14px 12px;font-size:16px;width:100%}
+.btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:14px 20px;font-weight:900;background:linear-gradient(135deg,#8de0ff,#ffd6f3);color:#111}
+</style>
 </head>
 <body>
-  <div class="lang" role="group" aria-label="Language Switch">
-    <button class="chip" data-lang="ja" aria-pressed="true">日本語</button>
-    <button class="chip" data-lang="en">English</button>
-    <button class="chip" data-lang="zh-CN">简体</button>
-    <button class="chip" data-lang="zh-TW">繁體</button>
-    <button class="chip" data-lang="ko">한국어</button>
-  </div>
-
-  <header>
-    <h1 id="title">名前をつけよう</h1>
-    <p id="subtitle" class="lead">会話はしません。<strong>名前を付けて、かわいがってね。</strong> ときどきマカロンをあげるだけで進みます。</p>
-  </header>
-
-  <section class="grid">
-    <article class="card">
-      <div class="field">
-        <label id="labelYou" for="you">あなたの名前</label>
-        <input id="you" type="text" inputmode="text" autocomplete="name" placeholder="例）Miwa" />
-      </div>
-      <div class="field">
-        <label id="labelBuddy" for="buddy">キャラクターの名前</label>
-        <input id="buddy" type="text" inputmode="text" placeholder="例）マカロン" />
-      </div>
-      <div class="flex">
-        <button id="saveBtn" class="btn"><span id="saveLabel">保存して進む（マカロン選択へ）</span></button>
-        <span id="hint" class="note">Enter ⏎ でも保存</span>
-      </div>
-      <p class="note" id="policy">※ 名前は端末内（localStorage）に保存されます。サーバ送信はしません。</p>
-    </article>
-
-    <article class="card preview">
-      <div class="avatar" aria-label="character placeholder">
-        <img id="placeholder" src="public/assets/stage1/tane_placeholder.png" alt="tane placeholder" onerror="this.style.display='none'" />
-        <span class="sr-only">プレースホルダー画像</span>
-      </div>
-      <div>
-        <div class="note" id="previewYou">あなた：—</div>
-        <div class="note" id="previewBuddy">キャラ：—</div>
-      </div>
-    </article>
-  </section>
-
-  <script>
-    // ===== i18n =====
-    const I18N = {
-      'ja': {title:'名前をつけよう', sub:'会話はしません。名前を付けて、かわいがってね。ときどきマカロンをあげるだけで進みます。',
-             you:'あなたの名前', buddy:'キャラクターの名前', save:'保存して進む（マカロン選択へ）', hint:'Enter ⏎ でも保存', policy:'※ 名前は端末内（localStorage）に保存されます。サーバ送信はしません。', previewYou:'あなた：', previewBuddy:'キャラ：'},
-      'en': {title:'Name your buddy', sub:"No chatting. Name it and care for it. You’ll just give macarons occasionally.",
-             you:'Your name', buddy:"Character's name", save:'Save & continue (to macarons)', hint:'Press Enter ⏎ to save', policy:'Names are stored locally (localStorage). Not sent to server.', previewYou:'You: ', previewBuddy:'Buddy: '},
-      'zh-CN': {title:'给它起个名字', sub:'不进行对话。给它取名并好好呵护，只需偶尔喂马卡龙即可继续。',
-             you:'你的名字', buddy:'角色的名字', save:'保存并继续（选择马卡龙）', hint:'按 Enter ⏎ 保存', policy:'名称仅保存在本地（localStorage），不会上传服务器。', previewYou:'你：', previewBuddy:'角色：'},
-      'zh-TW': {title:'幫它取個名字', sub:'不聊天。幫它命名並好好照顧，只需偶爾餵馬卡龍即可繼續。',
-             you:'你的名字', buddy:'角色名字', save:'儲存並前往（選馬卡龍）', hint:'按 Enter ⏎ 儲存', policy:'名稱僅儲存在本機（localStorage），不會傳送到伺服器。', previewYou:'你：', previewBuddy:'角色：'},
-      'ko': {title:'이름을 지어 주세요', sub:'대화하지 않아요. 이름을 지어 아껴 주세요. 가끔 마카롱만 주면 진행돼요.',
-             you:'당신의 이름', buddy:'캐릭터 이름', save:'저장하고 계속 (마카롱 선택)', hint:'Enter ⏎ 로 저장', policy:'이름은 로컬(localStorage)에만 저장되며 서버로 전송되지 않습니다.', previewYou:'당신: ', previewBuddy:'캐릭터: '}
-    };
-
-    const KEY = {
-      lang: 'whoai_lang',
-      you: 'whoai_player_name',
-      buddy: 'whoai_char_name'
-    };
-
-    const els = {
-      chips: [...document.querySelectorAll('.chip')],
-      title: document.getElementById('title'),
-      subtitle: document.getElementById('subtitle'),
-      labelYou: document.getElementById('labelYou'),
-      labelBuddy: document.getElementById('labelBuddy'),
-      you: document.getElementById('you'),
-      buddy: document.getElementById('buddy'),
-      saveBtn: document.getElementById('saveBtn'),
-      saveLabel: document.getElementById('saveLabel'),
-      hint: document.getElementById('hint'),
-      policy: document.getElementById('policy'),
-      previewYou: document.getElementById('previewYou'),
-      previewBuddy: document.getElementById('previewBuddy')
-    };
-
-    function detectLang(){
-      const saved = localStorage.getItem(KEY.lang);
-      if(saved && I18N[saved]) return saved;
-      const nav = (navigator.language||'ja').toLowerCase();
-      if(nav.startsWith('ja')) return 'ja';
-      if(nav.startsWith('en')) return 'en';
-      if(nav.startsWith('zh')){
-        if(nav.includes('tw')||nav.includes('hk')||nav.includes('mo')) return 'zh-TW';
-        return 'zh-CN';
-      }
-      if(nav.startsWith('ko')) return 'ko';
-      return 'ja';
-    }
-
-    function applyLang(lang){
-      const t = I18N[lang] || I18N.ja;
-      document.documentElement.lang = lang;
-      els.title.textContent = t.title;
-      els.subtitle.textContent = t.sub;
-      els.labelYou.textContent = t.you;
-      els.labelBuddy.textContent = t.buddy;
-      els.saveLabel.textContent = t.save;
-      els.hint.textContent = t.hint;
-      els.policy.textContent = t.policy;
-      els.previewYou.textContent = t.previewYou + (els.you.value||'—');
-      els.previewBuddy.textContent = t.previewBuddy + (els.buddy.value||'—');
-      els.chips.forEach(ch => ch.setAttribute('aria-pressed', String(ch.dataset.lang === lang)));
-      localStorage.setItem(KEY.lang, lang);
-    }
-
-    function updatePreview(){
-      const lang = localStorage.getItem(KEY.lang) || detectLang();
-      const t = I18N[lang] || I18N.ja;
-      els.previewYou.textContent = t.previewYou + (els.you.value||'—');
-      els.previewBuddy.textContent = t.previewBuddy + (els.buddy.value||'—');
-    }
-
-    function saveAndNext(){
-      const you = els.you.value.trim();
-      const buddy = els.buddy.value.trim();
-      if(!you || !buddy){
-        // simple a11y alert
-        alert('名前を入力してください（あなた／キャラ）');
-        return;
-      }
-      localStorage.setItem(KEY.you, you);
-      localStorage.setItem(KEY.buddy, buddy);
-      // Next: choose color (appearance)
-      location.href = 'macaron.html';
-    }
-
-    // Init
-    const initLang = detectLang();
-    els.you.value = localStorage.getItem(KEY.you)||'';
-    els.buddy.value = localStorage.getItem(KEY.buddy)||'';
-    applyLang(initLang);
-    updatePreview();
-
-    // Bindings
-    els.chips.forEach(chip=>chip.addEventListener('click',()=>applyLang(chip.dataset.lang)));
-    els.you.addEventListener('input', updatePreview);
-    els.buddy.addEventListener('input', updatePreview);
-    els.saveBtn.addEventListener('click', saveAndNext);
-    window.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveAndNext(); }});
-
-    // Prefetch next page
-    const link = document.createElement('link');
-    link.rel = 'prefetch';
-    link.href = 'macaron.html';
-    document.head.appendChild(link);
-  </script>
+<section class="card">
+<h1>名前をつけよう</h1>
+<p>会話はしません。<strong>名前を付けて、かわいがってね。</strong> ときどきマカロンをあげるだけで進みます。</p>
+<label>あなたの名前<input id="you" /></label>
+<label>キャラクターの名前<input id="buddy" /></label>
+<button id="save" class="btn">保存して進む（マカロン選択へ）</button>
+<p style="font-size:12px;opacity:.85">※ 名前は端末内（localStorage）に保存されます。サーバ送信はしません。</p>
+</section>
+<script>
+const K={you:'whoai_player_name',buddy:'whoai_char_name'};
+const you=document.getElementById('you');const buddy=document.getElementById('buddy');
+you.value=localStorage.getItem(K.you)||'';buddy.value=localStorage.getItem(K.buddy)||'';
+document.getElementById('save').addEventListener('click',()=>{if(!you.value||!buddy.value){alert('名前を入力してください');return;}localStorage.setItem(K.you,you.value.trim());localStorage.setItem(K.buddy,buddy.value.trim());location.href='macaron.html'});
+</script>
 </body>
 </html>
