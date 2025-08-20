@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（ボタン位置・サイズ調整版）-->
+<!-- FILE: /whoai_talk.html（キャラ周辺ランダム漂い版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -15,8 +15,6 @@
       background-image:url("space_background.png");
       background-position:center;
       background-size:cover;
-      background-repeat:no-repeat;
-      background-attachment:fixed;
       display:flex;align-items:center;justify-content:center;
     }
 
@@ -25,100 +23,95 @@
       width:min(90vw,680px);
       aspect-ratio:1;
       border-radius:24px;
-      background:rgba(0,0,0,.10);
-      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.1);
       overflow:hidden;
     }
-
-    /* === キャラ・吹き出し === */
-    .floatItem{
+    .char{
       position:absolute;
-      left:50%;
-      top:50%;
+      left:50%; top:50%;
+      width:55%;
       transform:translate(-50%,-50%);
-      animation: floatSmall 6s ease-in-out infinite alternate,
-                 drift      30s linear      infinite alternate;
+      object-fit:contain;
+      animation:float 10s ease-in-out infinite;
     }
 
-    .stage img{ width:55%;object-fit:contain; }
-
-    .bubble{
-      max-width:60%;
-      transform:translate(-50%,-80%); /* ←キャラより少し上に固定 */
-      background:rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.15);
-      border-radius:18px;
-      padding:8px 12px;
-      font-size:0.9rem;
-      opacity:0.55;
+    .bubble,.macaron-btn{
+      position:absolute;
+      padding:6px 10px;
+      font-size:.9rem;
+      border-radius:14px;
+      background:rgba(0,0,0,.4);
+      color:#fff;
+      opacity:.6;
+      transition:left .6s ease, top .6s ease;
     }
-
-    /* === マカロンボタン === */
     .macaron-btn{
-      transform:translate(-50%,30%); /* ←キャラより少し下に */
+      font-size:.8rem;
       background:rgba(255,255,255,.8);
       color:#111;
-      padding:4px 8px;
-      border-radius:12px;
-      font-size:0.8rem;
-      border:none;
       cursor:pointer;
-      animation: floatSmall 6s ease-in-out infinite alternate,
-                 drift      30s linear      infinite alternate;
     }
 
-    @keyframes floatSmall{
-      from{ transform:translate(-50%,-50%) translate(-10px,-10px); }
-      to  { transform:translate(-50%,-50%) translate(10px,10px);  }
-    }
-    @keyframes drift{
-      from{ transform:translate(-50%,-50%) translateX(-120px); }
-      to  { transform:translate(-50%,-50%) translateX(120px);  }
+    @keyframes float{
+      from{transform:translate(-50%,-50%) translateY(-10px);}
+      to  {transform:translate(-50%,-50%) translateY(10px);}
     }
   </style>
 </head>
 <body>
 
-  <section class="stage">
-    <img id="charImg"  class="floatItem" src="" alt="tane character" />
-    <div id="bubble"   class="floatItem bubble"></div>
-    <button id="feedBtn" class="macaron-btn floatItem">🍬 マカロンをあげる</button>
-  </section>
+<section class="stage" aria-live="polite">
+  <img  id="charImg" class="char" src="" alt="tane" />
+  <div id="bubble" class="bubble"></div>
+  <button id="feedBtn" class="macaron-btn">🍬 マカロンをあげる</button>
+</section>
 
-  <script>
-    const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
-    const I18N={ ja:{ lines:['…… きょろ きょろ','ふわふわ……','きらり★','すや……'] } };
-    function r(a){return a[Math.floor(Math.random()*a.length)]}
+<script>
+const KEY={color:'whoai_color',xp:'whoai_xp'};
+const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……　　']}};
+function r(a){return a[Math.floor(Math.random()*a.length)]}
 
-    // === キャラ ===
-    localStorage.setItem(KEY.stage,'tane');
-    const color=localStorage.getItem(KEY.color)||'pink';
-    document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
+// === キャラ読み込み ===
+const color=localStorage.getItem(KEY.color)||'pink';
+document.getElementById('charImg').src=`/WHOAI2/tane_${color}.png`;
 
-    // === 吹き出し ===
-    const bubble = document.getElementById('bubble');
-    function showLine(t){
-      bubble.textContent = t;
-      bubble.style.opacity = 0.6;
-      setTimeout(()=>{ bubble.style.opacity = 0; }, 2500);
-    }
-    showLine(r(I18N.ja.lines));
-    setInterval(()=>showLine(r(I18N.ja.lines)),5000);
+// === 周囲に漂わせるための関数 ===
+function setRandomAround(el,dist){
+  const angle=Math.random()*Math.PI*2;
+  const x = 50 + Math.cos(angle)*dist;
+  const y = 50 + Math.sin(angle)*dist;
+  el.style.left=x+'%';
+  el.style.top =y+'%';
+}
 
-    // === マカロン（進化） ===
-    const feedBtn=document.getElementById('feedBtn');
-    let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-    const XP_TO_EVOLVE=3;
-    function saveXP(){localStorage.setItem(KEY.xp,String(xp))}
+// === 吹き出し（独り言） ===
+const bubble=document.getElementById('bubble');
+function showLine(t){
+  bubble.textContent=t;
+  bubble.style.opacity=0.7;
+  setRandomAround(bubble,30);  // ←キャラ中心から30%半径でランダム配置
+  setTimeout(()=>bubble.style.opacity=0,2000);
+}
+showLine(r(I18N.ja.lines));
+setInterval(()=>showLine(r(I18N.ja.lines)),4000);
 
-    feedBtn.addEventListener('click',()=>{
-      xp++; saveXP();
-      showLine('ぱあっ！');
-      if(xp>=XP_TO_EVOLVE){
-        setTimeout(()=>{ location.href='macaron_select.html'; },800);
-      }
-    });
-  </script>
+// === マカロン ===
+const feedBtn=document.getElementById('feedBtn');
+let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+const XP_TO_EVOLVE=3;
+function saveXP(){localStorage.setItem(KEY.xp,String(xp))}
+function placeButton(){ setRandomAround(feedBtn,35); }
+placeButton();
+
+feedBtn.addEventListener('click',()=>{
+  xp++; saveXP();
+  showLine('ぱあっ！');
+  placeButton();        // ←押した後に別の場所へふわっと移動
+  if(xp>=XP_TO_EVOLVE){
+    setTimeout(()=>location.href='macaron_select.html',800);
+  }
+});
+</script>
 
 </body>
 </html>
