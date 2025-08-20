@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（クラゲ漂流アニメーション版）-->
+<!-- FILE: /whoai_talk.html（クラゲ漂流＋マカロンボタン版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -30,20 +30,21 @@
       overflow:hidden;
     }
 
-    /* === キャラと吹き出しは "揺れ + 横移動" の２つのアニメーションを同時に掛ける === */
-    .stage img,
-    .bubble{
+    /* === キャラ・吹き出し・マカロンボタン：すべて漂う === */
+    .floatItem{
       position:absolute;
-      width:55%;
       left:50%;
       top:50%;
       transform:translate(-50%,-50%);
-      animation:
-        floatSmall 6s ease-in-out infinite alternate,
-        drift      30s linear      infinite alternate;
+      animation: floatSmall 6s ease-in-out infinite alternate,
+                 drift      30s linear      infinite alternate;
     }
 
-    /* 吹き出し用 */
+    .stage img{
+      width:55%;
+      object-fit:contain;
+    }
+
     .bubble{
       max-width:60%;
       background:rgba(0,0,0,.45);
@@ -54,44 +55,72 @@
       opacity:0.55;
     }
 
-    /* 小さなゆらぎ */
-    @keyframes floatSmall {
-      from { transform:translate(-50%,-50%) translate(-10px, -10px); }
-      to   { transform:translate(-50%,-50%) translate( 10px,  10px); }
+    .macaron-btn{
+      cursor:pointer;
+      background:rgba(255,255,255,.85);
+      color:#111;
+      padding:6px 12px;
+      border-radius:14px;
+      font-weight:700;
+      border:none;
+      font-size:0.95rem;
+      margin-top:8px;
     }
-    /* 大きな移動（左右）*/
-    @keyframes drift {
-      from { transform:translate(-50%,-50%) translateX(-120px); }
-      to   { transform:translate(-50%,-50%) translateX( 120px); }
+
+    @keyframes floatSmall{
+      from{ transform:translate(-50%,-50%) translate(-10px,-10px); }
+      to  { transform:translate(-50%,-50%) translate(10px,10px);  }
+    }
+    @keyframes drift{
+      from{ transform:translate(-50%,-50%) translateX(-120px); }
+      to  { transform:translate(-50%,-50%) translateX(120px);  }
     }
   </style>
 </head>
 <body>
 
   <section class="stage" aria-live="polite">
-    <img id="charImg" src="" alt="tane character" />
-    <div id="bubble" class="bubble"></div>
+    <img id="charImg"  class="floatItem" src="" alt="tane character" />
+    <div id="bubble"   class="floatItem bubble"></div>
+    <button id="feedBtn" class="floatItem macaron-btn">🍬 マカロンをあげる</button>
   </section>
 
   <script>
     const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
-    const I18N = { ja:{ lines:['…… きょろ きょろ','ふわふわ……','（あなたを見上げている）','きらり★','すや……'] } };
-    function r(a){ return a[Math.floor(Math.random()*a.length)] }
+    const I18N={ ja:{ lines:['…… きょろ きょろ','ふわふわ……','きらり★','すや……'] } }; // ⇦ 見上げ系は除外
+
+    function r(a){return a[Math.floor(Math.random()*a.length)]}
 
     // === キャラ画像 ===
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
     document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-    // === 独り言 ===
+    // === 吹き出し ===
     const bubble = document.getElementById('bubble');
-    function show(t){
+    const feedBtn = document.getElementById('feedBtn');
+
+    function showLine(t){
       bubble.textContent = t;
       bubble.style.opacity = 0.6;
       setTimeout(()=>{ bubble.style.opacity = 0; }, 2500);
     }
-    show(r(I18N.ja.lines));
-    setInterval(()=>show(r(I18N.ja.lines)), 5000);
+    showLine(r(I18N.ja.lines));
+    setInterval(()=>showLine(r(I18N.ja.lines)), 5000);
+
+    // === マカロン（進化処理） ===
+    let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
+    const XP_TO_EVOLVE = 3;
+    function saveXP(){ localStorage.setItem(KEY.xp,String(xp)) }
+
+    feedBtn.addEventListener('click',()=>{
+      xp++;
+      saveXP();
+      showLine('ぱあっ！');
+      if(xp >= XP_TO_EVOLVE){
+        setTimeout(()=>{ location.href='macaron_select.html'; },800);
+      }
+    });
   </script>
 
 </body>
