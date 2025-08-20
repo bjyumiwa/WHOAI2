@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk_evolved.html（クラゲ漂流・進化後版）-->
+<!-- FILE: /whoai_talk_evolved.html（B仕様：進化後・口パク付き）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -8,12 +8,11 @@
   <meta name="color-scheme" content="dark light" />
 
   <style>
-    html,body{height:50%;margin:0;overflow:hidden}
+    html,body{height:100%;margin:0;overflow:hidden}
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
       color:#fff;
-      background-image:url("space_background.png");
-      background-size:cover;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
       display:flex;align-items:center;justify-content:center;
     }
 
@@ -21,8 +20,8 @@
       position:relative;
       width:min(90vw,680px);
       aspect-ratio:1;
-      border-radius:24px;
-      background:rgba(0,0,0,.07);
+      border-radius:20px;
+      background:rgba(0,0,0,.15);
       overflow:hidden;
     }
 
@@ -30,34 +29,34 @@
       position:absolute;
       left:50%; top:50%;
       transform:translate(-50%,-50%);
-      width:55%;
+      width:45%;
       object-fit:contain;
-      animation:float 10s ease-in-out infinite;
+      animation:float 18s ease-in-out infinite;
       pointer-events:none;
     }
 
     .bubble,.macaron-btn{
       position:absolute;
-      font-size:.8rem;
-      padding:5px 10px;
+      font-size:.9rem;
+      padding:6px 12px;
       border-radius:12px;
-      opacity:.6;
-      transition:left 1.5s ease, top 1.5s ease;
+      opacity:.7;
+      transition:left 1.2s ease, top 1.2s ease;
     }
     .bubble{
-      background:rgba(0,0,0,.45);
+      background:rgba(0,0,0,.55);
       color:#fff;
     }
     .macaron-btn{
-      background:rgba(255,255,255,.6);
+      background:rgba(255,255,255,.7);
       color:#111;
       cursor:pointer;
       font-weight:600;
     }
 
     @keyframes float{
-      from{transform:translate(-50%,-50%) translateY(-8px);}
-      to  {transform:translate(-50%,-50%) translateY(8px);}
+      from{transform:translate(-50%,-50%) translateY(-10px);}
+      to  {transform:translate(-50%,-50%) translateY(10px);}
     }
   </style>
 </head>
@@ -70,66 +69,72 @@
 </section>
 
 <script>
-// constants
+// === 定数 ===
 const KEY={color:'whoai_color',xp:'whoai_xp'};
-const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
+const I18N={ja:{lines:['おはなししよ！','わくわく！','にっこり','ふわ〜']}};
 const stage = document.querySelector(".stage");
 const stageW = stage.offsetWidth;
 const stageH = stage.offsetHeight;
 
-// === キャラ（進化後）===
+// === キャラ ===
 const charImg=document.getElementById('charImg');
 const color=localStorage.getItem(KEY.color)||'pink';
-charImg.src=`/WHOAI2/evolved_${color}.png`;  // ← 進化後のパスに変更
 
-// === キャラと離れたランダム位置を返す ===
+// 口パク切り替え
+let toggle=false;
+setInterval(()=>{
+  toggle=!toggle;
+  charImg.src=`/WHOAI2/${color}_${toggle?'open':'closed'}.png`;
+},1000);
+
+// === キャラから一定距離以上離れた座標 ===
 function getRandomFarPosition(minDistPx){
   let x,y;
-  const cx = stageW/2, cy = stageH/2;
+  const cx=stageW/2, cy=stageH/2;
   do {
-    x = Math.random()*stageW;
-    y = Math.random()*stageH;
-  } while (Math.hypot(x-cx,y-cy) < minDistPx);
+    x=Math.random()*stageW;
+    y=Math.random()*stageH;
+  } while (Math.hypot(x-cx,y-cy)<minDistPx);
   return {left:x, top:y};
 }
 
-// === 吹き出し（進化後も同じ）===
+// === 吹き出し ===
 const bubble=document.getElementById('bubble');
 function showLine(t){
   bubble.textContent=t;
-  bubble.style.opacity=.6;
-  const pos = getRandomFarPosition(140);
-  bubble.style.left = pos.left+'px';
-  bubble.style.top  = pos.top +'px';
+  bubble.style.opacity=.7;
+  const pos=getRandomFarPosition(120);
+  bubble.style.left=pos.left+'px';
+  bubble.style.top =pos.top +'px';
   setTimeout(()=>bubble.style.opacity=0,2000);
 }
+function r(a){return a[Math.floor(Math.random()*a.length)]}
 showLine(r(I18N.ja.lines));
 setInterval(()=>showLine(r(I18N.ja.lines)),4000);
 
-// === マカロン（進化後はただの会話XP加算用）===
+// === マカロン ===
 const feedBtn=document.getElementById('feedBtn');
 let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-const XP_TO_END=10; // ← 進化後は10回会話
+const XP_TO_NEXT=10;
 function saveXP(){localStorage.setItem(KEY.xp,xp)}
 
-(function(){ 
-  const pos = getRandomFarPosition(140);
-  feedBtn.style.left=pos.left+'px'; 
-  feedBtn.style.top =pos.top+'px';
+// 初期位置
+(function(){
+  const pos=getRandomFarPosition(140);
+  feedBtn.style.left=pos.left+'px';
+  feedBtn.style.top =pos.top +'px';
 })();
 
 feedBtn.addEventListener('click',()=>{
   xp++; saveXP();
   showLine('ぱあっ！');
-  const pos = getRandomFarPosition(140);
-  feedBtn.style.left = pos.left+'px';
-  feedBtn.style.top  = pos.top +'px';
-  if(xp>=XP_TO_END){
+  const pos=getRandomFarPosition(140);
+  feedBtn.style.left=pos.left+'px';
+  feedBtn.style.top =pos.top+'px';
+  if(xp>=XP_TO_NEXT){
     setTimeout(()=>location.href='rebirth.html',800);
   }
 });
-
-function r(a){return a[Math.floor(Math.random()*a.length)]}
 </script>
 
 </body>
