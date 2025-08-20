@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（クラゲ漂流＋マカロンボタン版）-->
+<!-- FILE: /whoai_talk.html（吹き出し位置調整＋見上げセリフ削除版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -30,7 +30,6 @@
       overflow:hidden;
     }
 
-    /* === キャラ・吹き出し・マカロンボタン：すべて漂う === */
     .floatItem{
       position:absolute;
       left:50%;
@@ -45,6 +44,7 @@
       object-fit:contain;
     }
 
+    /* 吹き出しをキャラより少し上にオフセットして漂わせる */
     .bubble{
       max-width:60%;
       background:rgba(0,0,0,.45);
@@ -53,6 +53,9 @@
       padding:8px 12px;
       font-size:0.9rem;
       opacity:0.55;
+
+      /* 漂いながら 40px 上に浮いた位置を基準に */
+      transform:translate(-50%,-50%) translateY(-40px);
     }
 
     .macaron-btn{
@@ -80,15 +83,15 @@
 <body>
 
   <section class="stage" aria-live="polite">
-    <img id="charImg"  class="floatItem" src="" alt="tane character" />
-    <div id="bubble"   class="floatItem bubble"></div>
+    <img    id="charImg"  class="floatItem" src="" alt="tane character" />
+    <div   id="bubble"   class="floatItem bubble"></div>
     <button id="feedBtn" class="floatItem macaron-btn">🍬 マカロンをあげる</button>
   </section>
 
   <script>
     const KEY={lang:'whoai_lang',color:'whoai_color',xp:'whoai_xp',log:'whoai_log',stage:'whoai_stage'};
-    const I18N={ ja:{ lines:['…… きょろ きょろ','ふわふわ……','きらり★','すや……'] } }; // ⇦ 見上げ系は除外
-
+    // 👇 見上げ系のセリフは完全に除外したセット
+    const I18N={ ja:{ lines:['…… きょろ きょろ','ふわふわ……','きらり★','すや……'] } };
     function r(a){return a[Math.floor(Math.random()*a.length)]}
 
     // === キャラ画像 ===
@@ -96,28 +99,26 @@
     const color=localStorage.getItem(KEY.color)||'pink';
     document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-    // === 吹き出し ===
+    // === 独り言 ===
     const bubble = document.getElementById('bubble');
-    const feedBtn = document.getElementById('feedBtn');
-
     function showLine(t){
       bubble.textContent = t;
       bubble.style.opacity = 0.6;
       setTimeout(()=>{ bubble.style.opacity = 0; }, 2500);
     }
     showLine(r(I18N.ja.lines));
-    setInterval(()=>showLine(r(I18N.ja.lines)), 5000);
+    setInterval(()=>showLine(r(I18N.ja.lines)),5000);
 
-    // === マカロン（進化処理） ===
-    let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
-    const XP_TO_EVOLVE = 3;
-    function saveXP(){ localStorage.setItem(KEY.xp,String(xp)) }
+    // === マカロン（進化） ===
+    const feedBtn=document.getElementById('feedBtn');
+    let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+    const XP_TO_EVOLVE=3;
+    function saveXP(){localStorage.setItem(KEY.xp,String(xp))}
 
     feedBtn.addEventListener('click',()=>{
-      xp++;
-      saveXP();
+      xp++; saveXP();
       showLine('ぱあっ！');
-      if(xp >= XP_TO_EVOLVE){
+      if(xp>=XP_TO_EVOLVE){
         setTimeout(()=>{ location.href='macaron_select.html'; },800);
       }
     });
