@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk_evolved.html（B仕様：進化後・口パク付き）-->
+<!-- FILE: /whoai_talk_evolved.html（進化後：地平線からタケノコ的に出現＋口パク＋周囲UI）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>会話 | WhoAI（進化後）</title>
   <meta name="color-scheme" content="dark light" />
-
   <style>
     html,body{height:100%;margin:0;overflow:hidden}
     body{
@@ -21,18 +20,52 @@
       width:min(90vw,680px);
       aspect-ratio:1;
       border-radius:20px;
-      background:rgba(0,0,0,.15);
+      background:rgba(0,0,0,.12);
       overflow:hidden;
     }
 
-    .char{
-      position:absolute;
-      left:50%; top:50%;
-      transform:translate(-50%,-50%);
-      width:45%;
-      object-fit:contain;
-      animation:float 18s ease-in-out infinite;
+    /* 地平線（horizon）: ステージ下部に細い線＋薄い霞を重ねて奥行きを出す */
+    .horizon{
+      position:absolute;left:0;right:0;
+      bottom:18%;                  /* ここが“地平線の高さ” */
+      height:2px;
+      background:rgba(255,255,255,.35);
+      box-shadow:0 0 16px rgba(255,255,255,.35);
+      z-index:5;                   /* キャラより前に置く（隠すため）*/
+    }
+    .horizon::after{
+      content:"";
+      position:absolute;left:0;right:0;bottom:0;
+      height:120px;
+      background:linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 100%);
       pointer-events:none;
+    }
+
+    /* キャラを“地平線の下から”出すためのラッパ。基準点を地平線に合わせる */
+    .charWrap{
+      position:absolute;left:50%;
+      bottom:18%;                  /* 地平線の高さと一致 */
+      transform:translateX(-50%);
+      z-index:4;                   /* 地平線の“後ろ側”に置く */
+      animation:sprout 2200ms cubic-bezier(.17,.84,.25,1) 200ms 1 forwards,
+                settle 8s ease-in-out 2.4s infinite alternate;
+      /* sproutで出現 → settleでゆらゆら */
+    }
+    @keyframes sprout{
+      0%   { transform:translateX(-50%) translateY(140%); } /* 地平線の下に隠れている */
+      70%  { transform:translateX(-50%) translateY(-6%); }  /* 少し出過ぎてから */
+      100% { transform:translateX(-50%) translateY(0%); }   /* すっと落ち着く */
+    }
+    @keyframes settle{
+      from { transform:translateX(-50%) translateY(-3%); }
+      to   { transform:translateX(-50%) translateY(3%);  }
+    }
+
+    .char{
+      width:45vw; max-width:300px; /* 画面に応じて自動調整 */
+      object-fit:contain;
+      pointer-events:none;
+      filter:drop-shadow(0 8px 18px rgba(0,0,0,.35));
     }
 
     .bubble,.macaron-btn{
@@ -40,101 +73,102 @@
       font-size:.9rem;
       padding:6px 12px;
       border-radius:12px;
-      opacity:.7;
-      transition:left 1.2s ease, top 1.2s ease;
+      opacity:.75;
+      transition:left 1.2s ease, top 1.2s ease, opacity .4s ease;
+      z-index:6;                   /* 地平線よりも前（キャラより手前） */
     }
     .bubble{
       background:rgba(0,0,0,.55);
       color:#fff;
     }
     .macaron-btn{
-      background:rgba(255,255,255,.7);
+      background:rgba(255,255,255,.72);
       color:#111;
       cursor:pointer;
       font-weight:600;
-    }
-
-    @keyframes float{
-      from{transform:translate(-50%,-50%) translateY(-10px);}
-      to  {transform:translate(-50%,-50%) translateY(10px);}
+      border:none;
     }
   </style>
 </head>
 <body>
 
 <section class="stage">
-  <img  id="charImg" class="char" src="" alt="evolved" />
+  <div class="horizon" aria-hidden="true"></div>
+
+  <!-- 地平線を基準に出てくるラッパの中にキャラ -->
+  <div class="charWrap">
+    <img id="charImg" class="char" src="" alt="evolved character">
+  </div>
+
   <div id="bubble" class="bubble"></div>
   <button id="feedBtn" class="macaron-btn">🍬 マカロンをあげる</button>
 </section>
 
 <script>
-// === 定数 ===
-const KEY={color:'whoai_color',xp:'whoai_xp'};
-const I18N={ja:{lines:['おはなししよ！','わくわく！','にっこり','ふわ〜']}};
-const stage = document.querySelector(".stage");
-const stageW = stage.offsetWidth;
-const stageH = stage.offsetHeight;
+  // 定数
+  const KEY={color:'whoai_color',xp:'whoai_xp'};
+  const I18N={ja:{lines:['ふわ〜','きらり★','すや……','……']}}; // 見上げ文は含めない
+  const stage = document.querySelector('.stage');
 
-// === キャラ ===
-const charImg=document.getElementById('charImg');
-const color=localStorage.getItem(KEY.color)||'pink';
-
-// 口パク切り替え
-let toggle=false;
-setInterval(()=>{
-  toggle=!toggle;
-  charImg.src=`/WHOAI2/${color}_${toggle?'open':'closed'}.png`;
-},1000);
-
-// === キャラから一定距離以上離れた座標 ===
-function getRandomFarPosition(minDistPx){
-  let x,y;
-  const cx=stageW/2, cy=stageH/2;
-  do {
-    x=Math.random()*stageW;
-    y=Math.random()*stageH;
-  } while (Math.hypot(x-cx,y-cy)<minDistPx);
-  return {left:x, top:y};
-}
-
-// === 吹き出し ===
-const bubble=document.getElementById('bubble');
-function showLine(t){
-  bubble.textContent=t;
-  bubble.style.opacity=.7;
-  const pos=getRandomFarPosition(120);
-  bubble.style.left=pos.left+'px';
-  bubble.style.top =pos.top +'px';
-  setTimeout(()=>bubble.style.opacity=0,2000);
-}
-function r(a){return a[Math.floor(Math.random()*a.length)]}
-showLine(r(I18N.ja.lines));
-setInterval(()=>showLine(r(I18N.ja.lines)),4000);
-
-// === マカロン ===
-const feedBtn=document.getElementById('feedBtn');
-let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-const XP_TO_NEXT=10;
-function saveXP(){localStorage.setItem(KEY.xp,xp)}
-
-// 初期位置
-(function(){
-  const pos=getRandomFarPosition(140);
-  feedBtn.style.left=pos.left+'px';
-  feedBtn.style.top =pos.top +'px';
-})();
-
-feedBtn.addEventListener('click',()=>{
-  xp++; saveXP();
-  showLine('ぱあっ！');
-  const pos=getRandomFarPosition(140);
-  feedBtn.style.left=pos.left+'px';
-  feedBtn.style.top =pos.top+'px';
-  if(xp>=XP_TO_NEXT){
-    setTimeout(()=>location.href='rebirth.html',800);
+  // 進化後キャラ：open/closedを交互に口パク
+  const charImg = document.getElementById('charImg');
+  const color   = localStorage.getItem(KEY.color)||'pink';
+  let toggle=false;
+  function swapMouth(){
+    toggle=!toggle;
+    charImg.src=`/WHOAI2/${color}_${toggle?'open':'closed'}.png`;
   }
-});
+  swapMouth();
+  setInterval(swapMouth, 1000);
+
+  // ステージ寸法（リサイズにも追従）
+  let stageW=stage.offsetWidth, stageH=stage.offsetHeight;
+  window.addEventListener('resize', ()=>{stageW=stage.offsetWidth; stageH=stage.offsetHeight;});
+
+  // キャラ中心（地平線上の中央）から一定距離以上離れたランダム座標
+  function getRandomFarPosition(minDistPx){
+    const cx = stageW/2, cy = stageH*0.82; // 地平線のy（bottom:18% → 高さの82%）
+    let x,y;
+    do{
+      x = Math.random()*stageW;
+      y = Math.random()*stageH;
+    }while(Math.hypot(x-cx,y-cy) < minDistPx);
+    return {left:x, top:y};
+  }
+
+  // 吹き出し
+  const bubble = document.getElementById('bubble');
+  function r(a){return a[Math.floor(Math.random()*a.length)]}
+  function showLine(t){
+    bubble.textContent=t;
+    bubble.style.opacity=.85;
+    const pos=getRandomFarPosition(140);
+    bubble.style.left=pos.left+'px';
+    bubble.style.top =pos.top +'px';
+    setTimeout(()=>bubble.style.opacity=0, 2000);
+  }
+  setTimeout(()=>{ showLine(r(I18N.ja.lines)); }, 2600);           // 出現アニメの後に初回
+  setInterval(()=>showLine(r(I18N.ja.lines)), 4200);
+
+  // マカロン：UIはキャラと離れた位置に“出没”
+  const feedBtn = document.getElementById('feedBtn');
+  let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
+  const XP_TO_NEXT = 10;
+  function saveXP(){ localStorage.setItem(KEY.xp, xp); }
+  function placeBtn(){
+    const pos=getRandomFarPosition(150);
+    feedBtn.style.left=pos.left+'px';
+    feedBtn.style.top =pos.top +'px';
+  }
+  setTimeout(placeBtn, 2500); // キャラ出現後に最初の配置
+  feedBtn.addEventListener('click', ()=>{
+    xp++; saveXP();
+    showLine('ぱあっ！');
+    placeBtn();
+    if(xp>=XP_TO_NEXT){
+      setTimeout(()=>location.href='rebirth.html', 800);
+    }
+  });
 </script>
 
 </body>
