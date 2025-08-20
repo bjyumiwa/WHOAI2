@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（タネ観察モード・404対策＆背景パス修正版）-->
+<!-- FILE: /whoai_talk.html（背景＆キャラ画像パス完全修正版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -60,7 +60,8 @@
     // ステージと画像
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
-    img.src=`assets/stage2/tane_${color}.png`;
+    // ✅ 画像は他のファイルと同じ階層にある想定（フォルダ名を付けない）
+    img.src=`tane_${color}.png`;
 
     // XP処理
     let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
