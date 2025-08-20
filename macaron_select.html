@@ -1,0 +1,31 @@
+<!-- FILE: /macaron_select.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2回目のマカロン | WhoAI</title>
+<style>
+html,body{height:100%;margin:0}
+body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:22px;max-width:720px;width:min(96vw,720px)}
+.macaron{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
+.macaron img{width:120px;height:120px;object-fit:cover;border-radius:50%;border:4px solid rgba(255,255,255,.5)}
+</style>
+</head>
+<body>
+<h1>もう一度、マカロンを選ぼう</h1>
+<p>マカロンを食べて<strong>進化</strong>します。記録とXPは維持されます。</p>
+<section class="grid">
+<div class="macaron" data-color="pink"><img src="assets/stage1/macaron_pink.png" alt="ピンク"/><div>ピンク</div></div>
+<div class="macaron" data-color="blue"><img src="assets/stage1/macaron_blue.png" alt="ブルー"/><div>ブルー</div></div>
+<div class="macaron" data-color="green"><img src="assets/stage1/macaron_green.png" alt="グリーン"/><div>グリーン</div></div>
+<div class="macaron" data-color="purple"><img src="assets/stage1/macaron_purple.png" alt="パープル"/><div>パープル</div></div>
+</section>
+<script>
+const KEY={color:'whoai_color',stage:'whoai_stage'};
+function choose(color){localStorage.setItem(KEY.color,color);localStorage.setItem(KEY.stage,'evolving');location.href='evolution.html'}
+document.querySelectorAll('.macaron').forEach(el=>el.addEventListener('click',()=>choose(el.dataset.color)));
+</script>
+</body>
+</html>
