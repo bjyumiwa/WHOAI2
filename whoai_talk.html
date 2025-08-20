@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html（背景＆tane画像パス完全修正版 – /WHOAI2/ パス対応版）-->
+<!-- FILE: /whoai_talk.html（雰囲気調整版）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>観察モード | WhoAI（タネ）</title>
   <meta name="color-scheme" content="dark light" />
-  <!-- ✅ favicon 404回避（データURI） -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Crect width='100%25' height='100%25' fill='%23000'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='44' fill='%23fff'%3E★%3C/text%3E%3C/svg%3E">
 
   <style>
     html,body{height:100%;margin:0}
@@ -21,11 +19,43 @@
       background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
     }
-    .stage{width:min(90vw,680px);aspect-ratio:1/1;border-radius:24px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);display:grid;place-items:center}
-    .stage img{width:85%;height:85%;object-fit:contain;animation:float 5s ease-in-out infinite}
-    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-    .log{width:min(96vw,980px);max-height:40vh;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:10px}
-    .bubble{align-self:center;max-width:720px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:10px 14px}
+    /* 👇 半透明レイヤの透明度を上げて“板”を薄くする */
+    .stage{
+      width:min(90vw,680px);
+      aspect-ratio:1/1;
+      border-radius:24px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.15);
+      display:grid;place-items:center;
+    }
+    /* 👇 キャラを少し小さく、ふわふわ幅を少し広くする */
+    .stage img{
+      width:65%;
+      height:65%;
+      object-fit:contain;
+      animation:float 7s ease-in-out infinite;
+    }
+    @keyframes float{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-12px)}
+    }
+    .log{
+      width:min(96vw,980px);
+      max-height:40vh;
+      overflow:auto;
+      display:flex;flex-direction:column;gap:8px;
+      padding:10px
+    }
+    /* 👇 吹き出しを半透明にして“独り言感”を出す */
+    .bubble{
+      align-self:center;
+      max-width:720px;
+      background:rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;
+      padding:10px 14px;
+      opacity:0.65;
+    }
     .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
     .btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:12px 16px;font-weight:900;background:linear-gradient(135deg,#9df,#fcf);color:#111}
     .meter{height:10px;width:min(96vw,420px);border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}
@@ -60,7 +90,6 @@
     // ステージと画像
     localStorage.setItem(KEY.stage,'tane');
     const color=localStorage.getItem(KEY.color)||'pink';
-    // ✅ GitHub Pages の /WHOAI2/ 下に置かれている画像を読む
     img.src = `/WHOAI2/tane_${color}.png`;
 
     // XP処理
@@ -82,3 +111,29 @@
         localStorage.setItem(KEY.log, JSON.stringify(arr).slice(-5000));
       }catch(e){}
     }
+
+    // 自動セリフ
+    let autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
+
+    // マカロン
+    feedBtn.addEventListener('click',()=>{
+      pushLine(r(I18N.ja.react));
+      xp++; setFill(); saveXP();
+      if(xp===XP_TO_EVOLVE-1) pushLine(I18N.ja.evoReady);
+      if(xp>=XP_TO_EVOLVE){
+        pushLine(I18N.ja.evoGo);
+        setTimeout(()=>{ location.href='macaron_select.html'; }, 1200);
+      }
+    });
+
+    // 観察（再開）
+    restBtn.addEventListener('click',()=>{
+      clearInterval(autoTimer);
+      autoTimer=setInterval(()=>pushLine(r(I18N.ja.lines)),4500);
+    });
+
+    // 初回の一言
+    pushLine(r(I18N.ja.lines));
+  </script>
+</body>
+</html>
