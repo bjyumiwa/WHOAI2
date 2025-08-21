@@ -121,6 +121,22 @@
     const input = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
     const character = document.getElementById("character");
+   
+  // …既存の定義の前に:
+  const params = new URLSearchParams(location.search);
+  const forceForm = params.get('form'); // "tane" が来たらタネ固定
+  const color = (localStorage.getItem('whoai_color') || localStorage.getItem('macaronColor') || 'pink').toLowerCase();
+  const imgEl = document.getElementById('charImg');
+
+  if (forceForm === 'tane') {
+    // タネ固定表示（口パクや進化画像切替は行わない）
+    const srcs = [`tane_${color}.png`,`tane.png`];
+    (function load(){ let i=0; const next=()=>{ if(i>=srcs.length){imgEl.style.display='none';return;} const u=srcs[i++]; const t=new Image(); t.onload=()=>imgEl.src=u; t.onerror=next; t.src=u; }; next(); })();
+  } else {
+    // ←ここから下は元の「進化後 open/closed 切替」ロジックを残す
+  }
+</script>
+
 
     // キャラ画像パス
     const closedImg = `${color}_closed.png`;
