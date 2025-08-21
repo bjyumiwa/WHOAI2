@@ -121,7 +121,22 @@
     const input = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
     const character = document.getElementById("character");
-   
+ 
+ 　 const params = new URLSearchParams(location.search);
+　  const forceForm = params.get('form');
+ 　 const color = (localStorage.getItem('whoai_color') || localStorage.getItem('macaronColor') || 'pink').toLowerCase();
+
+  if (forceForm === 'tane') {
+    // キャラ画像の設定箇所をこれに差し替え
+    const imgEl = document.getElementById('character') || document.getElementById('charImg');
+    if (imgEl) {
+      const srcs=[`tane_${color}.png`,`tane.png`];
+      (function load(){ let i=0; const next=()=>{ if(i>=srcs.length){imgEl.style.display='none';return;} const u=srcs[i++]; const t=new Image(); t.onload=()=>imgEl.src=u; t.onerror=next; t.src=u; }; next(); })();
+    }
+    // 以降は会話処理だけ（見た目の進化切替はしない）
+  }
+</script>
+
   // …既存の定義の前に:
   const params = new URLSearchParams(location.search);
   const forceForm = params.get('form'); // "tane" が来たらタネ固定
