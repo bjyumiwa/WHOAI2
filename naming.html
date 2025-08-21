@@ -23,13 +23,12 @@
   <button onclick="saveName()">決定</button>
 
   <script>
-    function saveName(){
-      const name=document.getElementById("charName").value;
-      if(name){
-        localStorage.setItem("characterName",name);
-        location.href="macaron.html";
-      }
-    }
-  </script>
+  const KEY={color:'whoai_color'};
+  function selectMacaron(color){
+    localStorage.setItem(KEY.color,color);   // 色を保存
+    location.href='naming.html';             // まずは名前付けへ
+  }
+</script>
+
 </body>
 </html>
