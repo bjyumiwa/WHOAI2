@@ -1,4 +1,3 @@
-<!-- FILE: /whoai_talk.html（にょきっと出現→画面回遊＋安全ボタン）-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,54 +6,51 @@
 <title>観察モード | WhoAI（タネ）</title>
 <meta name="color-scheme" content="dark light" />
 <style>
-  /* 1画面・背景だけ見せる（黒帯なし） */
-  html,body{height:100%;margin:0;overflow:hidden}
+  /* 全体背景は body のみに指定 */
+  html,body{
+    height:100%;margin:0;overflow:hidden;
+  }
   body{
     font-family:"Noto Sans JP",system-ui,sans-serif;
     color:#fff;
-    background:#000 url("space_background.png") center/cover no-repeat fixed;
+    background:url("space_background.png") center/cover no-repeat fixed;
     display:flex;align-items:center;justify-content:center;
   }
 
-  /* 舞台は完全透明。影だけうっすら。 */
+  /* ステージ自体は透明 */
   .stage{
     position:relative;
     width:min(92vw,720px);
     aspect-ratio:1;
     border-radius:22px;
-    background:transparent;
+    background:transparent; /* ← ここで背景は消す */
     overflow:hidden;
     box-shadow:0 8px 28px rgba(0,0,0,.28);
   }
 
-  /* 水平線（見た目の細い線だけ） */
   .horizon{
     position:absolute;left:0;right:0;top:82%;
     height:2px; background:rgba(255,255,255,.18);
     z-index:3; pointer-events:none;
   }
 
-  /* キャラのラッパ：出現（emerge）→ 回遊（roamPath） */
   .charWrap{
-    position:absolute;left:50%;top:82%;                 /* 地平線上から出る */
-    transform:translate(-50%,0) translateY(120%);        /* 地平線の下に隠しておく */
+    position:absolute;left:50%;top:82%;
+    transform:translate(-50%,0) translateY(120%);
     z-index:2;
     animation:
       emerge 1600ms cubic-bezier(.17,.84,.25,1) 200ms 1 forwards,
-      roamPath 38s ease-in-out 2s infinite alternate;    /* 出現後に回遊開始 */
+      roamPath 38s ease-in-out 2s infinite alternate;
   }
 
-  /* 実際の画像（ふわふわの小ゆらぎはここで） */
   .charImg{
-    /* ← ここで“半分”に縮小（48vw/320px → 24vw/160px） */
-    width:min(24vw,160px);
+    width:min(24vw,160px); /* 半分サイズ */
     object-fit:contain;
     filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));
     pointer-events:none;
     animation:bob 7s ease-in-out infinite;
   }
 
-  /* 漂うUI（独り言／漂うマカロン）。キャラとは離す */
   .ui{
     position:absolute;
     font-size:.9rem;
@@ -66,22 +62,17 @@
   .bubble{ background:rgba(0,0,0,.55); color:#fff; }
   .floatBtn{ background:rgba(255,255,255,.75); color:#111; font-weight:700; border:none; cursor:pointer; }
 
-  /* 右下の固定“保険”ボタン（必ず押せる） */
   .safety{ position:fixed; right:14px; bottom:14px; z-index:10;
            background:rgba(255,255,255,.9); color:#111; border:none; border-radius:14px;
            padding:9px 14px; font-weight:700; font-size:.95rem; cursor:pointer;
            box-shadow:0 6px 18px rgba(0,0,0,.28); }
 
-  /* アニメーション ---------------------- */
   @keyframes emerge{
     0%   { transform:translate(-50%,0) translateY(120%); opacity:0; }
     70%  { transform:translate(-50%,0) translateY(-6%);  opacity:1; }
     100% { transform:translate(-50%,0) translateY(0);    opacity:1; }
   }
-  @keyframes bob{
-    0%,100%{ transform:translateY(-8px) }
-    50%   { transform:translateY(  8px) }
-  }
+  @keyframes bob{ 0%,100%{ transform:translateY(-8px) } 50%{ transform:translateY(8px) } }
   @keyframes roamPath{
     0%   { left:18%; top:72%; }
     20%  { left:35%; top:58%; }
@@ -95,47 +86,26 @@
 <body>
   <section class="stage" aria-live="polite">
     <div class="horizon" aria-hidden="true"></div>
-
-    <!-- にょきっと出て、その後は roamPath で画面中を回遊 -->
     <div class="charWrap">
       <img id="charImg" class="charImg" src="" alt="tane character" />
     </div>
-
     <div id="bubble" class="ui bubble"></div>
     <button id="floatFeedBtn" class="ui floatBtn" type="button">🍬 マカロンをあげる</button>
   </section>
-
-  <!-- どんな時でも押せる保険ボタン -->
   <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
 
 <script>
-  // ------- 設定 -------
   const KEY={color:'whoai_color',xp:'whoai_xp'};
   const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
   const XP_TO_EVOLVE=3;
-
-  // 画像
   const color = localStorage.getItem(KEY.color)||'pink';
   document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-  // ステージ寸法
   const stage = document.querySelector('.stage');
   const wrap  = document.querySelector('.charWrap');
   let W=stage.offsetWidth, H=stage.offsetHeight;
   addEventListener('resize', ()=>{ W=stage.offsetWidth; H=stage.offsetHeight; });
 
-  // --- 出現中だけ“水平線で切れて見える”ように一時クリップ ---
-  // 地平線は top:82% にあるので、その下側(=18%)を一時的にクリップして隠す
-  function applyHorizonClip(){
-    const bottomInset = Math.max(0, Math.round(H*0.18)); // H*(1-0.82)
-    wrap.style.clipPath = `inset(0 0 ${bottomInset}px 0)`;
-  }
-  function removeHorizonClip(){ wrap.style.clipPath='none'; }
-  applyHorizonClip();
-  // emerge が終わったら解除
-  wrap.addEventListener('animationend', (e)=>{ if(e.animationName==='emerge') removeHorizonClip(); });
-
-  // キャラ中心（現在位置）と距離を取るための近接判定
   function charCenter(){
     const r = wrap.getBoundingClientRect();
     const s = stage.getBoundingClientRect();
@@ -152,10 +122,9 @@
     return {left:x, top:y};
   }
 
-  // 独り言（出没）
   const bubble = document.getElementById('bubble');
   const lines = I18N.ja.lines;
-  const r = a => a[Math.floor(Math.random()*a.length)];
+  function r(a){ return a[Math.floor(Math.random()*a.length)] }
   function showLine(t){
     bubble.textContent=t;
     bubble.style.opacity=.9;
@@ -164,21 +133,19 @@
     bubble.style.top =p.top +'px';
     setTimeout(()=>bubble.style.opacity=0, 2000);
   }
-  setTimeout(()=>showLine(r(lines)), 2200);     // にょきっと後に初回
+  setTimeout(()=>showLine(r(lines)), 2200);
   setInterval(()=>showLine(r(lines)), 4200);
 
-  // マカロン：漂うボタン＋右下固定ボタン
   const floatBtn = document.getElementById('floatFeedBtn');
   const safetyBtn= document.getElementById('safetyBtn');
   let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
-  const save = ()=>localStorage.setItem(KEY.xp,String(xp));
-
+  function save(){ localStorage.setItem(KEY.xp,String(xp)); }
   function placeFloatBtn(){
     const p = farPos(160);
     floatBtn.style.left=p.left+'px';
     floatBtn.style.top =p.top +'px';
   }
-  setTimeout(placeFloatBtn, 2300);              // にょきっと後に配置
+  setTimeout(placeFloatBtn, 2300);
 
   function feed(){
     xp++; save();
