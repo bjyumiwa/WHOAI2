@@ -1,34 +1,69 @@
+<!-- FILE: /WHOAI2/naming.html（置き換え） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>名前を付ける</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>名前をつける | WhoAI</title>
   <style>
-    body {
-      margin:0;padding:0;
-      background:#000 url("space_background.png") center/cover no-repeat fixed;
-      font-family:"Noto Sans JP",sans-serif;color:#fff;text-align:center;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;
     }
-    input,button{
-      margin-top:16px;padding:12px 20px;border-radius:8px;border:none;font-size:16px;
+    .card{
+      width:min(92vw,720px);background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:18px;
+      backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+      box-shadow:0 8px 24px rgba(0,0,0,.3)
     }
-    button{cursor:pointer;background:linear-gradient(90deg,#f6d365,#fda085);font-weight:bold;}
+    h1{margin:0 0 10px}
+    .char{width:min(38vw,240px);height:auto;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+    .row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+    input{padding:12px 14px;border-radius:10px;border:none;min-width:220px;font-size:16px}
+    button{padding:12px 16px;border:none;border-radius:10px;font-weight:800;cursor:pointer}
+    .primary{background:#fff;color:#111;box-shadow:0 6px 18px rgba(0,0,0,.25)}
   </style>
 </head>
 <body>
-  <h1>キャラクターに名前をつけてね</h1>
-  <input id="charName" placeholder="キャラクターの名前">
-  <button onclick="saveName()">決定</button>
+  <main class="card">
+    <h1>この子に名前をつけよう</h1>
+    <p id="colorLabel" style="opacity:.9;margin:0 0 12px"></p>
+    <img id="charImg" class="char" alt="キャラクターのプレビュー" />
+    <div class="row">
+      <input id="nameInput" placeholder="なまえ（例：ほしのこ）" maxlength="16" />
+      <button id="okBtn" class="primary">決定</button>
+    </div>
+    <p style="opacity:.8;margin-top:10px">※あとで変更できます</p>
+  </main>
 
-  <script>
-  const KEY={color:'whoai_color'};
-  function selectMacaron(color){
-    localStorage.setItem(KEY.color,color);   // 色を保存
-    location.href='naming.html';             // まずは名前付けへ
+<script>
+  const KEY={color:'whoai_color', name:'whoai_name'};
+  const color = (localStorage.getItem(KEY.color)||'pink').toLowerCase();
+
+  // 直下にある画像を順に試す
+  const candidates=[`${color}_closed.png`,`tane_${color}.png`];
+
+  const img=document.getElementById('charImg');
+  let i=0;
+  function next(){ if(i>=candidates.length){ img.style.display='none'; return; }
+    const url=candidates[i++]; const t=new Image();
+    t.onload=()=>{ img.src=url; }; t.onerror=next; t.src=url;
   }
-</script>
+  next();
 
+  // 色名ラベル（任意）
+  const jp={pink:'ピンク',blue:'ブルー',green:'グリーン',purple:'パープル'};
+  document.getElementById('colorLabel').textContent = `色：${jp[color]||color}`;
+
+  // 保存して次の画面へ（最初の観察 or 会話へ好きに接続）
+  document.getElementById('okBtn').addEventListener('click', ()=>{
+    const name=(document.getElementById('nameInput').value||'ななし').trim();
+    localStorage.setItem(KEY.name,name);
+    // 次の行き先：まずは観察（会話なし）
+    location.href='whoai_talk_evolved.html';
+  });
+</script>
 </body>
 </html>
