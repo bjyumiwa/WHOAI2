@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark light" />
 <style>
   /* 1画面・背景だけ見せる（黒帯なし） */
-  html,body{height:100%;margin:0;overflow:hidden}
+  html,body{height:50%;margin:0;overflow:hidden}
   body{
     font-family:"Noto Sans JP",system-ui,sans-serif;
     color:#fff;
@@ -27,19 +27,7 @@
     box-shadow:0 8px 28px rgba(0,0,0,.28);
   }
 
-  /* 地平線（“にょきっ”の基準線） */
-  .horizon{
-    position:absolute;left:0;right:0;bottom:16%;
-    height:2px;
-    background:rgba(255,255,255,.35);
-    box-shadow:0 0 14px rgba(255,255,255,.35);
-    z-index:3;
-  }
-  .horizon::after{
-    content:"";position:absolute;left:0;right:0;bottom:0;height:110px;
-    background:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.35) 100%);
-    pointer-events:none;
-  }
+ 
 
   /* キャラのラッパ：出現（emerge）→ 回遊（roamPath） */
   .charWrap{
