@@ -1,93 +1,151 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WhoAI 会話モード</title>
-<meta name="color-scheme" content="dark light" />
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000 url("space_background.png") center/cover fixed no-repeat;
-    display:flex;align-items:center;justify-content:center;padding:14px;
-  }
-  .wrap{width:min(960px,94vw);display:grid;grid-template-rows:auto 1fr auto;gap:12px;
-        background:rgba(0,0,0,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-        border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,.3)}
-  .header{display:flex;align-items:center;gap:12px}
-  .char{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
-  .title{font-weight:800}
-  .log{overflow:auto;max-height:58vh;display:flex;flex-direction:column;gap:10px}
-  .msg{max-width:78%;padding:10px 12px;border-radius:14px;line-height:1.5}
-  .me{align-self:flex-end;background:#2b82ff}
-  .bot{align-self:flex-start;background:#27ae60}
-  .input{display:flex;gap:8px}
-  .input input{flex:1;padding:10px 12px;border:none;border-radius:10px;font-size:16px}
-  .input button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:800}
-  .ghost{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.28)}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>会話 | WhoAI（進化後）</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    html,body{height:100%;margin:0;overflow:hidden}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;padding:12px;
+    }
+    .stage{
+      position:relative;width:min(92vw,820px);aspect-ratio:1/0.75;overflow:hidden;
+      border-radius:24px;background:rgba(0,0,0,.22);
+      backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:inset 0 10px 28px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
+    }
+    .charWrap{
+      position:absolute;left:50%;top:70%;
+      transform:translate(-50%,-50%);
+      z-index:2;animation:roamPath 36s ease-in-out 1.6s infinite alternate;
+    }
+    .charImg{
+      width:min(22vw,220px);max-width:40vmin;object-fit:contain;
+      filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));
+      animation:bob 7s ease-in-out infinite;
+    }
+    @keyframes bob{0%,100%{transform:translateY(-8px)}50%{transform:translateY(8px)}}
+    @keyframes roamPath{
+      0%{left:20%;top:72%}20%{left:34%;top:56%}
+      40%{left:74%;top:62%}60%{left:68%;top:30%}
+      80%{left:26%;top:32%}100%{left:20%;top:72%}
+    }
+    .bubble{
+      position:absolute;z-index:5;background:rgba(0,0,0,.55);color:#fff;
+      padding:8px 12px;border-radius:14px;font-size:.95rem;opacity:0;
+      transition:opacity .4s ease,left 1.1s ease,top 1.1s ease;user-select:none;
+      box-shadow:0 6px 14px rgba(0,0,0,.25);
+    }
+    .floatBtn{
+      position:absolute;z-index:5;background:rgba(255,255,255,.9);color:#111;
+      font-weight:700;border:none;border-radius:14px;padding:8px 12px;cursor:pointer;
+      opacity:.95;box-shadow:0 6px 18px rgba(0,0,0,.28);
+      transition:left 1.1s ease,top 1.1s ease,opacity .4s ease;
+    }
+    .safety{
+      position:fixed;right:14px;bottom:14px;z-index:10;background:rgba(255,255,255,.95);
+      color:#111;border:none;border-radius:14px;padding:10px 14px;font-weight:700;font-size:.95rem;
+      cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.32);
+    }
+  </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="header">
-      <img id="charImg" class="char" alt="キャラ">
-      <div class="title">会話モード</div>
-      <div style="margin-left:auto;opacity:.85" id="modeHint">（ここは会話ページ）</div>
-    </div>
-
-    <div id="log" class="log"></div>
-
-    <div class="input">
-      <input id="txt" placeholder="メッセージを入力…" />
-      <button id="send" class="ghost">送信</button>
-      <button id="toObserve" class="ghost" title="観察へ移動">👀 観察</button>
-    </div>
+  <main class="stage" aria-live="polite">
+    <div class="charWrap"><img id="charImg" class="charImg" alt="キャラ" /></div>
+    <div id="bubble" class="bubble"></div>
+    <button id="floatFeedBtn" class="floatBtn" type="button" style="left:16px;top:16px">🍬 マカロンをあげる</button>
   </main>
+  <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
 
-<script>
-(() => {
-  const params=new URLSearchParams(location.search);
-  const form=params.get('form');            // "tane" ならタネ固定
-  const color=(localStorage.getItem('whoai_color')||localStorage.getItem('macaronColor')||'pink').toLowerCase();
-  const name =(localStorage.getItem('whoai_name')||'ななし');
-  const logEl=document.getElementById('log');
-  const imgEl=document.getElementById('charImg');
+  <script>
+  (function(){
+    // ===== 基本状態 =====
+    const params = new URLSearchParams(location.search);
+    const forceForm = params.get('form');   // "tane" ならタネ固定表示
+    const color = (localStorage.getItem('whoai_color') || localStorage.getItem('macaronColor') || 'pink').toLowerCase();
 
-  // === 画像 ===
-  function setImg(url){ imgEl.src=url; }
-  if(form==='tane'){
-    // タネ固定
-    const s1=`tane_${color}.png`, s2='tane.png';
-    const t=new Image(); t.onload=()=>setImg(s1); t.onerror=()=>setImg(s2); t.src=s1;
-  }else{
-    // 進化口パク（ある場合のみ）
-    const open=`${color}_open.png`, closed=`${color}_closed.png`;
-    let hasO=false,hasC=false,isOpen=false;
-    const p=(u,cb)=>{const i=new Image();i.onload=()=>cb(true);i.onerror=()=>cb(false);i.src=u};
-    p(open, ok=>hasO=ok); p(closed, ok=>hasC=ok);
-    setImg(hasC?closed:(hasO?open:`tane_${color}.png`));
-    setInterval(()=>{isOpen=!isOpen; setImg(isOpen?(hasO?open:closed):(hasC?closed:open));},1000);
-  }
+    const imgEl   = document.getElementById('charImg');
+    const bubble  = document.getElementById('bubble');
+    const floatBtn= document.getElementById('floatFeedBtn');
+    const safetyBtn=document.getElementById('safetyBtn');
+    const stage   = document.querySelector('.stage');
+    const wrap    = document.querySelector('.charWrap');
 
-  // === ログ ===
-  function push(text,who){
-    const d=document.createElement('div'); d.className=`msg ${who}`; d.textContent=text;
-    logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight;
-  }
-  push(`こんにちは、${name}。話しかけてね！`,'bot');
+    // ===== 画像切替（口パク or タネ固定） =====
+    const openSrc    = `${color}_open.png`;
+    const closedSrc  = `${color}_closed.png`;
+    const taneSrc    = `tane_${color}.png`;
+    let hasOpen=false, hasClosed=false, isOpen=false, useTaneOnly = (forceForm === 'tane');
 
-  // === 送信（ダミー応答）===
-  document.getElementById('send').onclick=()=>{
-    const v=document.getElementById('txt').value.trim(); if(!v) return;
-    document.getElementById('txt').value='';
-    push(v,'me');
-    setTimeout(()=>push('うんうん、それでそれで？','bot'),500);
-  };
+    function probe(url, cb){ const t=new Image(); t.onload=()=>cb(true); t.onerror=()=>cb(false); t.src=url; }
 
-  // 観察へ（必ず観察ページへ遷移）
-  document.getElementById('toObserve').onclick=()=>location.assign('/WHOAI2/whoai_talk_evolved.html?form=tane&from=talk');
-})();
-</script>
+    if (!useTaneOnly) {
+      probe(openSrc,   ok=>{hasOpen=ok;});
+      probe(closedSrc, ok=>{hasClosed=ok;});
+    }
+
+    function setImg(url){ imgEl.src=url; }
+
+    // 初期表示
+    if (useTaneOnly) {
+      // タネ優先 / 無ければ汎用に任せる
+      const t1=new Image(); t1.onload=()=>setImg(taneSrc); t1.onerror=()=>setImg(`tane.png`); t1.src=taneSrc;
+    } else {
+      if (hasClosed) setImg(closedSrc);
+      else {
+        // 進化絵が無ければタネにフォールバック
+        const t1=new Image(); t1.onload=()=>setImg(taneSrc); t1.onerror=()=>setImg(`tane.png`); t1.src=taneSrc;
+      }
+      // 1秒ごとに口パク（どちらか欠けていてもフォールバック）
+      setInterval(()=>{
+        if (useTaneOnly) return;
+        isOpen = !isOpen;
+        if (isOpen) setImg(hasOpen ? openSrc : (hasClosed ? closedSrc : taneSrc));
+        else        setImg(hasClosed ? closedSrc : (hasOpen  ? openSrc  : taneSrc));
+      }, 1000);
+    }
+
+    // ===== 励ましバブル =====
+    const LINES=[
+      'だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','深呼吸、いっかいね',
+      'きみのペースで進もう','ミスは進化のタネだよ','もう一歩だけ、いっしょに',
+      '休むのも、強さだよ','小さな一歩、えらい！'
+    ];
+    const pick=a=>a[Math.floor(Math.random()*a.length)];
+    let W=stage.offsetWidth,H=stage.offsetHeight;
+    addEventListener('resize',()=>{W=stage.offsetWidth;H=stage.offsetHeight;});
+
+    function charCenter(){
+      const r=wrap.getBoundingClientRect(), s=stage.getBoundingClientRect();
+      return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};
+    }
+    function farPos(minD,margin=14){
+      const c=charCenter(); let x,y,g=0;
+      do{ x=Math.random()*(W-margin*2)+margin; y=Math.random()*(H-margin*2)+margin; g++; if(g>200)break;}
+      while(Math.hypot(x-c.x,y-c.y)<minD);
+      return {left:x,top:y};
+    }
+    function showLine(t){
+      bubble.textContent=t;
+      const p=farPos(160);
+      bubble.style.left=p.left+'px'; bubble.style.top=p.top+'px';
+      bubble.style.opacity=1; setTimeout(()=>bubble.style.opacity=0,2400);
+    }
+    setTimeout(()=>showLine(pick(LINES)),1500);
+    setInterval(()=>showLine(pick(LINES)),4200);
+
+    // ===== マカロン（再選択へ遷移） =====
+    function toMacaron(){ location.href='macaron_select.html'; }
+    floatBtn.addEventListener('click', toMacaron);
+    safetyBtn.addEventListener('click', toMacaron);
+    addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='m') toMacaron(); });
+
+  })();
+  </script>
 </body>
 </html>
