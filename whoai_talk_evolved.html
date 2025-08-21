@@ -1,4 +1,3 @@
-<!-- FILE: /WHOAI2/whoai_talk_evolved.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,86 +6,157 @@
 <title>会話 | WhoAI（進化後）</title>
 <meta name="color-scheme" content="dark light" />
 <style>
-  /* 背景は body のみに一枚だけ */
   html,body{height:100%;margin:0;overflow:hidden}
   body{
     font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
     background:#000 url("space_background.png") center/cover fixed no-repeat;
     display:flex;align-items:center;justify-content:center;padding:12px;
   }
-
-  /* ステージはガラス感（背景を持たせない） */
+  /* 透明＋ガラス感。背景はbodyだけ */
   .stage{
-    position:relative;
-    width:min(92vw,820px);
-    aspect-ratio:1/0.75; /* 横長 */
-    border-radius:24px;
-    background:rgba(0,0,0,.22);
-    backdrop-filter:blur(3px);
-    -webkit-backdrop-filter:blur(3px);
+    position:relative;width:min(92vw,820px);aspect-ratio:1/0.75;overflow:hidden;
+    border-radius:24px;background:rgba(0,0,0,.22);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
     border:1px solid rgba(255,255,255,.18);
-    box-shadow:0 10px 28px rgba(0,0,0,.35) inset, 0 10px 28px rgba(0,0,0,.25);
-    overflow:hidden;
+    box-shadow:inset 0 10px 28px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
   }
-
-  /* キャラの回遊（にょき→回遊） */
   .charWrap{
     position:absolute;left:50%;top:70%;
     transform:translate(-50%,0) translateY(120%);
     z-index:2;
-    animation:
-      emerge 1200ms cubic-bezier(.17,.84,.25,1) 200ms both,
-      roamPath 36s ease-in-out 1.6s infinite alternate;
+    animation:emerge 1200ms cubic-bezier(.17,.84,.25,1) 200ms both,
+             roamPath 36s ease-in-out 1.6s infinite alternate;
   }
   .charImg{
-    width:min(22vw,220px);           /* 小さめ */
-    max-width:40vmin;
-    object-fit:contain;
-    filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));
-    pointer-events:none;
+    width:min(22vw,220px);max-width:40vmin;object-fit:contain;
+    filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));pointer-events:none;
     animation:bob 7s ease-in-out infinite;
   }
-
-  /* 漂うUI（励ましバブル） */
+  .fallbackBadge{
+    position:absolute;left:50%;top:70%;transform:translate(-50%,-50%);
+    background:rgba(0,0,0,.55);padding:8px 12px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.2);font-weight:700
+  }
   .bubble{
-    position:absolute; z-index:5;
-    background:rgba(0,0,0,.55); color:#fff;
-    padding:8px 12px; border-radius:14px; font-size:.95rem;
-    opacity:0; transition:opacity .4s ease, left 1.1s ease, top 1.1s ease;
-    user-select:none; -webkit-user-select:none;
+    position:absolute;z-index:5;background:rgba(0,0,0,.55);color:#fff;
+    padding:8px 12px;border-radius:14px;font-size:.95rem;opacity:0;
+    transition:opacity .4s ease,left 1.1s ease,top 1.1s ease;user-select:none;
     box-shadow:0 6px 14px rgba(0,0,0,.25);
   }
-
-  /* 任意で使える浮遊ボタン（左上に時々出る） */
   .floatBtn{
-    position:absolute; z-index:5;
-    background:rgba(255,255,255,.85); color:#111;
-    font-weight:700; border:none; border-radius:14px;
-    padding:8px 12px; cursor:pointer;
-    opacity:.95; box-shadow:0 6px 18px rgba(0,0,0,.28);
-    transition:left 1.1s ease, top 1.1s ease, opacity .4s ease;
+    position:absolute;z-index:5;background:rgba(255,255,255,.85);color:#111;
+    font-weight:700;border:none;border-radius:14px;padding:8px 12px;cursor:pointer;
+    opacity:.95;box-shadow:0 6px 18px rgba(0,0,0,.28);
+    transition:left 1.1s ease,top 1.1s ease,opacity .4s ease;
   }
-
-  /* 右下の保険ボタン（常に押せる） */
   .safety{
-    position:fixed; right:14px; bottom:14px; z-index:10;
-    background:rgba(255,255,255,.95); color:#111; border:none; border-radius:14px;
-    padding:10px 14px; font-weight:700; font-size:.95rem; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.32);
+    position:fixed;right:14px;bottom:14px;z-index:10;background:rgba(255,255,255,.95);
+    color:#111;border:none;border-radius:14px;padding:10px 14px;font-weight:700;font-size:.95rem;
+    cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.32);
+  }
+  @keyframes emerge{0%{transform:translate(-50%,0) translateY(120%);opacity:0}
+    70%{transform:translate(-50%,0) translateY(-6%);opacity:1}
+    100%{transform:translate(-50%,0) translateY(0);opacity:1}}
+  @keyframes bob{0%,100%{transform:translateY(-8px)}50%{transform:translateY(8px)}}
+  @keyframes roamPath{
+    0%{left:20%;top:72%}18%{left:34%;top:56%}36%{left:74%;top:62%}
+    54%{left:68%;top:30%}72%{left:26%;top:32%}100%{left:20%;top:72%}}
+</style>
+</head>
+<body>
+  <main class="stage" aria-live="polite">
+    <div class="charWrap"><img id="charImg" class="charImg" alt="evolved character" /></div>
+    <div id="noImg" class="fallbackBadge" style="display:none;">(画像未配置)</div>
+    <div id="bubble" class="bubble"></div>
+    <button id="floatFeedBtn" class="floatBtn" type="button" style="left:16px;top:16px">🍬 マカロンをあげる</button>
+  </main>
+  <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
+
+<script>
+  // ===== 基本設定 =====
+  const KEY={color:'whoai_color',xp:'whoai_xp'};
+  const color=(localStorage.getItem(KEY.color)||'pink').toLowerCase();
+
+  // 励ましメッセージ
+  const LINES=[
+    'だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','深呼吸、いっかいね',
+    'きみのペースで進もう','ミスは進化のタネだよ','もう一歩だけ、いっしょに','休むのも、強さだよ','小さな一歩、えらい！'
+  ];
+
+  // ===== 画像フォールバック：相対→絶対→別フォルダ→タネ =====
+  function setWithFallback(imgEl, badgeEl, candidates){
+    let i=0;
+    function next(){
+      if(i>=candidates.length){
+        imgEl.style.display='none';
+        badgeEl.style.display='block';
+        console.warn('evolved image not found. tried:', candidates);
+        return;
+      }
+      const url=candidates[i++]; imgEl.onerror=next; imgEl.onload=()=>{badgeEl.style.display='none'}; imgEl.src=url;
+    }
+    next();
   }
 
-  /* アニメーション */
-  @keyframes emerge{
-    0%   { transform:translate(-50%,0) translateY(120%); opacity:0; }
-    70%  { transform:translate(-50%,0) translateY(-6%);  opacity:1; }
-    100% { transform:translate(-50%,0) translateY(0);    opacity:1; }
+  const evolvedCandidates=[
+    // 相対（このHTMLと同階層の想定）
+    `evolved_${color}.png`,`evolved_${color}_open.png`,
+    // 絶対（/WHOAI2 直下）
+    `/WHOAI2/evolved_${color}.png`,`/WHOAI2/evolved_${color}_open.png`,
+    // public 配下の可能性
+    `/WHOAI2/public/assets/stage2/evolved_${color}.png`,
+    `/WHOAI2/public/assets/stage2/evolved_${color}_open.png`,
+    // 最終手段：タネ画像
+    `tane_${color}.png`,`/WHOAI2/tane_${color}.png`
+  ];
+
+  setWithFallback(
+    document.getElementById('charImg'),
+    document.getElementById('noImg'),
+    evolvedCandidates
+  );
+
+  // ===== ふわふわバブル & ボタン移動 =====
+  const stage=document.querySelector('.stage');
+  const wrap=document.querySelector('.charWrap');
+  const bubble=document.getElementById('bubble');
+  const floatBtn=document.getElementById('floatFeedBtn');
+  const safetyBtn=document.getElementById('safetyBtn');
+
+  let W=stage.offsetWidth,H=stage.offsetHeight;
+  addEventListener('resize',()=>{W=stage.offsetWidth;H=stage.offsetHeight;});
+
+  function charCenter(){
+    const r=wrap.getBoundingClientRect(), s=stage.getBoundingClientRect();
+    return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};
   }
-  @keyframes bob{
-    0%,100%{ transform:translateY(-8px) }
-    50%   { transform:translateY(  8px) }
+  function farPos(minDistPx,margin=14){
+    const c=charCenter(); let x,y,g=0;
+    do{ x=Math.random()*(W-margin*2)+margin; y=Math.random()*(H-margin*2)+margin; g++; if(g>200) break; }
+    while(Math.hypot(x-c.x,y-c.y)<minDistPx);
+    return {left:x,top:y};
   }
-  /* 画面中をゆっくり巡回（%でパス指定） */
-  @keyframes roamPath{
-    0%   { left:20%; top:72%; }
-    18%  { left:34%; top:56%; }
-    36%  { lef
+
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  function showLine(t){
+    bubble.textContent=t;
+    const p=farPos(160);
+    bubble.style.left=p.left+'px'; bubble.style.top=p.top+'px';
+    bubble.style.opacity=1; setTimeout(()=>bubble.style.opacity=0,2400);
+  }
+  setTimeout(()=>showLine(pick(LINES)),1500);
+  setInterval(()=>showLine(pick(LINES)),4200);
+
+  // マカロン（演出だけ。XPは任意で接続）
+  let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
+  const save=()=>localStorage.setItem(KEY.xp,String(xp));
+  function feed(){
+    xp++; save(); showLine('キラッ☆ ありがとう！');
+    const p=farPos(180); floatBtn.style.left=p.left+'px'; floatBtn.style.top=p.top+'px';
+  }
+  floatBtn.addEventListener('click',feed);
+  safetyBtn.addEventListener('click',feed);
+  addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='m') feed(); });
+</script>
+</body>
+</html>
