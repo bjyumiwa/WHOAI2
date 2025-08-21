@@ -1,56 +1,44 @@
-<!-- FILE: /WHOAI2/index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI スタート</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhoAIへようこそ</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
     body {
-      font-family: "Noto Sans JP", system-ui, sans-serif;
-      background: #000 url("/WHOAI2/space_background.png") center/cover no-repeat fixed;
+      font-family: "Noto Sans JP", sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #000 url("space_background.png") center/cover no-repeat fixed;
+      color: #fff;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       text-align: center;
-      color: #fff;
     }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 8px rgba(255,255,255,0.7);
+    .lang-switch {
+      margin-top: 10px;
     }
-    .character {
-      width: 200px;
-      margin: 20px auto;
-    }
-    .btn {
-      display: inline-block;
-      margin-top: 30px;
+    button {
       padding: 12px 24px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #fff;
-      background: rgba(0,0,0,0.6);
-      border: 2px solid #fff;
+      border: none;
       border-radius: 12px;
-      text-decoration: none;
-      transition: background 0.3s, transform 0.2s;
-    }
-    .btn:hover {
-      background: rgba(255,255,255,0.2);
-      transform: scale(1.05);
+      font-size: 16px;
+      cursor: pointer;
+      background: linear-gradient(90deg,#ffb6c1,#87cefa);
+      color: #000;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <h1>WhoAIへようこそ</h1>
-  <img src="/WHOAI2/tane_blue.png" alt="タネキャラ" class="character" />
-  <a href="/WHOAI2/macaron.html" class="btn">🌸 はじめる</a>
+  <p>名前を付けて、かわいがってね。<br>ときどきマカロンをあげると反応します。</p>
+  <button onclick="location.href='fortune.html'">はじめる（名前を付ける）</button>
+  <div class="lang-switch">
+    日本語 | English | 简体 | 繁體 | 한국어
+  </div>
 </body>
 </html>
