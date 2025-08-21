@@ -1,26 +1,38 @@
+<!-- FILE: fortune.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>占いイベント</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>占いイベント | WhoAI</title>
   <style>
-    body {
-      margin: 0; padding: 0;
-      font-family: "Noto Sans JP", sans-serif;
-      background: #000 url("space_background.png") center/cover no-repeat fixed;
-      color: #fff; text-align: center;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;
+    html,body{
+      height:100%;margin:0;
+      font-family:"Noto Sans JP",sans-serif;
+      color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;
     }
-    button {
-      margin-top:20px;padding:12px 24px;border:none;border-radius:12px;cursor:pointer;
-      background:linear-gradient(90deg,#ff9a9e,#fad0c4);font-size:16px;font-weight:bold;
+    h1{font-size:28px;margin-bottom:16px;}
+    p{font-size:18px;max-width:80%;line-height:1.6;margin-bottom:24px;}
+    button{
+      background:linear-gradient(135deg,#ff9a9e,#fad0c4);
+      border:none;color:#000;font-weight:bold;
+      padding:12px 24px;border-radius:12px;
+      cursor:pointer;font-size:18px;
+      box-shadow:0 4px 10px rgba(0,0,0,.3);
+      transition:transform .2s;
     }
+    button:hover{transform:scale(1.05);}
   </style>
 </head>
 <body>
-  <h1>今日の運勢</h1>
-  <p>星があなたを導いてくれる…！</p>
-  <button onclick="location.href='naming.html'">次へ</button>
+  <h1>🔮 あなたのマカロン占い 🔮</h1>
+  <p>
+    今日の気分や運命をマカロンが導いてくれます。<br>
+    次の画面で名前を入力して、冒険を始めましょう！
+  </p>
+  <button onclick="location.href='naming.html'">次へ（名前入力へ）</button>
 </body>
 </html>
