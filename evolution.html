@@ -46,23 +46,22 @@
     </div>
   </main>
 
+<!-- evolution.html（該当の下部だけ差し替えOK） -->
 <script>
-  const KEY={color:'whoai_color',xp:'whoai_xp'};
-  const color=(localStorage.getItem(KEY.color)||localStorage.getItem('macaronColor')||'pink').toLowerCase();
+  const KEY={color:'whoai_color',name:'whoai_name'};
+  const color=(localStorage.getItem(KEY.color)||'pink').toLowerCase();
 
-  // タネ画像（直下）。無ければ色なし汎用にフォールバック
+  // タネ画像表示（そのまま観察・会話でもタネのまま）
   const img=document.getElementById('charImg');
-  const srcs=[`tane_${color}.png`,`tane.png`];
-  (function load(){ let i=0; const tryNext=()=>{ if(i>=srcs.length){img.style.display='none';return;} const u=srcs[i++]; const t=new Image(); t.onload=()=>img.src=u; t.onerror=tryNext; t.src=u; }; tryNext(); })();
+  (function(){const a=[`tane_${color}.png`,'tane.png'];let i=0;const n=()=>{if(i>=a.length){img.style.display='none';return}const u=a[i++],t=new Image();t.onload=()=>img.src=u;t.onerror=n;t.src=u};n()})();
 
-  // ✅ 行き先を入れ替え
-  // 観察：whoai_talk_evolved.html（ただし form=tane で“タネのまま”に）
-  const OBSERVE_URL=`whoai_talk_evolved.html?form=tane`;
-  // 会話：whoai_talk.html（こちらも form=tane で“タネのまま”に）
-  const TALK_URL   =`whoai_talk.html?form=tane`;
+  // ✅ 絶対パス & 明示的なURL（観察＝whoai_talk_evolved、会話＝whoai_talk）
+  const OBSERVE_URL = '/WHOAI2/whoai_talk_evolved.html?form=tane&from=evo';
+  const TALK_URL    = '/WHOAI2/whoai_talk.html?form=tane&from=evo';
 
-  document.getElementById('btnObserve').addEventListener('click', ()=>location.href=OBSERVE_URL);
-  document.getElementById('btnTalk').addEventListener('click',    ()=>location.href=TALK_URL);
+  document.getElementById('btnObserve').onclick = ()=>location.assign(OBSERVE_URL);
+  document.getElementById('btnTalk').onclick    = ()=>location.assign(TALK_URL);
 </script>
+
 </body>
 </html>
