@@ -1,33 +1,35 @@
-<!-- FILE: /naming.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>名前をつける | WhoAI</title>
-<meta name="color-scheme" content="dark light" />
-<style>
-html,body{height:100%;margin:0}
-body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
-.card{background:rgba(0,0,0,.45);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:18px;max-width:980px;width:min(96vw,980px)}
-input{background:rgba(255,255,255,.94);color:#111;border:0;border-radius:12px;padding:14px 12px;font-size:16px;width:100%}
-.btn{appearance:none;border:0;cursor:pointer;border-radius:16px;padding:14px 20px;font-weight:900;background:linear-gradient(135deg,#8de0ff,#ffd6f3);color:#111}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>名前を付ける</title>
+  <style>
+    body {
+      margin:0;padding:0;
+      background:#000 url("space_background.png") center/cover no-repeat fixed;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;text-align:center;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;
+    }
+    input,button{
+      margin-top:16px;padding:12px 20px;border-radius:8px;border:none;font-size:16px;
+    }
+    button{cursor:pointer;background:linear-gradient(90deg,#f6d365,#fda085);font-weight:bold;}
+  </style>
 </head>
 <body>
-<section class="card">
-<h1>名前をつけよう</h1>
-<p>会話はしません。<strong>名前を付けて、かわいがってね。</strong> ときどきマカロンをあげるだけで進みます。</p>
-<label>あなたの名前<input id="you" /></label>
-<label>キャラクターの名前<input id="buddy" /></label>
-<button id="save" class="btn">保存して進む（マカロン選択へ）</button>
-<p style="font-size:12px;opacity:.85">※ 名前は端末内（localStorage）に保存されます。サーバ送信はしません。</p>
-</section>
-<script>
-const K={you:'whoai_player_name',buddy:'whoai_char_name'};
-const you=document.getElementById('you');const buddy=document.getElementById('buddy');
-you.value=localStorage.getItem(K.you)||'';buddy.value=localStorage.getItem(K.buddy)||'';
-document.getElementById('save').addEventListener('click',()=>{if(!you.value||!buddy.value){alert('名前を入力してください');return;}localStorage.setItem(K.you,you.value.trim());localStorage.setItem(K.buddy,buddy.value.trim());location.href='macaron.html'});
-</script>
+  <h1>キャラクターに名前をつけてね</h1>
+  <input id="charName" placeholder="キャラクターの名前">
+  <button onclick="saveName()">決定</button>
+
+  <script>
+    function saveName(){
+      const name=document.getElementById("charName").value;
+      if(name){
+        localStorage.setItem("characterName",name);
+        location.href="macaron.html";
+      }
+    }
+  </script>
 </body>
 </html>
