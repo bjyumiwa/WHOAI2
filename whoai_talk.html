@@ -3,161 +3,91 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>観察モード | WhoAI（タネ）</title>
+<title>WhoAI 会話モード</title>
 <meta name="color-scheme" content="dark light" />
 <style>
-  /* 全体背景は body のみに指定 */
-  html,body{
-    height:100%;margin:0;overflow:hidden;
-  }
+  html,body{height:100%;margin:0}
   body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;
-    color:#fff;
-    background:url("space_background.png") center/cover no-repeat fixed;
-    display:flex;align-items:center;justify-content:center;
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;align-items:center;justify-content:center;padding:14px;
   }
-
-  /* ステージ自体は透明 */
-  .stage{
-    position:relative;
-    width:min(92vw,720px);
-    aspect-ratio:1;
-    border-radius:22px;
-    background:transparent; /* ← ここで背景は消す */
-    overflow:hidden;
-    box-shadow:0 8px 28px rgba(0,0,0,.28);
-  }
-
-  .horizon{
-    position:absolute;left:0;right:0;top:82%;
-    height:2px; background:rgba(255,255,255,.18);
-    z-index:3; pointer-events:none;
-  }
-
-  .charWrap{
-    position:absolute;left:50%;top:82%;
-    transform:translate(-50%,0) translateY(120%);
-    z-index:2;
-    animation:
-      emerge 1600ms cubic-bezier(.17,.84,.25,1) 200ms 1 forwards,
-      roamPath 38s ease-in-out 2s infinite alternate;
-  }
-
-  .charImg{
-    width:min(24vw,160px); /* 半分サイズ */
-    object-fit:contain;
-    filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));
-    pointer-events:none;
-    animation:bob 7s ease-in-out infinite;
-  }
-
-  .ui{
-    position:absolute;
-    font-size:.9rem;
-    padding:6px 12px;border-radius:12px;
-    opacity:.8;z-index:5;
-    transition:left 1.2s ease, top 1.2s ease, opacity .4s ease;
-    user-select:none;-webkit-user-select:none;
-  }
-  .bubble{ background:rgba(0,0,0,.55); color:#fff; }
-  .floatBtn{ background:rgba(255,255,255,.75); color:#111; font-weight:700; border:none; cursor:pointer; }
-
-  .safety{ position:fixed; right:14px; bottom:14px; z-index:10;
-           background:rgba(255,255,255,.9); color:#111; border:none; border-radius:14px;
-           padding:9px 14px; font-weight:700; font-size:.95rem; cursor:pointer;
-           box-shadow:0 6px 18px rgba(0,0,0,.28); }
-
-  @keyframes emerge{
-    0%   { transform:translate(-50%,0) translateY(120%); opacity:0; }
-    70%  { transform:translate(-50%,0) translateY(-6%);  opacity:1; }
-    100% { transform:translate(-50%,0) translateY(0);    opacity:1; }
-  }
-  @keyframes bob{ 0%,100%{ transform:translateY(-8px) } 50%{ transform:translateY(8px) } }
-  @keyframes roamPath{
-    0%   { left:18%; top:72%; }
-    20%  { left:35%; top:58%; }
-    40%  { left:72%; top:64%; }
-    60%  { left:66%; top:28%; }
-    80%  { left:28%; top:30%; }
-    100% { left:18%; top:72%; }
-  }
+  .wrap{width:min(960px,94vw);display:grid;grid-template-rows:auto 1fr auto;gap:12px;
+        background:rgba(0,0,0,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+        border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,.3)}
+  .header{display:flex;align-items:center;gap:12px}
+  .char{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+  .title{font-weight:800}
+  .log{overflow:auto;max-height:58vh;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:78%;padding:10px 12px;border-radius:14px;line-height:1.5}
+  .me{align-self:flex-end;background:#2b82ff}
+  .bot{align-self:flex-start;background:#27ae60}
+  .input{display:flex;gap:8px}
+  .input input{flex:1;padding:10px 12px;border:none;border-radius:10px;font-size:16px}
+  .input button{padding:10px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:800}
+  .ghost{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.28)}
 </style>
 </head>
 <body>
-  <section class="stage" aria-live="polite">
-    <div class="horizon" aria-hidden="true"></div>
-    <div class="charWrap">
-      <img id="charImg" class="charImg" src="" alt="tane character" />
+  <main class="wrap">
+    <div class="header">
+      <img id="charImg" class="char" alt="キャラ">
+      <div class="title">会話モード</div>
+      <div style="margin-left:auto;opacity:.85" id="modeHint">（ここは会話ページ）</div>
     </div>
-    <div id="bubble" class="ui bubble"></div>
-    <button id="floatFeedBtn" class="ui floatBtn" type="button">🍬 マカロンをあげる</button>
-  </section>
-  <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
+
+    <div id="log" class="log"></div>
+
+    <div class="input">
+      <input id="txt" placeholder="メッセージを入力…" />
+      <button id="send" class="ghost">送信</button>
+      <button id="toObserve" class="ghost" title="観察へ移動">👀 観察</button>
+    </div>
+  </main>
 
 <script>
-  const KEY={color:'whoai_color',xp:'whoai_xp'};
-  const I18N={ja:{lines:['ふわふわ……','きらり★','すや……','……']}};
-  const XP_TO_EVOLVE=3;
-  const color = localStorage.getItem(KEY.color)||'pink';
-  document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
+(() => {
+  const params=new URLSearchParams(location.search);
+  const form=params.get('form');            // "tane" ならタネ固定
+  const color=(localStorage.getItem('whoai_color')||localStorage.getItem('macaronColor')||'pink').toLowerCase();
+  const name =(localStorage.getItem('whoai_name')||'ななし');
+  const logEl=document.getElementById('log');
+  const imgEl=document.getElementById('charImg');
 
-  const stage = document.querySelector('.stage');
-  const wrap  = document.querySelector('.charWrap');
-  let W=stage.offsetWidth, H=stage.offsetHeight;
-  addEventListener('resize', ()=>{ W=stage.offsetWidth; H=stage.offsetHeight; });
-
-  function charCenter(){
-    const r = wrap.getBoundingClientRect();
-    const s = stage.getBoundingClientRect();
-    return { x: r.left - s.left + r.width/2, y: r.top - s.top + r.height/2 };
-  }
-  function farPos(minDistPx, margin=14){
-    const c = charCenter();
-    let x,y,guard=0;
-    do{
-      x = Math.random()*(W - margin*2) + margin;
-      y = Math.random()*(H - margin*2) + margin;
-      guard++; if(guard>200) break;
-    }while(Math.hypot(x-c.x,y-c.y) < minDistPx);
-    return {left:x, top:y};
+  // === 画像 ===
+  function setImg(url){ imgEl.src=url; }
+  if(form==='tane'){
+    // タネ固定
+    const s1=`tane_${color}.png`, s2='tane.png';
+    const t=new Image(); t.onload=()=>setImg(s1); t.onerror=()=>setImg(s2); t.src=s1;
+  }else{
+    // 進化口パク（ある場合のみ）
+    const open=`${color}_open.png`, closed=`${color}_closed.png`;
+    let hasO=false,hasC=false,isOpen=false;
+    const p=(u,cb)=>{const i=new Image();i.onload=()=>cb(true);i.onerror=()=>cb(false);i.src=u};
+    p(open, ok=>hasO=ok); p(closed, ok=>hasC=ok);
+    setImg(hasC?closed:(hasO?open:`tane_${color}.png`));
+    setInterval(()=>{isOpen=!isOpen; setImg(isOpen?(hasO?open:closed):(hasC?closed:open));},1000);
   }
 
-  const bubble = document.getElementById('bubble');
-  const lines = I18N.ja.lines;
-  function r(a){ return a[Math.floor(Math.random()*a.length)] }
-  function showLine(t){
-    bubble.textContent=t;
-    bubble.style.opacity=.9;
-    const p = farPos(140);
-    bubble.style.left=p.left+'px';
-    bubble.style.top =p.top +'px';
-    setTimeout(()=>bubble.style.opacity=0, 2000);
+  // === ログ ===
+  function push(text,who){
+    const d=document.createElement('div'); d.className=`msg ${who}`; d.textContent=text;
+    logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight;
   }
-  setTimeout(()=>showLine(r(lines)), 2200);
-  setInterval(()=>showLine(r(lines)), 4200);
+  push(`こんにちは、${name}。話しかけてね！`,'bot');
 
-  const floatBtn = document.getElementById('floatFeedBtn');
-  const safetyBtn= document.getElementById('safetyBtn');
-  let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
-  function save(){ localStorage.setItem(KEY.xp,String(xp)); }
-  function placeFloatBtn(){
-    const p = farPos(160);
-    floatBtn.style.left=p.left+'px';
-    floatBtn.style.top =p.top +'px';
-  }
-  setTimeout(placeFloatBtn, 2300);
+  // === 送信（ダミー応答）===
+  document.getElementById('send').onclick=()=>{
+    const v=document.getElementById('txt').value.trim(); if(!v) return;
+    document.getElementById('txt').value='';
+    push(v,'me');
+    setTimeout(()=>push('うんうん、それでそれで？','bot'),500);
+  };
 
-  function feed(){
-    xp++; save();
-    showLine('ぱあっ！');
-    placeFloatBtn();
-    if(xp>=XP_TO_EVOLVE){
-      setTimeout(()=>location.href='macaron_select.html',700);
-    }
-  }
-  floatBtn.addEventListener('click', feed);
-  safetyBtn.addEventListener('click', feed);
-  addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='m') feed(); });
+  // 観察へ（必ず観察ページへ遷移）
+  document.getElementById('toObserve').onclick=()=>location.assign('/WHOAI2/whoai_talk_evolved.html?form=tane&from=talk');
+})();
 </script>
 </body>
 </html>
