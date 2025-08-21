@@ -12,8 +12,6 @@
     background:#000 url("space_background.png") center/cover fixed no-repeat;
     display:flex;align-items:center;justify-content:center;padding:12px;
   }
-
-  /* ガラス風ステージ */
   .stage{
     position:relative;width:min(92vw,820px);aspect-ratio:1/0.75;overflow:hidden;
     border-radius:24px;background:rgba(0,0,0,.22);
@@ -21,7 +19,6 @@
     border:1px solid rgba(255,255,255,.18);
     box-shadow:inset 0 10px 28px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
   }
-
   .charWrap{
     position:absolute;left:50%;top:70%;
     transform:translate(-50%,-50%);
@@ -39,14 +36,12 @@
     40%{left:74%;top:62%}60%{left:68%;top:30%}
     80%{left:26%;top:32%}100%{left:20%;top:72%}
   }
-
   .bubble{
     position:absolute;z-index:5;background:rgba(0,0,0,.55);color:#fff;
     padding:8px 12px;border-radius:14px;font-size:.95rem;opacity:0;
     transition:opacity .4s ease,left 1.1s ease,top 1.1s ease;user-select:none;
     box-shadow:0 6px 14px rgba(0,0,0,.25);
   }
-
   .floatBtn{
     position:absolute;z-index:5;background:rgba(255,255,255,.85);color:#111;
     font-weight:700;border:none;border-radius:14px;padding:8px 12px;cursor:pointer;
@@ -62,19 +57,14 @@
 </head>
 <body>
   <main class="stage" aria-live="polite">
-    <div class="charWrap">
-      <img id="charImg" class="charImg" alt="進化キャラ" />
-    </div>
+    <div class="charWrap"><img id="charImg" class="charImg" alt="進化キャラ" /></div>
     <div id="bubble" class="bubble"></div>
     <button id="floatFeedBtn" class="floatBtn" type="button" style="left:16px;top:16px">🍬 マカロンをあげる</button>
   </main>
   <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
 
 <script>
-  // ===== 基本設定 =====
-  const KEY={color:'whoai_color',xp:'whoai_xp'};
-  const color=(localStorage.getItem(KEY.color)||'pink').toLowerCase();
-
+  const color=(localStorage.getItem('whoai_color')||localStorage.getItem('macaronColor')||'pink').toLowerCase();
   const imgEl=document.getElementById('charImg');
   const bubble=document.getElementById('bubble');
   const floatBtn=document.getElementById('floatFeedBtn');
@@ -82,64 +72,40 @@
   const stage=document.querySelector('.stage');
   const wrap=document.querySelector('.charWrap');
 
-  let W=stage.offsetWidth,H=stage.offsetHeight;
-  addEventListener('resize',()=>{W=stage.offsetWidth;H=stage.offsetHeight;});
+  // 口パク（直下の <color>_open/_closed.png を使う。無ければ tane にフォールバック）
+  const openSrc  = `${color}_open.png`;
+  const closedSrc= `${color}_closed.png`;
+  const taneSrc  = `tane_${color}.png`;
 
-  // ===== 進化キャラ画像：open / closed を切り替え =====
-  const openSrc  = `/WHOAI2/${color}_open.png`;
-  const closedSrc= `/WHOAI2/${color}_closed.png`;
+  function tryLoad(url, ok, ng){ const t=new Image(); t.onload=()=>ok(url); t.onerror=ng; t.src=url; }
 
-  let isOpen=false;
-  function showOpen(){ imgEl.src=openSrc; isOpen=true; }
-  function showClosed(){ imgEl.src=closedSrc; isOpen=false; }
+  let isOpen=false, hasOpen=false, hasClosed=false;
+  tryLoad(openSrc,  ()=>{hasOpen=true;},  ()=>{});
+  tryLoad(closedSrc,()=>{hasClosed=true;},()=>{});
 
-  // 初期は closed
-  showClosed();
-  // 1秒ごとに open / closed 切り替え（口パク）
-  setInterval(()=>{ isOpen?showClosed():showOpen(); },1000);
+  function show(open){
+    const url = open ? (hasOpen?openSrc:taneSrc) : (hasClosed?closedSrc:taneSrc);
+    imgEl.src = url;
+  }
+  // 初期：closed優先 → フォールバック
+  show(false);
+  // 1秒ごとに切替（どちらか欠けてても自動フォールバック）
+  setInterval(()=>{ isOpen=!isOpen; show(isOpen); },1000);
 
-  // ===== 励ましメッセージ =====
-  const LINES=[
-    'だいじょうぶ、ゆっくりでいいよ',
-    '今日のがんばり、見てたよ',
-    '深呼吸、いっかいね',
-    'きみのペースで進もう',
-    'ミスは進化のタネだよ',
-    'もう一歩だけ、いっしょに',
-    '休むのも、強さだよ',
-    '小さな一歩、えらい！'
-  ];
+  // 励ましバブル
+  const LINES=['だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','深呼吸、いっかいね','きみのペースで進もう','ミスは進化のタネだよ','もう一歩だけ、いっしょに','休むのも、強さだよ','小さな一歩、えらい！'];
   const pick=a=>a[Math.floor(Math.random()*a.length)];
+  let W=stage.offsetWidth,H=stage.offsetHeight; addEventListener('resize',()=>{W=stage.offsetWidth;H=stage.offsetHeight;});
+  function charCenter(){const r=wrap.getBoundingClientRect(),s=stage.getBoundingClientRect();return {x:r.left-s.left+r.width/2,y:r.top-s.top+r.height/2};}
+  function farPos(minD,margin=14){const c=charCenter();let x,y,g=0;do{x=Math.random()*(W-margin*2)+margin;y=Math.random()*(H-margin*2)+margin;g++;if(g>200)break;}while(Math.hypot(x-c.x,y-c.y)<minD);return {left:x,top:y};}
+  function showLine(t){bubble.textContent=t;const p=farPos(160);bubble.style.left=p.left+'px';bubble.style.top=p.top+'px';bubble.style.opacity=1;setTimeout(()=>bubble.style.opacity=0,2400);}
+  setTimeout(()=>showLine(pick(LINES)),1500); setInterval(()=>showLine(pick(LINES)),4200);
 
-  function charCenter(){
-    const r=wrap.getBoundingClientRect(), s=stage.getBoundingClientRect();
-    return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};
-  }
-  function farPos(minDistPx,margin=14){
-    const c=charCenter(); let x,y,g=0;
-    do{ x=Math.random()*(W-margin*2)+margin; y=Math.random()*(H-margin*2)+margin; g++; if(g>200) break; }
-    while(Math.hypot(x-c.x,y-c.y)<minDistPx);
-    return {left:x,top:y};
-  }
-  function showLine(t){
-    bubble.textContent=t;
-    const p=farPos(160);
-    bubble.style.left=p.left+'px'; bubble.style.top=p.top+'px';
-    bubble.style.opacity=1; setTimeout(()=>bubble.style.opacity=0,2400);
-  }
-  setTimeout(()=>showLine(pick(LINES)),1500);
-  setInterval(()=>showLine(pick(LINES)),4200);
-
-  // ===== マカロン処理 =====
-  let xp=parseInt(localStorage.getItem(KEY.xp)||'0',10);
-  const save=()=>localStorage.setItem(KEY.xp,String(xp));
-  function feed(){
-    xp++; save(); showLine('キラッ☆ ありがとう！');
-    const p=farPos(180); floatBtn.style.left=p.left+'px'; floatBtn.style.top=p.top+'px';
-  }
-  floatBtn.addEventListener('click',feed);
-  safetyBtn.addEventListener('click',feed);
-  addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='m') feed(); });
+  // マカロン
+  let xp=parseInt(localStorage.getItem('whoai_xp')||'0',10);
+  const save=()=>localStorage.setItem('whoai_xp',String(xp));
+  function feed(){xp++;save();showLine('キラッ☆ ありがとう！');const p=farPos(180);floatBtn.style.left=p.left+'px';floatBtn.style.top=p.top+'px';}
+  floatBtn.addEventListener('click',feed); safetyBtn.addEventListener('click',feed); addEventListener('keydown',e=>{ if(e.key.toLowerCase()==='m') feed(); });
 </script>
 </body>
 </html>
