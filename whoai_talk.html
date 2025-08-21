@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark light" />
 <style>
   /* 1画面・背景だけ見せる（黒帯なし） */
-  html,body{height:50%;margin:0;overflow:hidden}
+  html,body{height:100%;margin:0;overflow:hidden}
   body{
     font-family:"Noto Sans JP",system-ui,sans-serif;
     color:#fff;
@@ -22,18 +22,23 @@
     width:min(92vw,720px);
     aspect-ratio:1;
     border-radius:22px;
-    background:transparent;            /* ← 黒帯を消す */
+    background:transparent;
     overflow:hidden;
     box-shadow:0 8px 28px rgba(0,0,0,.28);
   }
 
- 
+  /* 水平線（見た目の細い線だけ） */
+  .horizon{
+    position:absolute;left:0;right:0;top:82%;
+    height:2px; background:rgba(255,255,255,.18);
+    z-index:3; pointer-events:none;
+  }
 
   /* キャラのラッパ：出現（emerge）→ 回遊（roamPath） */
   .charWrap{
     position:absolute;left:50%;top:82%;                 /* 地平線上から出る */
     transform:translate(-50%,0) translateY(120%);        /* 地平線の下に隠しておく */
-    z-index:2;                                           /* 地平線より背面に配置 */
+    z-index:2;
     animation:
       emerge 1600ms cubic-bezier(.17,.84,.25,1) 200ms 1 forwards,
       roamPath 38s ease-in-out 2s infinite alternate;    /* 出現後に回遊開始 */
@@ -41,7 +46,8 @@
 
   /* 実際の画像（ふわふわの小ゆらぎはここで） */
   .charImg{
-    width:min(48vw,320px);
+    /* ← ここで“半分”に縮小（48vw/320px → 24vw/160px） */
+    width:min(24vw,160px);
     object-fit:contain;
     filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));
     pointer-events:none;
@@ -67,16 +73,15 @@
            box-shadow:0 6px 18px rgba(0,0,0,.28); }
 
   /* アニメーション ---------------------- */
-  @keyframes emerge{               /* 地平線の下 → すっと出る */
+  @keyframes emerge{
     0%   { transform:translate(-50%,0) translateY(120%); opacity:0; }
     70%  { transform:translate(-50%,0) translateY(-6%);  opacity:1; }
     100% { transform:translate(-50%,0) translateY(0);    opacity:1; }
   }
-  @keyframes bob{                  /* 小さな上下揺れ */
+  @keyframes bob{
     0%,100%{ transform:translateY(-8px) }
     50%   { transform:translateY(  8px) }
   }
-  /* 画面中をゆっくり回遊（left/top％をゆっくり巡回）*/
   @keyframes roamPath{
     0%   { left:18%; top:72%; }
     20%  { left:35%; top:58%; }
@@ -113,32 +118,44 @@
   const color = localStorage.getItem(KEY.color)||'pink';
   document.getElementById('charImg').src = `/WHOAI2/tane_${color}.png`;
 
-  // ステージサイズ
+  // ステージ寸法
   const stage = document.querySelector('.stage');
+  const wrap  = document.querySelector('.charWrap');
   let W=stage.offsetWidth, H=stage.offsetHeight;
   addEventListener('resize', ()=>{ W=stage.offsetWidth; H=stage.offsetHeight; });
 
-  // キャラ中心（実質 .charWrap の現在位置付近）と距離を取るための近接判定
+  // --- 出現中だけ“水平線で切れて見える”ように一時クリップ ---
+  // 地平線は top:82% にあるので、その下側(=18%)を一時的にクリップして隠す
+  function applyHorizonClip(){
+    const bottomInset = Math.max(0, Math.round(H*0.18)); // H*(1-0.82)
+    wrap.style.clipPath = `inset(0 0 ${bottomInset}px 0)`;
+  }
+  function removeHorizonClip(){ wrap.style.clipPath='none'; }
+  applyHorizonClip();
+  // emerge が終わったら解除
+  wrap.addEventListener('animationend', (e)=>{ if(e.animationName==='emerge') removeHorizonClip(); });
+
+  // キャラ中心（現在位置）と距離を取るための近接判定
   function charCenter(){
-    const wrap = document.querySelector('.charWrap').getBoundingClientRect();
+    const r = wrap.getBoundingClientRect();
     const s = stage.getBoundingClientRect();
-    return { x: wrap.left - s.left + wrap.width/2, y: wrap.top - s.top + wrap.height/2 };
+    return { x: r.left - s.left + r.width/2, y: r.top - s.top + r.height/2 };
   }
   function farPos(minDistPx, margin=14){
-    const cx=charCenter().x, cy=charCenter().y;
+    const c = charCenter();
     let x,y,guard=0;
     do{
       x = Math.random()*(W - margin*2) + margin;
       y = Math.random()*(H - margin*2) + margin;
       guard++; if(guard>200) break;
-    }while(Math.hypot(x-cx,y-cy) < minDistPx);
+    }while(Math.hypot(x-c.x,y-c.y) < minDistPx);
     return {left:x, top:y};
   }
 
   // 独り言（出没）
   const bubble = document.getElementById('bubble');
   const lines = I18N.ja.lines;
-  function r(a){ return a[Math.floor(Math.random()*a.length)] }
+  const r = a => a[Math.floor(Math.random()*a.length)];
   function showLine(t){
     bubble.textContent=t;
     bubble.style.opacity=.9;
@@ -147,20 +164,21 @@
     bubble.style.top =p.top +'px';
     setTimeout(()=>bubble.style.opacity=0, 2000);
   }
-  setTimeout(()=>showLine(r(lines)), 2200);              // にょきっと後に初回
+  setTimeout(()=>showLine(r(lines)), 2200);     // にょきっと後に初回
   setInterval(()=>showLine(r(lines)), 4200);
 
   // マカロン：漂うボタン＋右下固定ボタン
   const floatBtn = document.getElementById('floatFeedBtn');
   const safetyBtn= document.getElementById('safetyBtn');
   let xp = parseInt(localStorage.getItem(KEY.xp)||'0',10);
-  function save(){ localStorage.setItem(KEY.xp,String(xp)); }
+  const save = ()=>localStorage.setItem(KEY.xp,String(xp));
+
   function placeFloatBtn(){
     const p = farPos(160);
     floatBtn.style.left=p.left+'px';
     floatBtn.style.top =p.top +'px';
   }
-  setTimeout(placeFloatBtn, 2300);                       // にょきっと後に配置
+  setTimeout(placeFloatBtn, 2300);              // にょきっと後に配置
 
   function feed(){
     xp++; save();
