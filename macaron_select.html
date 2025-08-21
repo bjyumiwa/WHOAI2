@@ -1,31 +1,130 @@
-<!-- FILE: /macaron_select.html -->
+<!-- FILE: /WHOAI2/macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>2回目のマカロン | WhoAI</title>
-<style>
-html,body{height:100%;margin:0}
-body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;background:#000 url("assets/stage1/space_background.png") center/cover fixed no-repeat;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px;text-align:center}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:22px;max-width:720px;width:min(96vw,720px)}
-.macaron{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px}
-.macaron img{width:120px;height:120px;object-fit:cover;border-radius:50%;border:4px solid rgba(255,255,255,.5)}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>マカロンをもう一度選ぶ | WhoAI</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;padding:16px
+    }
+    .wrap{
+      width:min(960px,95vw); backdrop-filter:blur(2px);
+      border-radius:20px; padding:18px; 
+      background:rgba(0,0,0,.28); box-shadow:0 8px 26px rgba(0,0,0,.35)
+    }
+    h1{margin:0 0 8px;font-size:22px}
+    p.lead{margin:0 0 16px;opacity:.9}
+    .grid{
+      display:grid; gap:16px;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    }
+    .card{
+      border-radius:16px; background:rgba(255,255,255,.08);
+      padding:14px; display:flex; flex-direction:column; align-items:center; gap:10px;
+      border:1px solid rgba(255,255,255,.14);
+      transition:transform .15s ease, background .15s ease;
+      cursor:pointer;
+    }
+    .card:hover{ transform:translateY(-2px); background:rgba(255,255,255,.12) }
+    .thumb{
+      width:120px;height:120px; border-radius:50%; overflow:hidden;
+      display:grid; place-items:center; background:rgba(255,255,255,.1)
+    }
+    .thumb img{ width:100%; height:100%; object-fit:contain }
+    .name{font-weight:700}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .prev{display:flex;align-items:center;gap:10px}
+    .prev img{width:40px;height:40px;object-fit:contain}
+    .btn{
+      appearance:none;border:none;border-radius:12px;padding:10px 14px;
+      background:#fff;color:#111;font-weight:700;cursor:pointer
+    }
+    .warn{font-size:.9rem; opacity:.9; margin-top:10px}
+  </style>
 </head>
 <body>
-<h1>もう一度、マカロンを選ぼう</h1>
-<p>マカロンを食べて<strong>進化</strong>します。記録とXPは維持されます。</p>
-<section class="grid">
-<div class="macaron" data-color="pink"><img src="assets/stage1/macaron_pink.png" alt="ピンク"/><div>ピンク</div></div>
-<div class="macaron" data-color="blue"><img src="assets/stage1/macaron_blue.png" alt="ブルー"/><div>ブルー</div></div>
-<div class="macaron" data-color="green"><img src="assets/stage1/macaron_green.png" alt="グリーン"/><div>グリーン</div></div>
-<div class="macaron" data-color="purple"><img src="assets/stage1/macaron_purple.png" alt="パープル"/><div>パープル</div></div>
-</section>
-<script>
-const KEY={color:'whoai_color',stage:'whoai_stage'};
-function choose(color){localStorage.setItem(KEY.color,color);localStorage.setItem(KEY.stage,'evolving');location.href='evolution.html'}
-document.querySelectorAll('.macaron').forEach(el=>el.addEventListener('click',()=>choose(el.dataset.color)));
-</script>
+  <main class="wrap">
+    <div class="row">
+      <div class="prev">
+        <span>現在の色：</span>
+        <img id="currentSeed" alt="current seed"/>
+        <strong id="currentName">-</strong>
+      </div>
+      <button id="skipBtn" class="btn" type="button">今回はそのまま</button>
+    </div>
+
+    <h1>もう一度マカロンを選んでね</h1>
+    <p class="lead">選んだ色に合わせて進化演出へ移動します。</p>
+
+    <section class="grid" id="grid"></section>
+    <p class="warn">※画像が見えない場合は、下記のパスに画像ファイルを配置してください：<br>
+      <code>/WHOAI2/macaron_pink.png, macaron_blue.png, macaron_green.png, macaron_purple.png</code>
+    </p>
+  </main>
+
+  <script>
+    // ---- 設定 ----
+    const KEY = { color:'whoai_color', xp:'whoai_xp' };
+    const COLORS = [
+      {key:'pink',   label:'ピンク'},
+      {key:'blue',   label:'ブルー'},
+      {key:'green',  label:'グリーン'},
+      {key:'purple', label:'パープル'},
+    ];
+
+    // 画像パス（ここだけ直せばOK）
+    const IMG = {
+      macaron: c => `/WHOAI2/macaron_${c}.png`,
+      seed:    c => `/WHOAI2/tane_${c}.png`
+    };
+
+    // 現在色の表示
+    const current = localStorage.getItem(KEY.color) || 'pink';
+    const nameMap = {pink:'ピンク',blue:'ブルー',green:'グリーン',purple:'パープル'};
+    document.getElementById('currentSeed').src = IMG.seed(current);
+    document.getElementById('currentSeed').onerror = e => { e.target.style.display='none'; };
+    document.getElementById('currentName').textContent = nameMap[current] ?? current;
+
+    // グリッド生成
+    const grid = document.getElementById('grid');
+    COLORS.forEach(({key,label})=>{
+      const card = document.createElement('button');
+      card.className = 'card'; card.type='button';
+      card.setAttribute('aria-label', label + ' を選ぶ');
+
+      const t = document.createElement('div');
+      t.className='thumb';
+      const img = document.createElement('img');
+      img.src = IMG.macaron(key);
+      img.alt = label + 'のマカロン';
+      img.onerror = () => { img.style.display='none'; t.textContent='(画像なし)'; };
+
+      const name = document.createElement('div'); name.className='name'; name.textContent = label;
+
+      t.appendChild(img);
+      card.appendChild(t);
+      card.appendChild(name);
+      card.addEventListener('click', ()=>selectColor(key));
+      grid.appendChild(card);
+    });
+
+    // 選択処理：色を保存 → 進化演出へ
+    function selectColor(c){
+      localStorage.setItem(KEY.color, c);
+      // 必要に応じてXPをリセット/加算（ここではそのまま）
+      location.href = 'evolution.html';
+    }
+
+    // スキップ（色そのまま→進化演出へ）
+    document.getElementById('skipBtn').addEventListener('click', ()=>{
+      location.href = 'evolution.html';
+    });
+  </script>
 </body>
 </html>
