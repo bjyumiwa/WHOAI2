@@ -29,17 +29,22 @@
     padding:6px 10px; border-radius:10px; font-size:12px; opacity:.95
   }
 
-  /* キャラ（クリック時くるっと） */
+  /* キャラ：ラップをXY移動、画像はwiggle回転 */
+  #charWrap{
+    position:absolute; left:50%; top:60%;
+    transform:translate(-50%,-50%);
+    transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out;
+    will-change:left, top;
+  }
   #char{
-    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
     width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))
   }
   .wiggle{ animation: wiggle .55s ease; }
   @keyframes wiggle{
-    0%  { transform:translateX(-50%) rotate(0deg)   scale(1.00) }
-    30% { transform:translateX(-50%) rotate(10deg)  scale(1.04) }
-    60% { transform:translateX(-50%) rotate(-8deg)  scale(1.02) }
-    100%{ transform:translateX(-50%) rotate(0deg)   scale(1.00) }
+    0%  { transform:rotate(0deg)   scale(1.00) }
+    30% { transform:rotate(10deg)  scale(1.04) }
+    60% { transform:rotate(-8deg)  scale(1.02) }
+    100%{ transform:rotate(0deg)   scale(1.00) }
   }
 
   /* クリックしやすい “名前”（透明の大きい当たり判定） */
@@ -101,7 +106,8 @@
   <section class="stage" aria-label="観察シーン">
     <div class="guide">名前が出たらクリックしてね（+1pt）｜20ptで「マカロンを選ぶ」</div>
 
-    <img id="char" alt="キャラクター">
+    <!-- キャラ（ラッパーがXY移動） -->
+    <div id="charWrap"><img id="char" alt="キャラクター"></div>
 
     <!-- クリックしやすい名前（透明ヒット領域） -->
     <div id="nameWrap" class="floatWrap">
@@ -126,18 +132,33 @@
 /* ===== ステート ===== */
 const K = {
   name:"whoai_name", color:"macaronColor", color2:"whoai_color",
-  stage:"whoai_stage", pts:"whoai_points", visits:"whoai_observe_visits"
+  stage:"whoai_stage", pts:"whoai_points",
+  lastNamed:"whoai_last_named", lastColor:"whoai_last_color", lastStage:"whoai_last_stage"
 };
 const getName = ()=> localStorage.getItem(K.name) || "キャラ";
 const getColor= ()=> (localStorage.getItem(K.color) || localStorage.getItem(K.color2) || "pink").toLowerCase();
+const getStage= ()=> localStorage.getItem(K.stage) || "evolved";
 const getPts  = ()=> parseInt(localStorage.getItem(K.pts) || "0",10);
 const setPts  = (n)=> localStorage.setItem(K.pts, String(n));
 
-/* ===== 観察シーン来訪回数でリセット（2回目以降） ===== */
-(function manageVisits(){
-  const v = parseInt(localStorage.getItem(K.visits) || "0", 10) + 1;
-  localStorage.setItem(K.visits, String(v));
-  if(v >= 2){ setPts(0); }   // ★ここでリセット
+/* ===== “自然な”リセットロジック =====
+   - 名前が変わったらリセット
+   - 色が変わったらリセット
+   - 段階（tane/evolved）が変わったらリセット
+*/
+(function naturalReset(){
+  const nowName = getName();
+  const nowColor= getColor();
+  const nowStage= getStage();
+  const prevName = localStorage.getItem(K.lastNamed);
+  const prevColor= localStorage.getItem(K.lastColor);
+  const prevStage= localStorage.getItem(K.lastStage);
+  if (prevName !== nowName || prevColor !== nowColor || prevStage !== nowStage){
+    setPts(0);
+    localStorage.setItem(K.lastNamed, nowName);
+    localStorage.setItem(K.lastColor, nowColor);
+    localStorage.setItem(K.lastStage, nowStage);
+  }
 })();
 
 /* ===== 画像（フォールバック） ===== */
@@ -191,13 +212,8 @@ function cyclePhrase(){
 /* ===== 名前エコー（いろんな名前がふわふわ） ===== */
 function renderNameEchoes(base){
   const variants = Array.from(new Set([
-    base,
-    `${base}ちゃん`,
-    `${base}さん`,
-    `${base}*`,
-    `.${base}`,
+    base, `${base}ちゃん`, `${base}さん`, `${base}*`, `.${base}`
   ])).slice(0,5);
-
   const wrap = document.getElementById('echoWrap');
   wrap.innerHTML = "";
   variants.forEach(v=>{
@@ -209,6 +225,18 @@ function renderNameEchoes(base){
     d.style.setProperty('--dur', (9 + Math.random()*4).toFixed(1)+'s');
     wrap.appendChild(d);
   });
+}
+
+/* ===== キャラ：ステージ内をランダムにXY移動 ===== */
+function roamCharacter(){
+  const wrap = document.getElementById('charWrap');
+  const dur = (rand(22, 50) / 10) + 's'; // 2.2〜5.0s
+  wrap.style.setProperty('--dur', dur);
+  // ステージ内の安全域（端に寄りすぎない）
+  const left = rand(10, 88);   // %
+  const top  = rand(22, 80);   // %
+  wrap.style.left = left + '%';
+  wrap.style.top  = top  + '%';
 }
 
 /* ===== ポイント & ボタン ===== */
@@ -231,7 +259,7 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
   const name=getName();
   document.getElementById('floatName').textContent=name;
 
-  // クリックで +1 pt ＆ キャラwiggle
+  // 名前クリックで +1 pt ＆ キャラwiggle
   document.getElementById('nameHit').onclick=()=>{
     const n=Math.min(getPts()+1,THRESHOLD);
     setPts(n); refreshPtsUI();
@@ -245,6 +273,7 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
   // ループ開始
   cycleName();   setInterval(cycleName,   3200);
   cyclePhrase(); setInterval(cyclePhrase, 3600);
+  roamCharacter(); setInterval(roamCharacter, rand(2200, 5000)); // XYに回遊
 })();
 </script>
 </body>
