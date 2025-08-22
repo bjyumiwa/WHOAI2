@@ -1,25 +1,37 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>進化！</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-         background:#000;color:#fff;font-family:sans-serif;height:100vh;text-align:center}
-    img{max-width:300px}
-  </style>
-</head>
-<body>
+<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>進化！</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+       background:#000 url("space_background.png") center/cover fixed no-repeat;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+  img{width:min(60vw,340px);height:auto}
+  .btn{padding:10px 16px;border-radius:12px;border:0;background:#f7b0bf;color:#222;font-weight:800;cursor:pointer}
+</style>
+</head><body>
   <h1>キャラが進化した！</h1>
-  <img id="evolvedImg" />
+  <img id="evolvedImg" alt="進化キャラ">
+  <button class="btn" onclick="location.href='whoai_talk.html'">進化キャラと会話する</button>
 
-  <button onclick="location.href='whoai_talk.html'">進化キャラと会話する</button>
+<script>
+(function(){
+  const stage = localStorage.getItem("whoai_stage") || "tane";
+  const color = localStorage.getItem("whoai_color") || "pink";
+  if(stage !== "evolved"){ location.replace("whoai_talk.html"); return; }
 
-  <script src="public/js/whoai_state.js"></script>
-  <script>
-    const color = getColor();
-    document.getElementById("evolvedImg").src = `public/assets/stage2/${color}_open.png`;
-  </script>
-</body>
-</html>
+  const candidates = [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`];
+  const img = document.getElementById("evolvedImg");
+
+  function tryNext(i){
+    if(i>=candidates.length){ img.alt="画像が見つかりません"; return; }
+    const p = candidates[i];
+    const t = new Image();
+    t.onload  = ()=>{ img.src = p; };
+    t.onerror = ()=>{ tryNext(i+1); };
+    t.src = p;
+  }
+  tryNext(0);
+})();
+</script>
+</body></html>
