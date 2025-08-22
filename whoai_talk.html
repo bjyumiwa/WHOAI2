@@ -1,91 +1,84 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>キャラと会話する | WhoAI2</title>
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-      background:#000; /* ← まずは黒。画像が見つかったらJSで上書き */
-      display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
-    }
-    h1{margin:8px 0 0;font-size:clamp(22px,5vw,36px)}
-    #stageTag{opacity:.85;font-size:14px}
-    #characterImg{width:min(60vw,340px);height:auto}
-    .box{width:min(92vw,900px);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px}
-    .nav{margin-top:8px}.nav a{color:#fff;text-decoration:underline}
-    .debug{font-size:12px;opacity:.8}
-    .btn{padding:6px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>キャラと会話する | WhoAI2</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000; /* 画像はJSで存在チェック後に適用 */
+    display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
+  }
+  h1{margin:8px 0 0;font-size:clamp(22px,5vw,36px)}
+  #stageTag{opacity:.85;font-size:14px}
+  #characterImg{width:min(60vw,340px);height:auto}
+  .chat{
+    width:min(92vw,980px);
+    display:flex;flex-direction:column;gap:10px;
+    background:rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px
+  }
+  .log{max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+  .bubble{max-width:80%;padding:10px 12px;border-radius:14px;line-height:1.7}
+  .me   {align-self:flex-end;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2)}
+  .bot  {align-self:flex-start;background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14)}
+  .composer{display:flex;gap:8px}
+  .composer input{
+    flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.35);color:#fff
+  }
+  .composer button{
+    padding:10px 14px;border-radius:12px;border:0;cursor:pointer;
+    background:#f7b0bf;color:#222;font-weight:800
+  }
+  .nav{margin-top:8px}.nav a{color:#fff;text-decoration:underline}
+  small.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;opacity:.8}
+</style>
 </head>
 <body>
   <h1>キャラと会話する</h1>
   <div id="stageTag"></div>
   <img id="characterImg" alt="キャラクターが読み込み中…" />
 
-  <div class="box">
-    （ここに既存の会話UIを入れてください）
-    <div class="nav" style="margin-top:8px">
+  <section class="chat" aria-label="chat">
+    <div class="log" id="log"></div>
+    <form class="composer" id="composer">
+      <input id="msg" type="text" autocomplete="off" placeholder="メッセージを入力（Enterで送信）" />
+      <button id="sendBtn" type="submit">送信</button>
+    </form>
+    <div class="nav">
       <a href="macaron_select.html">2回目のマカロンを選ぶ</a>
-      &nbsp;|&nbsp;
-      <button class="btn" id="resetBtn" type="button">リセット</button>
+      &nbsp;|&nbsp;<a href="index.html">最初に戻る</a>
+      &nbsp;|&nbsp;<button type="button" id="resetBtn">リセット</button>
+      <div><small class="mono">エンドポイント: <span id="ep"></span></small></div>
     </div>
-    <div class="debug" id="debug"></div>
-  </div>
+  </section>
 
-  <script>
-    // --- 背景画像：存在すれば適用 ---
-    (function setBg(){
-      const bg = "space_background.png"; // /WHOAI2/ 直下
-      const t = new Image();
-      t.onload  = ()=>{ document.body.style.backgroundImage = `url('${bg}')`;
-                        document.body.style.backgroundSize = "cover";
-                        document.body.style.backgroundPosition = "center";
-                        document.body.style.backgroundAttachment = "fixed"; };
-      t.onerror = ()=>{ /* 見つからなければ黒のまま */ };
-      t.src = bg;
-    })();
+<script>
+/* ========= 設定 =========
+ * GitHub Pages から Vercel の Serverless Function へPOSTします。
+ * ここをあなたのデプロイURLに変更してください。
+ */
+const TALK_ENDPOINT = "https://YOUR-APP-NAME.vercel.app/api/talk"; // ←★要変更★
 
-    // --- ステート読み込み（未設定でも動く） ---
-    const stage = localStorage.getItem("whoai_stage") || "tane";  // "tane" | "evolved"
-    const color = localStorage.getItem("whoai_color") || "pink";  // "pink" など
+document.getElementById("ep").textContent = TALK_ENDPOINT;
 
-    // --- キャラ画像の候補を段階的に試行（存在チェック付き） ---
-    const candidates = (stage === "evolved")
-      ? [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`]
-      : [`tane_${color}.png`, `tane_pink.png`, `pink_closed.png`];
+/* ========= 背景：存在すれば適用 ========= */
+(function(){
+  const bg = "space_background.png";
+  const t = new Image();
+  t.onload  = ()=>{ Object.assign(document.body.style,{
+    backgroundImage:`url('${bg}')`,backgroundSize:"cover",
+    backgroundPosition:"center",backgroundAttachment:"fixed"
+  }); };
+  t.onerror = ()=>{};
+  t.src = bg;
+})();
 
-    const imgEl = document.getElementById("characterImg");
-    const tagEl = document.getElementById("stageTag");
-    const debugEl = document.getElementById("debug");
-
-    tagEl.textContent = (stage === "evolved")
-      ? `進化キャラ（色：${color}）`
-      : `タネキャラ（色：${color}）`;
-
-    function tryLoad(i){
-      if(i >= candidates.length){
-        imgEl.alt = "画像が見つかりません（ファイル名を確認してください）";
-        debugEl.textContent = "試した候補: " + candidates.join(", ");
-        return;
-      }
-      const path = candidates[i];
-      const tester = new Image();
-      tester.onload  = ()=>{ imgEl.src = path; debugEl.textContent = "使用画像: " + path; };
-      tester.onerror = ()=>{ tryLoad(i+1); };
-      tester.src = path;
-    }
-    tryLoad(0);
-
-    // --- 開発用リセット（状態が怪しい時に） ---
-    document.getElementById("resetBtn").onclick = ()=>{
-      localStorage.removeItem("whoai_history");
-      localStorage.removeItem("whoai_color");
-      localStorage.removeItem("whoai_stage");
-      location.href = "macaron.html";
-    };
-  </script>
-</body>
-</html>
+/* ========= ステート（色/段階）と画像フォールバック ========= */
+const stage = localStorage.getItem("whoai_stage") || "tane";
+const color = localStorage.getItem("whoai_color") || "pink";
+document.getElementById("stageTag").textContent =
+  (stage==="evolved") ? `
