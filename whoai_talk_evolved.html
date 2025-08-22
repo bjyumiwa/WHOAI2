@@ -35,7 +35,12 @@
     transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out;
     will-change:left, top;
   }
-  #char{width:min(300px,62vw);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  /* ★スマホで小さく：最小120px〜最大240px、通常は画面幅の36% */
+  #char{
+    width: clamp(120px, 36vw, 240px);
+    height: auto;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.55));
+  }
   .wiggle{ animation: wiggle .55s ease }
   @keyframes wiggle{
     0%{transform:rotate(0) scale(1)}
@@ -105,7 +110,7 @@ const getStage=()=> localStorage.getItem(K.stage)||"evolved";
 const getPts  =()=> parseInt(localStorage.getItem(K.pts)||"0",10);
 const setPts  =(n)=> localStorage.setItem(K.pts,String(n));
 
-/* ===== “自然な”リセット（名前/色/段階の変更時） ===== */
+/* ===== “自然な”リセット（名前/色/段階の変更時に自動） ===== */
 (function naturalReset(){
   const nowName=getName(), nowColor=getColor(), nowStage=getStage();
   const pN=localStorage.getItem(K.lastNamed), pC=localStorage.getItem(K.lastColor), pS=localStorage.getItem(K.lastStage);
@@ -133,23 +138,23 @@ function roamCharacter(){
   const wrap=document.getElementById('charWrap');
   const dur=(rand(22,52)/10)+'s'; // 2.2〜5.2s
   wrap.style.setProperty('--dur',dur);
-  // 端も含めて広めに回遊（安全マージン少し）
-  wrap.style.left=rand(8,92)+'%';
-  wrap.style.top =rand(18,86)+'%';
+  // 端も含めつつ見切れにくいレンジ
+  wrap.style.left=rand(10,90)+'%';
+  wrap.style.top =rand(20,84)+'%';
 }
 
 /* ===== 名前：キャラと重ならない“反対側”に出す ===== */
 function placeNameAwayFromChar(){
   const wrap=document.getElementById('nameWrap');
   const cWrap=document.getElementById('charWrap');
-  // 現在の%位置を取得
-  const l=parseFloat(getComputedStyle(cWrap).left);  // px
-  const t=parseFloat(getComputedStyle(cWrap).top);   // px
-  const stageRect=document.querySelector('.stage').getBoundingClientRect();
-  const cx = (l - stageRect.left) / stageRect.width * 100;
-  const cy = (t - stageRect.top)  / stageRect.height* 100;
+  const stage=document.querySelector('.stage');
+  const stageRect=stage.getBoundingClientRect();
+  // left/top は stage を基準にした px 値。%に直す時は stageRect の幅/高さで割ればOK
+  const leftPx=parseFloat(getComputedStyle(cWrap).left);
+  const topPx =parseFloat(getComputedStyle(cWrap).top);
+  const cx = leftPx / stageRect.width  * 100;  // 0–100%
+  const cy = topPx  / stageRect.height * 100;
 
-  // キャラのいる象限の“反対側レンジ”を選択
   const leftRange = (cx < 50) ? [60, 88] : [10, 40];
   const topRange  = (cy < 50) ? [60, 82] : [12, 34];
 
@@ -176,9 +181,10 @@ function cyclePhrase(){
     el.textContent=PHRASES[rand(0,PHRASES.length-1)];
     // キャラの反対側寄りに出す（おおまかに重なり回避）
     const cWrap=document.getElementById('charWrap');
-    const l=parseFloat(getComputedStyle(cWrap).left), t=parseFloat(getComputedStyle(cWrap).top);
-    const st=document.querySelector('.stage').getBoundingClientRect();
-    const cx=(l - st.left)/st.width*100, cy=(t - st.top)/st.height*100;
+    const stage=document.querySelector('.stage');
+    const stageRect=stage.getBoundingClientRect();
+    const cx=parseFloat(getComputedStyle(cWrap).left)/stageRect.width*100;
+    const cy=parseFloat(getComputedStyle(cWrap).top)/stageRect.height*100;
     const lr=(cx<50)?[56,82]:[14,36];
     const tr=(cy<50)?[60,82]:[18,40];
     place(el, lr[0],lr[1], tr[0],tr[1]);
@@ -227,8 +233,8 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
   refreshPtsUI();
 
   // ループ開始
-  roamCharacter(); setInterval(roamCharacter, rand(2200,5200));  // ★XY回遊
-  cycleName();     setInterval(cycleName,   3200);               // ★反対側に名前
+  roamCharacter(); setInterval(roamCharacter, rand(2200,5200));  // XY回遊
+  cycleName();     setInterval(cycleName,   3200);               // 反対側に名前
   cyclePhrase();   setInterval(cyclePhrase, 3600);
 })();
 </script>
