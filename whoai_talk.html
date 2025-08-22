@@ -1,35 +1,46 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>会話 | WhoAI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body{margin:0;padding:20px;background:#000;color:#fff;font-family:sans-serif;text-align:center}
-    img{max-width:300px}
-  </style>
-</head>
-<body>
+<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>会話 | WhoAI2</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+       background:#000 url("space_background.png") center/cover fixed no-repeat;
+       display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px}
+  img{width:min(60vw,320px);height:auto}
+  .box{width:min(92vw,920px);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px}
+  .nav{margin-top:8px}.nav a{color:#fff;text-decoration:underline}
+</style>
+</head><body>
   <h1>キャラと会話する</h1>
-  <img id="characterImg" alt="キャラクター" />
+  <div id="stageTag"></div>
+  <img id="characterImg" alt="キャラクター">
+  <div class="box">（ここに既存の会話UIを入れてください）</div>
+  <div class="nav"><a href="macaron_select.html">2回目のマカロンを選ぶ</a></div>
 
-  <div id="talkArea">
-    <!-- ここにAPIとの会話UIを入れる -->
-  </div>
+<script>
+(function(){
+  const stage = localStorage.getItem("whoai_stage") || "tane"; // "tane" | "evolved"
+  const color = localStorage.getItem("whoai_color") || "pink";
 
-  <script src="public/js/whoai_state.js"></script>
-  <script>
-    const stage = getStage(); // "tane" or "evolved"
-    const color = getColor();
-    let imgPath = "";
+  // 優先: 進化=「{color}_open.png」/ タネ=「tane_{color}.png」
+  // 無い場合に備えてフォールバックを段階的に用意
+  const candidates = (stage==="evolved")
+    ? [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`]
+    : [`tane_${color}.png`, `tane_pink.png`, `pink_closed.png`];
 
-    if(stage === "evolved"){
-      imgPath = `public/assets/stage2/${color}_open.png`; // 進化後画像
-    }else{
-      imgPath = `public/assets/stage1/tane_${color}.png`; // タネ画像
-    }
+  const img = document.getElementById("characterImg");
+  const tag = document.getElementById("stageTag");
 
-    document.getElementById("characterImg").src = imgPath;
-  </script>
-</body>
-</html>
+  function tryNext(i){
+    if(i>=candidates.length){ img.alt="画像が見つかりません"; return; }
+    const path = candidates[i];
+    const tester = new Image();
+    tester.onload  = ()=>{ img.src = path; };
+    tester.onerror = ()=>{ tryNext(i+1); };
+    tester.src = path;
+  }
+  tryNext(0);
+  tag.textContent = (stage==="evolved") ? `進化キャラ（${color}）` : `タネキャラ（${color}）`;
+})();
+</script>
+</body></html>
