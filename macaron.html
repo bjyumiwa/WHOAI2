@@ -2,19 +2,50 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>最初のマカロン選択</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="public/style.css" />
+  <title>マカロンを選ぶ（1回目）</title>
+  <style>
+    body{
+      margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:#000 url("space_background.png") center/cover no-repeat;
+      color:#fff;font-family:"Noto Sans JP",sans-serif;
+    }
+    h1{margin-bottom:10px}
+    .macaron-container{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .macaron-container button{background:none;border:none;cursor:pointer}
+    .macaron-container img{width:90px;height:90px}
+  </style>
 </head>
 <body>
-  <h1>マカロンを選んでね</h1>
+  <h1>最初のマカロンを選んでね</h1>
   <div class="macaron-container">
-    <button onclick="chooseMacaron('pink', 1)">ピンク</button>
-    <button onclick="chooseMacaron('blue', 1)">ブルー</button>
-    <button onclick="chooseMacaron('green', 1)">グリーン</button>
-    <button onclick="chooseMacaron('purple', 1)">パープル</button>
+    <button onclick="chooseMacaron('pink',1)"><img src="macaron_pink.png" alt="ピンク"></button>
+    <button onclick="chooseMacaron('blue',1)"><img src="macaron_blue.png" alt="ブルー"></button>
+    <button onclick="chooseMacaron('green',1)"><img src="macaron_green.png" alt="グリーン"></button>
+    <button onclick="chooseMacaron('purple',1)"><img src="macaron_purple.png" alt="パープル"></button>
   </div>
 
-  <script src="public/js/whoai_state.js"></script>
+  <script>
+  (function(){
+    const K={history:"whoai_history",color:"whoai_color",stage:"whoai_stage"};
+    const getHist=()=>JSON.parse(localStorage.getItem(K.history)||"[]");
+    const setHist=a=>localStorage.setItem(K.history,JSON.stringify(a));
+    const setStage=s=>localStorage.setItem(K.stage,s);
+    const setColor=c=>localStorage.setItem(K.color,c);
+
+    window.chooseMacaron=function(color,n){
+      const hist=getHist(); setColor(color);
+      if(n===1){
+        setHist([color]); setStage("tane");
+        location.href="whoai_talk.html"; // タネで3回会話
+        return;
+      }
+      hist.push(color); setHist(hist);
+      const evolved=(hist.length>=2 && hist[0]===hist[1]);
+      setStage(evolved?"evolved":"tane");
+      location.href=evolved?"evolution.html":"whoai_talk.html";
+    }
+  })();
+  </script>
 </body>
 </html>
