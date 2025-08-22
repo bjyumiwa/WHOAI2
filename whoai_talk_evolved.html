@@ -24,18 +24,28 @@
   #char{position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
         width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
 
-  /* ふわふわテキスト */
-  .floatText{
-    position:absolute; user-select:none; white-space:pre-wrap; line-height:1.6;
-    text-shadow:0 4px 16px rgba(0,0,0,.45);
-    transition:opacity .35s ease, transform .18s ease;
-    opacity:0; pointer-events:none;
+  /* クリックしやすい “名前”（透明の大きい当たり判定） */
+  .floatWrap{
+    position:absolute; opacity:0; transition:opacity .35s ease, transform .18s ease;
+    pointer-events:none; /* 非表示時は拾わない */
   }
-  .show{opacity:1; pointer-events:auto;}
-  #floatName{font-weight:900; font-size:clamp(18px,5vw,28px); cursor:pointer;}
-  #floatSpeech{font-weight:600; font-size:clamp(14px,4.5vw,22px); opacity:.9;}
+  .floatWrap.show{opacity:1; pointer-events:auto;}
+  .hit{position:relative; display:inline-block; padding:14px 22px;} /* 透明のクリック領域 */
+  #floatName{
+    position:absolute; left:0; top:0; transform:translate(14px,10px);
+    font-weight:900; font-size:clamp(18px,5vw,28px); cursor:pointer;
+    text-shadow:0 4px 16px rgba(0,0,0,.45); user-select:none; pointer-events:none; /* テキストは透過、イベントは .hit で拾う */
+  }
 
-  /* 追加の小さな囁き */
+  /* ランダムに出る短いセリフ */
+  .phrase{
+    position:absolute; opacity:0; transition:opacity .35s ease, transform .35s ease;
+    font-weight:600; font-size:clamp(14px,4.5vw,22px); text-shadow:0 4px 16px rgba(0,0,0,.45);
+    pointer-events:none;
+  }
+  .phrase.show{opacity:1}
+
+  /* 小さなささやき（飾り） */
   .whisp{position:absolute; font-size:12px; opacity:.85; pointer-events:none;
          animation: floaty 10s ease-in-out infinite;}
   @keyframes floaty{
@@ -65,10 +75,18 @@
 
   <section class="stage" aria-label="進化シーン">
     <img id="char" alt="キャラクター">
-    <!-- ふわふわテキスト（名前＆短いささやき） -->
-    <div id="floatName"   class="floatText" title="ダブルクリックでポイントUP">-</div>
-    <div id="floatSpeech" class="floatText">……</div>
-    <div id="whisps"></div><!-- 小さな囁き -->
+
+    <!-- クリックしやすい名前：大きめの透明ボタン(.hit)の上に文字 -->
+    <div id="nameWrap" class="floatWrap">
+      <button id="nameHit" class="hit" aria-label="名前をクリックでポイント"></button>
+      <div id="floatName">-</div>
+    </div>
+
+    <!-- 短いセリフ（1つずつ出て消える） -->
+    <div id="phrase" class="phrase">……</div>
+
+    <!-- 小さな囁き -->
+    <div id="whisps"></div>
   </section>
 
   <div class="controls">
@@ -85,7 +103,7 @@ const getColor= ()=> (localStorage.getItem(K.color) || localStorage.getItem(K.co
 const getPts  = ()=> parseInt(localStorage.getItem(K.pts) || "0",10);
 const setPts  = (n)=> localStorage.setItem(K.pts, String(n));
 
-/* ===== キャラ画像（フォールバック） ===== */
+/* ===== 画像（フォールバック） ===== */
 function loadCharImage(imgEl, color){
   const cand = [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`];
   (function tryNext(i){
@@ -97,118 +115,13 @@ function loadCharImage(imgEl, color){
   })(0);
 }
 
-/* ===== 直近の発話 → 短いささやきに整形 ===== */
-function latestAssistant(){
-  const getOrCreate=(k)=>{ let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v; };
-  const userId=getOrCreate('whoai_userId');
-  const keyLog=`whoai:evolved:${userId}:evolved_conversation:chatLog`;
-  let log=[]; try{ log=JSON.parse(localStorage.getItem(keyLog)||"[]"); }catch{}
-  const last=[...log].reverse().find(m=>m && m.role==='assistant' && m.content);
-  return (last?.content || "").trim();
-}
-function shortWhisper(text){
-  if(!text) return "……";
-  // 改行・余計なスペース除去
-  text = text.replace(/\s+/g," ").trim();
-  // 句点や感嘆符までを優先して切り出し、最大24文字
-  const m = text.match(/^(.+?[。.!?！？])/);
-  let s = (m ? m[1] : text).slice(0,24);
-  if(s.length < text.length) s += "…";
-  return s;
-}
-
-/* ===== ランダム配置ユーティリティ ===== */
+/* ===== ユーティリティ ===== */
 const rand = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
 function place(el, leftMin,leftMax, topMin,topMax){
   el.style.left = rand(leftMin,leftMax) + '%';
   el.style.top  = rand(topMin, topMax) + '%';
 }
 
-/* ===== 名前：出たり消えたり + 逃げる ===== */
+/* ===== 名前：出たり消えたり（クリックしやすい） ===== */
 function cycleName(){
-  const el = document.getElementById('floatName');
-  el.classList.remove('show');
-  el.style.transform = 'scale(1)';
-  setTimeout(()=>{
-    place(el, 8,32, 8,28);
-    el.classList.add('show');
-    // 可視時間 1.2〜2.2秒
-    setTimeout(()=>el.classList.remove('show'), rand(1200,2200));
-  }, rand(1600,3200)); // おやすみ 1.6〜3.2秒
-}
-// 近づいたら逃げる
-function installDodge(){
-  const el=document.getElementById('floatName');
-  el.addEventListener('mouseenter', ()=>{
-    place(el, 8,32, 8,28);
-    el.style.transform='translateY(-4px)';
-    setTimeout(()=>el.style.transform='',120);
-  });
-}
-
-/* ===== セリフ：短く表示→自動消滅（出っぱなし防止） ===== */
-function cycleSpeech(){
-  const el = document.getElementById('floatSpeech');
-  const text = shortWhisper(latestAssistant());
-  el.textContent = text || "……";
-  el.classList.remove('show');
-  setTimeout(()=>{
-    place(el, 56,80, 22,46);
-    el.classList.add('show');
-    // 2.8〜4秒で消える
-    setTimeout(()=>el.classList.remove('show'), rand(2800,4000));
-  }, rand(800,1800));
-}
-
-/* ===== 小さな囁き（飾り） ===== */
-function renderWhisps(){
-  const whispers = ["……ふわ","いるよ","見てる","すき","きら","zzz","ぱた","hello","嗚呼","♪"];
-  const wWrap = document.getElementById('whisps');
-  wWrap.innerHTML = "";
-  for(let i=0;i<4;i++){
-    const d=document.createElement('div');
-    d.className='whisp';
-    d.style.left = rand(6, 88) + '%';
-    d.style.top  = rand(18, 72) + '%';
-    d.style.animationDuration = (9 + Math.random()*4).toFixed(1) + 's';
-    d.textContent = whispers[(Math.random()*whispers.length)|0];
-    wWrap.appendChild(d);
-  }
-}
-
-/* ===== ポイント & ボタン ===== */
-const THRESHOLD=20;
-function refreshPtsUI(){
-  const n=getPts();
-  document.getElementById('pts').textContent=String(n);
-  const btn=document.getElementById('btnMacaron');
-  if(n>=THRESHOLD){ btn.disabled=false; btn.classList.add('pop'); setTimeout(()=>btn.classList.remove('pop'),220); }
-  else{ btn.disabled=true; }
-}
-function resetPts(){ setPts(0); refreshPtsUI(); }
-
-/* ===== 起動 ===== */
-(function init(){
-  const color=getColor();
-  document.getElementById('chipColor').textContent=color;
-  loadCharImage(document.getElementById('char'), color);
-
-  document.getElementById('floatName').textContent=getName();
-
-  // 名前ダブルクリックでポイント加算（最大20）
-  document.getElementById('floatName').ondblclick=()=>{
-    const n=Math.min(getPts()+1,THRESHOLD);
-    setPts(n); refreshPtsUI();
-  };
-
-  renderWhisps();
-  refreshPtsUI();
-  installDodge();
-
-  // ループ開始
-  cycleName(); setInterval(cycleName, 3200);   // 出たり消えたり
-  cycleSpeech(); setInterval(cycleSpeech, 5200); // ささやき出たり消えたり
-})();
-</script>
-</body>
-</html>
+  const wrap = document.getEl
