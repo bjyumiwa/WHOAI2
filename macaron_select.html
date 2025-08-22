@@ -1,46 +1,153 @@
-<!DOCTYPE html><html lang="ja"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>2回目のマカロン選択</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%23f7b0bf'/%3E%3C/svg%3E">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2回目のマカロン選択 | WHOAI2</title>
 <style>
   html,body{height:100%;margin:0}
-  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-       background:#000 url("space_background.png") center/cover fixed no-repeat;
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px}
-  h1{margin:0 0 4px;font-size:clamp(22px,5vw,40px)}
-  p{margin:0 0 10px}
-  .row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-  .m{width:96px;height:96px;border-radius:16px;border:1px solid rgba(255,255,255,.25);
-     background:rgba(0,0,0,.25);padding:8px;cursor:pointer}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px
+  }
+  h1{margin:6px 0 0;font-size:clamp(22px,5vw,36px)}
+  p{margin:4px 0 0}
+  .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .m{
+    width:96px;height:96px;border-radius:16px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(0,0,0,.25);padding:8px;cursor:pointer;display:grid;place-items:center
+  }
   .m img{width:100%;height:100%;object-fit:contain;display:block}
+
+  /* —— プリシーン（キャラ登場＆名前入力）モーダル —— */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;
+    z-index:20
+  }
+  .overlay.open{display:flex}
+  .sheet{
+    width:min(92vw,640px);background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px
+  }
+  .hero{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 10px}
+  .hero img{width:min(180px,52vw);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:8px}
+  input[type=text]{
+    flex:1;min-width:220px;padding:12px 14px;border:none;border-radius:12px;background:rgba(255,255,255,.95);color:#111
+  }
+  .btn{
+    padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800
+  }
+  .btn-primary{background:#f7b0bf;color:#222}
+  .btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
+
+  /* —— 観察シーン —— */
+  #observeScene{display:none;width:min(980px,96vw)}
+  .stage{
+    position:relative;min-height:56vh;border-radius:18px;padding:18px;
+    background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);
+    overflow:hidden
+  }
+  #obsChar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(260px,60vw);height:auto}
+  .floatName{
+    position:absolute;left:10%;top:12%;
+    font-size:clamp(18px,5vw,28px);font-weight:800;text-shadow:0 3px 12px rgba(0,0,0,.5);
+    animation: drift 8s ease-in-out infinite alternate; cursor: pointer;
+  }
+  @keyframes drift{
+    from{ transform:translate(0,0) rotate(-2deg);}
+    to  { transform:translate(24px,-18px) rotate(3deg);}
+  }
+  .chip{
+    position:absolute;right:12px;top:12px;background:rgba(0,0,0,.45);
+    border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:999px;font-size:12px
+  }
+  .tw{
+    position:absolute;left:6%;top:28%;font-size:14px;opacity:.9;
+    animation: floaty 10s ease-in-out infinite;white-space:nowrap;pointer-events:none
+  }
+  .tw:nth-child(2){ left:70%; top:22%; animation-duration:12s}
+  .tw:nth-child(3){ left:18%; top:48%; animation-duration:11s}
+  .tw:nth-child(4){ left:62%; top:58%; animation-duration:9.5s}
+  @keyframes floaty{
+    0%{ transform:translateY(0) translateX(0); opacity:.8}
+    50%{ transform:translateY(-16px) translateX(6px); opacity:1}
+    100%{ transform:translateY(0) translateX(0); opacity:.8}
+  }
+
+  /* ごほうび：マカロントレイ */
+  .tray{
+    display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+    background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:8px 10px
+  }
+  .tray.open{display:flex;gap:8px;align-items:center}
+  .tray img{width:54px;height:54px;transition:transform .15s ease}
+  .tray img:active{transform:scale(.94)}
+  .note{font-size:12px;opacity:.9}
+
+  /* 戻る／会話へ */
+  .nav{display:flex;gap:8px;justify-content:center;margin-top:10px}
 </style>
-</head><body>
+</head>
+<body>
   <h1>2回目のマカロンを選んでね</h1>
-  <p>同じ色を <strong>2回</strong> 選ぶと進化します！</p>
-  <div class="row">
-    <button class="m" onclick="chooseMacaron('pink',2)"><img src="macaron_pink.png"   alt="ピンク"></button>
-    <button class="m" onclick="chooseMacaron('blue',2)"><img src="macaron_blue.png"   alt="ブルー"></button>
-    <button class="m" onclick="chooseMacaron('green',2)"><img src="macaron_green.png" alt="グリーン"></button>
-    <button class="m" onclick="chooseMacaron('purple',2)"><img src="macaron_purple.png" alt="パープル"></button>
+  <p>同じ色を<strong>2回</strong>選ぶと進化します。選んだら「観察」か「会話」を選択できます。</p>
+
+  <div class="row" id="selectRow">
+    <button class="m" onclick="onPick('pink')"><img src="macaron_pink.png" alt="ピンク"></button>
+    <button class="m" onclick="onPick('blue')"><img src="macaron_blue.png" alt="ブルー"></button>
+    <button class="m" onclick="onPick('green')"><img src="macaron_green.png" alt="グリーン"></button>
+    <button class="m" onclick="onPick('purple')"><img src="macaron_purple.png" alt="パープル"></button>
   </div>
 
-<script>
-(function(){
-  const K={history:"whoai_history",color:"whoai_color",stage:"whoai_stage"};
-  const getHist=()=>JSON.parse(localStorage.getItem(K.history)||"[]");
-  const setHist=a=>localStorage.setItem(K.history,JSON.stringify(a));
-  const setStage=s=>localStorage.setItem(K.stage,s);
-  const setColor=c=>localStorage.setItem(K.color,c);
+  <!-- プリシーン：キャラ登場＆名前入力＆モード選択 -->
+  <div class="overlay" id="preScene">
+    <div class="sheet">
+      <div class="hero">
+        <img id="preImg" alt="キャラ">
+        <div><small id="preStageTag">-</small></div>
+      </div>
+      <div class="controls">
+        <input id="nameInput" type="text" placeholder="なまえ" />
+        <button class="btn btn-ghost" onclick="startMode('observe')">観察する</button>
+        <button class="btn btn-primary" onclick="startMode('talk')">会話する</button>
+      </div>
+      <div class="nav" style="margin-top:8px">
+        <button class="btn btn-ghost" onclick="closePre()">戻る</button>
+      </div>
+    </div>
+  </div>
 
-  window.chooseMacaron=function(color,n){
-    const hist=getHist(); setColor(color);
-    if(n===1){ setHist([color]); setStage("tane"); location.href="whoai_talk.html"; return; }
-    // 2回目
-    hist.push(color); setHist(hist);
-    const evolved=(hist.length>=2 && hist[0]===hist[1]);
-    setStage(evolved?"evolved":"tane");
-    location.href=evolved?"evolution.html":"whoai_talk.html";
-  };
-})();
-</script>
-</body></html>
+  <!-- 観察シーン -->
+  <section id="observeScene" aria-label="観察シーン">
+    <div class="stage">
+      <img id="obsChar" alt="キャラ">
+      <div class="chip">pts: <span id="pts">0</span> / 20</div>
+      <div id="floatingName" class="floatName" title="ダブルクリックでポイントアップ">-</div>
+      <div id="twWrap">
+        <!-- ふわふわ つぶやきは JS で生成 -->
+      </div>
+      <div id="tray" class="tray">
+        <span class="note">ごほうび！</span>
+        <img src="macaron_pink.png"   alt="pink">
+        <img src="macaron_blue.png"   alt="blue">
+        <img src="macaron_green.png"  alt="green">
+        <img src="macaron_purple.png" alt="purple">
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-ghost" onclick="backToSelect()">選び直す</button>
+      <button class="btn btn-primary" onclick="location.href='whoai_talk.html'">このキャラで会話へ</button>
+    </div>
+  </section>
+
+<script>
+/* ========= ステート／ユーティリティ ========= */
+const K = {
+  history: "whoai_history",     // ["pink","pink"] など
+  color:   "whoai_color",       // 互換用
+  color2:  "macaronColor",      // whoai_talk.html 互換
+  stage:   "whoai_stage",       // "tane" | "evolved"
+  name:    "whoai_name",
+  pts:
