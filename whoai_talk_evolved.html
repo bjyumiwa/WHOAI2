@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhoAI | 進化シーン（ふわふわ）</title>
+<title>WhoAI | 観察シーン</title>
 <style>
   html,body{height:100%;margin:0}
   body{
@@ -22,7 +22,14 @@
     border-radius:18px; overflow:hidden;
   }
 
-  /* キャラ：クリック時にクルッと動く */
+  /* ガイド */
+  .guide{
+    position:absolute; left:12px; top:12px;
+    background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25);
+    padding:6px 10px; border-radius:10px; font-size:12px; opacity:.95
+  }
+
+  /* キャラ（クリック時くるっと） */
   #char{
     position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
     width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))
@@ -41,16 +48,27 @@
     pointer-events:none;
   }
   .floatWrap.show{opacity:1; pointer-events:auto;}
-  /* ← div に変更（ボタンの灰色枠を根絶） */
   .hit{
     position:relative; display:inline-block; padding:18px 26px;
-    background:transparent; border:none; outline:none; box-shadow:none;  /* 完全透明 */
+    background:transparent; border:none; outline:none; box-shadow:none;
     -webkit-tap-highlight-color:transparent;
   }
   #floatName{
     position:absolute; left:0; top:0; transform:translate(18px,12px);
     font-weight:900; font-size:clamp(18px,5vw,28px);
     text-shadow:0 4px 16px rgba(0,0,0,.45); user-select:none; pointer-events:none;
+  }
+
+  /* 名前の“エコー”たち（飾り） */
+  .nameEcho{
+    position:absolute; font-weight:800; opacity:.75; pointer-events:none;
+    font-size:clamp(12px,3.5vw,18px); text-shadow:0 4px 16px rgba(0,0,0,.35);
+    animation: floaty var(--dur,10s) ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%{ transform:translate(0,0); opacity:.8 }
+    50%{ transform:translate(10px,-14px); opacity:1 }
+    100%{ transform:translate(0,0); opacity:.8 }
   }
 
   /* 短いセリフ（出て消える） */
@@ -60,15 +78,6 @@
     pointer-events:none;
   }
   .phrase.show{opacity:1}
-
-  /* 小さな囁き（飾り） */
-  .whisp{position:absolute; font-size:12px; opacity:.85; pointer-events:none;
-         animation: floaty 10s ease-in-out infinite;}
-  @keyframes floaty{
-    0%{ transform:translate(0,0); opacity:.8 }
-    50%{ transform:translate(10px,-14px); opacity:1 }
-    100%{ transform:translate(0,0); opacity:.8 }
-  }
 
   /* 下部操作 */
   .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
@@ -89,7 +98,9 @@
     <span class="chip">pts: <span id="pts">0</span> / 20</span>
   </div>
 
-  <section class="stage" aria-label="進化シーン">
+  <section class="stage" aria-label="観察シーン">
+    <div class="guide">名前が出たらクリックしてね（+1pt）｜20ptで「マカロンを選ぶ」</div>
+
     <img id="char" alt="キャラクター">
 
     <!-- クリックしやすい名前（透明ヒット領域） -->
@@ -101,8 +112,8 @@
     <!-- 短いセリフ（1つずつ出て消える） -->
     <div id="phrase" class="phrase">……</div>
 
-    <!-- 小さな囁き -->
-    <div id="whisps"></div>
+    <!-- 名前エコーたち（飾り） -->
+    <div id="echoWrap"></div>
   </section>
 
   <div class="controls">
@@ -113,11 +124,21 @@
 
 <script>
 /* ===== ステート ===== */
-const K = { name:"whoai_name", color:"macaronColor", color2:"whoai_color", stage:"whoai_stage", pts:"whoai_points" };
+const K = {
+  name:"whoai_name", color:"macaronColor", color2:"whoai_color",
+  stage:"whoai_stage", pts:"whoai_points", visits:"whoai_observe_visits"
+};
 const getName = ()=> localStorage.getItem(K.name) || "キャラ";
 const getColor= ()=> (localStorage.getItem(K.color) || localStorage.getItem(K.color2) || "pink").toLowerCase();
 const getPts  = ()=> parseInt(localStorage.getItem(K.pts) || "0",10);
 const setPts  = (n)=> localStorage.setItem(K.pts, String(n));
+
+/* ===== 観察シーン来訪回数でリセット（2回目以降） ===== */
+(function manageVisits(){
+  const v = parseInt(localStorage.getItem(K.visits) || "0", 10) + 1;
+  localStorage.setItem(K.visits, String(v));
+  if(v >= 2){ setPts(0); }   // ★ここでリセット
+})();
 
 /* ===== 画像（フォールバック） ===== */
 function loadCharImage(imgEl, color){
@@ -167,20 +188,27 @@ function cyclePhrase(){
   }, rand(800,1600));
 }
 
-/* ===== 小さな囁き（飾り） ===== */
-function renderWhisps(){
-  const whispers = ["……ふわ","いるよ","すき","hello","zzz","♪"];
-  const wWrap = document.getElementById('whisps');
-  wWrap.innerHTML = "";
-  for(let i=0;i<4;i++){
+/* ===== 名前エコー（いろんな名前がふわふわ） ===== */
+function renderNameEchoes(base){
+  const variants = Array.from(new Set([
+    base,
+    `${base}ちゃん`,
+    `${base}さん`,
+    `${base}*`,
+    `.${base}`,
+  ])).slice(0,5);
+
+  const wrap = document.getElementById('echoWrap');
+  wrap.innerHTML = "";
+  variants.forEach(v=>{
     const d=document.createElement('div');
-    d.className='whisp';
+    d.className='nameEcho';
+    d.textContent=v;
     d.style.left = rand(6, 88) + '%';
     d.style.top  = rand(18, 72) + '%';
-    d.style.animationDuration = (9 + Math.random()*4).toFixed(1) + 's';
-    d.textContent = whispers[rand(0,whispers.length-1)];
-    wWrap.appendChild(d);
-  }
+    d.style.setProperty('--dur', (9 + Math.random()*4).toFixed(1)+'s');
+    wrap.appendChild(d);
+  });
 }
 
 /* ===== ポイント & ボタン ===== */
@@ -200,18 +228,18 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
   document.getElementById('chipColor').textContent=color;
   loadCharImage(document.getElementById('char'), color);
 
-  // 名前テキスト
-  document.getElementById('floatName').textContent=getName();
+  const name=getName();
+  document.getElementById('floatName').textContent=name;
 
-  // クリックで +1 pt ＆ キャラをwiggle
+  // クリックで +1 pt ＆ キャラwiggle
   document.getElementById('nameHit').onclick=()=>{
     const n=Math.min(getPts()+1,THRESHOLD);
     setPts(n); refreshPtsUI();
     const ch=document.getElementById('char');
-    ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle'); // リスタート
+    ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle');
   };
 
-  renderWhisps();
+  renderNameEchoes(name);
   refreshPtsUI();
 
   // ループ開始
