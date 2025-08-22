@@ -1,242 +1,60 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhoAI | 観察シーン</title>
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000 url("space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
-  }
-
-  .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-  .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
-        border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px}
-
-  .stage{
-    position:relative; width:min(980px,96vw); height:min(70vh,78vw);
-    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.2);
-    border-radius:18px; overflow:hidden;
-  }
-
-  .guide{
-    position:absolute; left:12px; top:12px;
-    background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25);
-    padding:6px 10px; border-radius:10px; font-size:12px; opacity:.95
-  }
-
-  /* キャラ：ラッパーがXY移動、画像はwiggle回転 */
-  #charWrap{
-    position:absolute; left:50%; top:60%;
-    transform:translate(-50%,-50%);
-    transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out;
-    will-change:left, top;
-  }
-  /* ★スマホで小さく：最小120px〜最大240px、通常は画面幅の36% */
-  #char{
-    width: clamp(120px, 36vw, 240px);
-    height: auto;
-    filter: drop-shadow(0 8px 22px rgba(0,0,0,.55));
-  }
-  .wiggle{ animation: wiggle .55s ease }
-  @keyframes wiggle{
-    0%{transform:rotate(0) scale(1)}
-    30%{transform:rotate(10deg) scale(1.04)}
-    60%{transform:rotate(-8deg) scale(1.02)}
-    100%{transform:rotate(0) scale(1)}
-  }
-
-  /* クリックしやすい “名前”（透明の大きい当たり判定） */
-  .floatWrap{position:absolute;opacity:0;transition:opacity .35s ease, transform .18s ease;pointer-events:none}
-  .floatWrap.show{opacity:1;pointer-events:auto}
-  .hit{position:relative;display:inline-block;padding:18px 26px;background:transparent;border:none;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
-  #floatName{position:absolute;left:0;top:0;transform:translate(18px,12px);font-weight:900;font-size:clamp(18px,5vw,28px);text-shadow:0 4px 16px rgba(0,0,0,.45);user-select:none;pointer-events:none}
-
-  /* 名前の“エコー”たち（飾り） */
-  .nameEcho{position:absolute;font-weight:800;opacity:.75;pointer-events:none;font-size:clamp(12px,3.5vw,18px);text-shadow:0 4px 16px rgba(0,0,0,.35);animation: floaty var(--dur,10s) ease-in-out infinite}
-  @keyframes floaty{0%{transform:translate(0,0);opacity:.8}50%{transform:translate(10px,-14px);opacity:1}100%{transform:translate(0,0);opacity:.8}}
-
-  /* 短いセリフ（出て消える） */
-  .phrase{position:absolute;opacity:0;transition:opacity .35s ease, transform .35s ease;font-weight:600;font-size:clamp(14px,4.5vw,22px);text-shadow:0 4px 16px rgba(0,0,0,.45);pointer-events:none}
-  .phrase.show{opacity:1}
-
-  .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-  .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800;background:#ffd1ec;color:#222}
-  .btn[disabled]{opacity:.5;cursor:not-allowed}
-  .btn-ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}
-  .pop{animation: pop .18s ease}
-  @keyframes pop{0%{transform:scale(1.02)}100%{transform:scale(1)}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>会話 | WhoAI（進化後）</title>
+  <style>
+    html,body { height:100%; margin:0 }
+    body {
+      font-family:"Noto Sans JP", sans-serif;
+      background:url("space_background.png") center/cover fixed no-repeat;
+      display:flex; flex-direction:column; align-items:center;
+      color:#fff;
+    }
+    .chat { flex:1; width:100%; max-width:600px; overflow-y:auto; padding:10px; }
+    .bubble { max-width:75%; margin:5px; padding:10px;
+      border-radius:16px; line-height:1.4; }
+    .me { background:#4cafef; align-self:flex-end; }
+    .ai { background:#666; align-self:flex-start; }
+    .input-row { display:flex; width:100%; max-width:600px; margin:10px; }
+    input { flex:1; padding:10px; border-radius:8px; border:none; }
+    button { padding:10px; margin-left:8px; border:none; border-radius:8px; background:#f5a; color:#fff; }
+  </style>
 </head>
 <body>
-  <div class="chips">
-    <span class="chip">色: <span id="chipColor">-</span></span>
-    <span class="chip">段階: evolved</span>
-    <span class="chip">pts: <span id="pts">0</span> / 20</span>
+  <h2>進化キャラと会話しよう</h2>
+  <div class="chat" id="chat"></div>
+  <div class="input-row">
+    <input id="msg" placeholder="メッセージを入力…" />
+    <button id="send">送信</button>
   </div>
 
-  <section class="stage" aria-label="観察シーン">
-    <div class="guide">名前が出たらクリックしてね（+1pt）｜20ptで「マカロンを選ぶ」</div>
+  <script>
+    const KEY_NAME = "whoai_name";
+    const TALK_ENDPOINT = "YOUR_API_ENDPOINT";
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("msg");
 
-    <!-- キャラ（XY回遊） -->
-    <div id="charWrap"><img id="char" alt="キャラクター"></div>
+    function addBubble(text, cls){
+      const div = document.createElement("div");
+      div.className = "bubble "+cls;
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
 
-    <!-- クリックしやすい名前 -->
-    <div id="nameWrap" class="floatWrap">
-      <div id="nameHit" class="hit" role="button" aria-label="名前をクリックでポイント"></div>
-      <div id="floatName">-</div>
-    </div>
-
-    <!-- セリフ＆名前エコー -->
-    <div id="phrase" class="phrase">……</div>
-    <div id="echoWrap"></div>
-  </section>
-
-  <div class="controls">
-    <button class="btn-ghost" onclick="location.href='whoai_talk.html'">会話モードへ</button>
-    <button id="btnMacaron" class="btn" disabled onclick="location.href='macaron_select.html'">マカロンを選ぶ</button>
-    <button class="btn-ghost" onclick="resetPts()">ptsリセット</button>
-  </div>
-
-<script>
-/* ===== ステート ===== */
-const K={name:"whoai_name",color:"macaronColor",color2:"whoai_color",stage:"whoai_stage",pts:"whoai_points",lastNamed:"whoai_last_named",lastColor:"whoai_last_color",lastStage:"whoai_last_stage"};
-const getName =()=>localStorage.getItem(K.name)||"キャラ";
-const getColor=()=> (localStorage.getItem(K.color)||localStorage.getItem(K.color2)||"pink").toLowerCase();
-const getStage=()=> localStorage.getItem(K.stage)||"evolved";
-const getPts  =()=> parseInt(localStorage.getItem(K.pts)||"0",10);
-const setPts  =(n)=> localStorage.setItem(K.pts,String(n));
-
-/* ===== “自然な”リセット（名前/色/段階の変更時に自動） ===== */
-(function naturalReset(){
-  const nowName=getName(), nowColor=getColor(), nowStage=getStage();
-  const pN=localStorage.getItem(K.lastNamed), pC=localStorage.getItem(K.lastColor), pS=localStorage.getItem(K.lastStage);
-  if(pN!==nowName || pC!==nowColor || pS!==nowStage){
-    setPts(0);
-    localStorage.setItem(K.lastNamed,nowName);
-    localStorage.setItem(K.lastColor,nowColor);
-    localStorage.setItem(K.lastStage,nowStage);
-  }
-})();
-
-/* ===== 画像（フォールバック） ===== */
-function loadCharImage(imgEl,color){
-  const cand=[`${color}_open.png`,`${color}_closed.png`,`pink_open.png`];
-  (function tryNext(i){ if(i>=cand.length){imgEl.alt="画像が見つかりません";return;}
-    const p=cand[i], t=new Image(); t.onload=()=>imgEl.src=p; t.onerror=()=>tryNext(i+1); t.src=p; })(0);
-}
-
-/* ===== ユーティリティ ===== */
-const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
-function place(el,lmin,lmax,tmin,tmax){ el.style.left=rand(lmin,lmax)+'%'; el.style.top=rand(tmin,tmax)+'%'; }
-
-/* ===== キャラ：ステージ内を広くXY移動 ===== */
-function roamCharacter(){
-  const wrap=document.getElementById('charWrap');
-  const dur=(rand(22,52)/10)+'s'; // 2.2〜5.2s
-  wrap.style.setProperty('--dur',dur);
-  // 端も含めつつ見切れにくいレンジ
-  wrap.style.left=rand(10,90)+'%';
-  wrap.style.top =rand(20,84)+'%';
-}
-
-/* ===== 名前：キャラと重ならない“反対側”に出す ===== */
-function placeNameAwayFromChar(){
-  const wrap=document.getElementById('nameWrap');
-  const cWrap=document.getElementById('charWrap');
-  const stage=document.querySelector('.stage');
-  const stageRect=stage.getBoundingClientRect();
-  // left/top は stage を基準にした px 値。%に直す時は stageRect の幅/高さで割ればOK
-  const leftPx=parseFloat(getComputedStyle(cWrap).left);
-  const topPx =parseFloat(getComputedStyle(cWrap).top);
-  const cx = leftPx / stageRect.width  * 100;  // 0–100%
-  const cy = topPx  / stageRect.height * 100;
-
-  const leftRange = (cx < 50) ? [60, 88] : [10, 40];
-  const topRange  = (cy < 50) ? [60, 82] : [12, 34];
-
-  place(wrap, leftRange[0], leftRange[1], topRange[0], topRange[1]);
-}
-
-/* ===== 名前（出たり消えたり・クリックで+1pt & キャラwiggle） ===== */
-function cycleName(){
-  const wrap=document.getElementById('nameWrap');
-  wrap.classList.remove('show');
-  setTimeout(()=>{
-    placeNameAwayFromChar();   // ★重ならない配置
-    wrap.classList.add('show');
-    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200));
-  }, rand(900,1500));
-}
-
-/* ===== セリフ（短い固定フレーズのみ） ===== */
-const PHRASES=["ここにいるよ","すき","ふわ…","むに","zzz","やっほー","ただいま","こっち","ぱたぱた","hello","うとうと","みてる","だいじょうぶ","きら","ねぇ","すや…"];
-function cyclePhrase(){
-  const el=document.getElementById('phrase');
-  el.classList.remove('show');
-  setTimeout(()=>{
-    el.textContent=PHRASES[rand(0,PHRASES.length-1)];
-    // キャラの反対側寄りに出す（おおまかに重なり回避）
-    const cWrap=document.getElementById('charWrap');
-    const stage=document.querySelector('.stage');
-    const stageRect=stage.getBoundingClientRect();
-    const cx=parseFloat(getComputedStyle(cWrap).left)/stageRect.width*100;
-    const cy=parseFloat(getComputedStyle(cWrap).top)/stageRect.height*100;
-    const lr=(cx<50)?[56,82]:[14,36];
-    const tr=(cy<50)?[60,82]:[18,40];
-    place(el, lr[0],lr[1], tr[0],tr[1]);
-    el.style.transform='translateY(0)';
-    el.classList.add('show');
-    setTimeout(()=>{ el.style.transform='translateY(-10px)'; }, 400);
-    setTimeout(()=>{ el.classList.remove('show'); }, rand(2200,3400));
-  }, rand(800,1600));
-}
-
-/* ===== 名前エコー（飾り） ===== */
-function renderNameEchoes(base){
-  const vars=Array.from(new Set([base,`${base}ちゃん`,`${base}さん`,`${base}*`,`.${base}`])).slice(0,5);
-  const wrap=document.getElementById('echoWrap'); wrap.innerHTML="";
-  vars.forEach(v=>{
-    const d=document.createElement('div'); d.className='nameEcho'; d.textContent=v;
-    d.style.left=rand(6,92)+'%'; d.style.top=rand(18,86)+'%';
-    d.style.setProperty('--dur',(9+Math.random()*4).toFixed(1)+'s'); wrap.appendChild(d);
-  });
-}
-
-/* ===== ポイント & ボタン ===== */
-const THRESHOLD=20;
-function refreshPtsUI(){
-  const n=getPts(); document.getElementById('pts').textContent=String(n);
-  const btn=document.getElementById('btnMacaron');
-  if(n>=THRESHOLD){ btn.disabled=false; btn.classList.add('pop'); setTimeout(()=>btn.classList.remove('pop'),220); }
-  else{ btn.disabled=true; }
-}
-function resetPts(){ setPts(0); refreshPtsUI(); }
-
-/* ===== 起動 ===== */
-(function init(){
-  const color=getColor(); document.getElementById('chipColor').textContent=color;
-  loadCharImage(document.getElementById('char'), color);
-
-  const name=getName(); document.getElementById('floatName').textContent=name;
-
-  // 名前クリックで +1 pt ＆ キャラwiggle
-  document.getElementById('nameHit').onclick=()=>{
-    const n=Math.min(getPts()+1,THRESHOLD); setPts(n); refreshPtsUI();
-    const ch=document.getElementById('char'); ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle');
-  };
-
-  renderNameEchoes(name);
-  refreshPtsUI();
-
-  // ループ開始
-  roamCharacter(); setInterval(roamCharacter, rand(2200,5200));  // XY回遊
-  cycleName();     setInterval(cycleName,   3200);               // 反対側に名前
-  cyclePhrase();   setInterval(cyclePhrase, 3600);
-})();
-</script>
+    document.getElementById("send").addEventListener("click", async ()=>{
+      const msg = input.value.trim();
+      if(!msg) return;
+      addBubble(msg,"me");
+      input.value="";
+      try {
+        const res = await fetch(TALK_ENDPOINT,{method:"POST",body:JSON.stringify({msg})});
+        const data = await res.json();
+        addBubble(data.reply || "…","ai");
+      } catch(e){ addBubble("エラー","ai"); }
+    });
+  </script>
 </body>
 </html>
