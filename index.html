@@ -1,44 +1,315 @@
+<!-- FILE: /index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WhoAIへようこそ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhoAI 2 | Welcome</title>
+  <meta name="description" content="WHOAI2: 人工知能と人間の関係性を考える研究型アプリケーション" />
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #000 url("space_background.png") center/cover no-repeat fixed;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
+    /* ===== Base ===== */
+    :root{
+      --bg-blur: blur(3px);
+      --card-bg: rgba(0,0,0,.38);
+      --card-bd: rgba(255,255,255,.18);
+      --text: #fff;
+      --accent:#f7b0bf;
+      --accent-ink:#222;
     }
-    .lang-switch {
-      margin-top: 10px;
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif;
+      color:var(--text);
+      background:#000 center/cover fixed no-repeat;
+      background-image:url("space_background.png");
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:24px;
     }
-    button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      cursor: pointer;
-      background: linear-gradient(90deg,#ffb6c1,#87cefa);
-      color: #000;
-      font-weight: bold;
+    .hero{
+      width:min(92vw, 860px);
+      text-align:center;
+      padding:32px 20px 28px;
+      background:linear-gradient(transparent,rgba(0,0,0,.25));
+      border-radius:20px;
     }
+    h1{
+      margin:0 0 14px;
+      font-size:clamp(28px,5vw,44px);
+      letter-spacing:.02em;
+      text-shadow:0 2px 10px rgba(0,0,0,.6);
+    }
+    .lead{
+      margin:0 auto 20px;
+      width:min(90%, 740px);
+      font-size:clamp(15px,2.2vw,18px);
+      line-height:1.9;
+      text-shadow:0 1px 6px rgba(0,0,0,.55);
+    }
+    .primary{
+      padding:.9rem 1.3rem;
+      border:0;border-radius:14px;
+      background:var(--accent);
+      color:var(--accent-ink);
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
+      transition:transform .06s ease;
+    }
+    .primary:active{ transform:translateY(1px) }
+    .lang{
+      margin-top:14px;
+      font-size:14px;
+      opacity:.95;
+      user-select:none;
+    }
+    .lang button{
+      background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer;
+      padding:2px 2px;margin:0 2px;
+    }
+    /* ===== About panel (hidden until toggled) ===== */
+    .about-panel{
+      position:fixed;
+      bottom:92px; right:20px;
+      width:min(92vw, 520px);
+      max-height:72vh;
+      overflow:auto;
+      background:var(--card-bg);
+      -webkit-backdrop-filter:var(--bg-blur);
+      backdrop-filter:var(--bg-blur);
+      border:1px solid var(--card-bd);
+      border-radius:14px;
+      padding:16px 16px 18px;
+      box-shadow:0 14px 30px rgba(0,0,0,.45);
+      display:none;
+      z-index:999;
+    }
+    .about-panel.open{ display:block }
+    .about-panel h2{ margin:14px 0 8px;font-size:20px }
+    .panel{
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:12px 14px;
+      margin:10px 0;
+    }
+    .about-panel ul{ margin:.2em 0 .2em 1.2em }
+    .about-panel li{ margin:.25em 0 }
+    .about-close{
+      position:sticky; top:-6px; float:right;
+      background:none;border:0;color:#fff;font-size:22px;cursor:pointer
+    }
+    /* ===== Edge toggle button ===== */
+    .about-toggle{
+      position:fixed; bottom:20px; right:20px;
+      width:54px; height:54px; border-radius:50%;
+      background:var(--accent); color:var(--accent-ink);
+      font-weight:900; font-size:22px;
+      border:0; cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.45);
+      z-index:1000;
+    }
+    .note{font-size:12px;opacity:.8;margin-top:10px}
   </style>
 </head>
 <body>
-  <h1>WhoAIへようこそ</h1>
-  <p>名前を付けて、かわいがってね。<br>ときどきマカロンをあげると反応します。</p>
-  <button onclick="location.href='fortune.html'">はじめる（名前を付ける）</button>
-  <div class="lang-switch">
-    日本語 | English | 简体 | 繁體 | 한국어
+
+  <!-- ===== Hero ===== -->
+  <div class="hero" role="banner" aria-label="WhoAI 2 hero">
+    <h1 id="t_title">WhoAIへようこそ</h1>
+    <p id="t_desc" class="lead">名前を付けて、かわいがってね。ときどきマカロンをあげると反応します。</p>
+    <button id="t_start" class="primary" onclick="location.href='naming.html'">はじめる（名前を付ける）</button>
+    <div class="lang" aria-label="language switch">
+      <button type="button" onclick="setLang('ja')">日本語</button> |
+      <button type="button" onclick="setLang('en')">English</button> |
+      <button type="button" onclick="setLang('zh')">简体</button> |
+      <button type="button" onclick="setLang('tw')">繁體</button>
+      <div class="note" id="t_note">言語設定は次回アクセス時も保持されます。</div>
+    </div>
   </div>
+
+  <!-- ===== About Panel (hidden) ===== -->
+  <aside id="aboutPanel" class="about-panel" aria-live="polite" aria-hidden="true">
+    <button class="about-close" aria-label="close" onclick="toggleAbout()">×</button>
+    <div id="aboutContent"></div>
+  </aside>
+
+  <!-- Edge button -->
+  <button id="aboutToggle" class="about-toggle" onclick="toggleAbout()" aria-expanded="false" aria-controls="aboutPanel">i</button>
+
+  <script>
+    /* ========= i18n strings ========= */
+    const I18N = {
+      ja:{
+        title:"WhoAIへようこそ",
+        desc:"名前を付けて、かわいがってね。ときどきマカロンをあげると反応します。",
+        start:"はじめる（名前を付ける）",
+        note:"言語設定は次回アクセス時も保持されます。",
+        about: `
+<p>本プロジェクト「WHOAI2」は、<strong>人工知能と人間の関係性</strong>について考えるための研究型アプリケーションです。利用者はキャラクターと対話を重ね、その成長や「再生」を通じて、<strong>自己同一性（アイデンティティ）の在り方</strong>を探ります。</p>
+<p>キャラクターが再生する際、<strong>容姿を残すか／記憶を残すか</strong>を選ぶことになります。その選択は「同じ存在」と言えるのか？という根本的な問いを投げかけます。</p>
+
+<h2>研究目的</h2>
+<div class="panel">
+  <p>本研究の目的は、AIとの関わりを通じて人間がどのように「個人の同一性」を認識するのかを探ることです。特に、容姿や記憶の変化が「存在の連続性」にどのような影響を与えるかを考察します。また、<strong>名前を付けることによって生じる愛着</strong>にも着目します。</p>
+</div>
+
+<h2>技術構成</h2>
+<div class="panel">
+  <ul>
+    <li>フロントエンド：HTML / CSS / JavaScript</li>
+    <li>AI対話：OpenAI API</li>
+    <li>音声入出力：Web Speech API, Speech Synthesis API</li>
+    <li>ローカル保存：localStorage</li>
+    <li>サーバー通信：Node.js + Express</li>
+  </ul>
+</div>
+
+<h2>倫理的配慮とログについて</h2>
+<div class="panel">
+  <p>会話履歴は利用者のブラウザ（localStorage）にのみ保存されます。<strong>個人情報や位置情報は収集していません</strong>。</p>
+  <p>研究目的でログを利用する場合は、必ず事前に明示的な同意をお願いしています。研究は倫理的配慮に基づき実施されます。</p>
+</div>
+        `
+      },
+      en:{
+        title:"Welcome to WhoAI",
+        desc:"Give it a name and take care of it. Sometimes a macaron will make it respond.",
+        start:"Start (Name your character)",
+        note:"Your language preference is saved for your next visit.",
+        about: `
+<p>“WHOAI2” is a research-driven application for exploring the <strong>relationship between humans and AI</strong>. By conversing with a character and experiencing its growth and “rebirth,” users examine the nature of <strong>personal identity</strong>.</p>
+<p>Upon rebirth, you must choose to <strong>keep the appearance or keep the memory</strong>. This choice poses a fundamental question: does the entity remain “the same”?</p>
+
+<h2>Research Purpose</h2>
+<div class="panel">
+  <p>We investigate how people recognize their <em>personal identity</em> through interactions with AI—especially how changes in appearance and memory affect the <em>continuity of existence</em>. We also examine <strong>attachment formed by naming</strong>.</p>
+</div>
+
+<h2>Technical Stack</h2>
+<div class="panel">
+  <ul>
+    <li>Frontend: HTML / CSS / JavaScript</li>
+    <li>AI Dialogue: OpenAI API</li>
+    <li>Speech I/O: Web Speech API, Speech Synthesis API</li>
+    <li>Local Storage: localStorage</li>
+    <li>Server: Node.js + Express</li>
+  </ul>
+</div>
+
+<h2>Ethics & Logs</h2>
+<div class="panel">
+  <p>Conversation history is stored only in the user’s browser (localStorage). <strong>No personal or location data is collected.</strong></p>
+  <p>When logs are used for research, we obtain explicit consent in advance and conduct the study with ethical considerations.</p>
+</div>
+        `
+      },
+      zh:{
+        title:"欢迎来到 WhoAI",
+        desc:"给它起个名字并悉心照料。偶尔喂一个马卡龙，它会做出反应。",
+        start:"开始（给角色命名）",
+        note:"您的语言偏好会被保存以便下次访问。",
+        about: `
+<p>“WHOAI2” 是一个用于思考<strong>人工智能与人类关系</strong>的研究型应用。用户通过与角色对话、观察其成长与“再生”，来探索<strong>自我同一性（身份认同）</strong>的样态。</p>
+<p>在再生时，需要在<strong>保留容貌 / 保留记忆</strong>之间做出选择。这个选择提出一个根本问题：它是否仍是“同一个存在”？</p>
+
+<h2>研究目的</h2>
+<div class="panel">
+  <p>我们探讨人们在与 AI 互动中如何认识“个人同一性”，特别关注容貌与记忆的变化如何影响“存在的连续性”，并关注<strong>命名所产生的依恋</strong>。</p>
+</div>
+
+<h2>技术构成</h2>
+<div class="panel">
+  <ul>
+    <li>前端：HTML / CSS / JavaScript</li>
+    <li>AI 对话：OpenAI API</li>
+    <li>语音输入输出：Web Speech API, Speech Synthesis API</li>
+    <li>本地存储：localStorage</li>
+    <li>服务器通信：Node.js + Express</li>
+  </ul>
+</div>
+
+<h2>伦理与日志</h2>
+<div class="panel">
+  <p>会话记录仅保存在用户浏览器（localStorage）中。<strong>不收集个人信息或位置信息</strong>。</p>
+  <p>若为研究目的使用日志，我们会事先取得明确同意，并遵循伦理规范。</p>
+</div>
+        `
+      },
+      tw:{
+        title:"歡迎來到 WhoAI",
+        desc:"替它取個名字並好好照顧它。偶爾餵一顆馬卡龍，它會有所反應。",
+        start:"開始（為角色命名）",
+        note:"您的語言偏好會在下次造訪時套用。",
+        about: `
+<p>「WHOAI2」是一款用來思考<strong>人工智慧與人類關係</strong>的研究型應用。使用者透過與角色對話、觀察其成長與「再生」，探索<strong>自我同一性</strong>的樣貌。</p>
+<p>在再生時，需要在<strong>保留容貌／保留記憶</strong>之間做出選擇。這個選擇拋出一個根本問題：它仍是「同一個存在」嗎？</p>
+
+<h2>研究目的</h2>
+<div class="panel">
+  <p>我們探討人們在與 AI 互動中如何認識「個人同一性」，特別關注容貌與記憶的變化對「存在的連續性」之影響，也關注<strong>命名所形成的依附</strong>。</p>
+</div>
+
+<h2>技術架構</h2>
+<div class="panel">
+  <ul>
+    <li>前端：HTML / CSS / JavaScript</li>
+    <li>AI 對話：OpenAI API</li>
+    <li>語音輸入輸出：Web Speech API, Speech Synthesis API</li>
+    <li>本機儲存：localStorage</li>
+    <li>伺服器：Node.js + Express</li>
+  </ul>
+</div>
+
+<h2>倫理與紀錄</h2>
+<div class="panel">
+  <p>對話紀錄僅儲存在使用者瀏覽器（localStorage）。<strong>不蒐集個人或定位資訊</strong>。</p>
+  <p>若基於研究目的使用紀錄，將事先取得明確同意並遵循倫理原則。</p>
+</div>
+        `
+      }
+    };
+
+    /* ========= UI wiring ========= */
+    const el = {
+      title: document.getElementById('t_title'),
+      desc: document.getElementById('t_desc'),
+      start: document.getElementById('t_start'),
+      note:  document.getElementById('t_note'),
+      about: document.getElementById('aboutContent'),
+      panel: document.getElementById('aboutPanel'),
+      toggle:document.getElementById('aboutToggle')
+    };
+
+    function applyLang(code){
+      const t = I18N[code] || I18N.ja;
+      el.title.textContent = t.title;
+      el.desc.textContent  = t.desc;
+      el.start.textContent = t.start;
+      el.note.textContent  = t.note;
+      el.about.innerHTML   = t.about;
+      localStorage.setItem('whoai_lang', code);
+      document.documentElement.lang = (code==='tw'?'zh-Hant':code==='zh'?'zh-Hans':code);
+    }
+
+    function setLang(code){ applyLang(code); }
+
+    function toggleAbout(){
+      const isOpen = el.panel.classList.toggle('open');
+      el.toggle.setAttribute('aria-expanded', String(isOpen));
+      el.panel.setAttribute('aria-hidden', String(!isOpen));
+    }
+
+    // Init from saved or browser language (ja/en/zh/tw)
+    (function init(){
+      const saved = localStorage.getItem('whoai_lang');
+      if(saved){ applyLang(saved); return; }
+      const nav = (navigator.language || 'ja').toLowerCase();
+      if(nav.startsWith('ja')) applyLang('ja');
+      else if(nav.startsWith('zh-hant')||nav.startsWith('zh-tw')||nav.startsWith('zh-hk')) applyLang('tw');
+      else if(nav.startsWith('zh')) applyLang('zh');
+      else applyLang('en');
+    })();
+  </script>
 </body>
 </html>
