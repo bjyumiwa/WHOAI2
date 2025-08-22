@@ -6,49 +6,43 @@
 <title>WhoAI | 観察（全画面）</title>
 <meta name="color-scheme" content="dark light" />
 <style>
-  /* 画面全域を使う。背景は body だけ（黒い幕なし） */
   html,body{height:100%;margin:0;overflow:hidden}
   body{
     position:relative;
     font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
     background:#000 url("space_background.png") center/cover fixed no-repeat;
   }
+  .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;z-index:30}
+  .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px}
+  .guide{position:fixed;left:12px;top:12px;z-index:30;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:10px;font-size:12px;opacity:.95}
 
-  /* 上ラベルとガイドは固定配置 */
-  .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);
-         display:flex;gap:8px;flex-wrap:wrap;z-index:30}
-  .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
-        border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px}
-  .guide{position:fixed;left:12px;top:12px;z-index:30;
-         background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);
-         padding:6px 10px;border-radius:10px;font-size:12px;opacity:.95}
-
-  /* キャラ（全画面回遊） */
   #charWrap{
-    position:absolute; left:50%; top:60%;
-    transform:translate(-50%,-50%); z-index:10;
-    transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out;
-    will-change:left, top;
+    position:absolute; left:50%; top:60%; transform:translate(-50%,-50%); z-index:10;
+    transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out; will-change:left, top;
   }
   #char{
     width: clamp(90px, 22vw, 200px); height:auto; object-fit:contain;
-    filter: drop-shadow(0 8px 22px rgba(0,0,0,.55));
-    animation:bob 7s ease-in-out infinite;
+    filter: drop-shadow(0 8px 22px rgba(0,0,0,.55)); animation:bob 7s ease-in-out infinite;
   }
   @keyframes bob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
   .wiggle{animation:wiggle .55s ease}
-  @keyframes wiggle{0%{transform:rotate(0) scale(1)}30%{transform:rotate(10deg) scale(1.04)}60%{transform:rotate(-8deg) scale(1.02)}100%{transform:rotate(0) scale(1)}}
+  @keyframes wiggle{0%{transform:rotate(0) scale(1)}30%{transform:rotate(8deg) scale(1.03)}60%{transform:rotate(-6deg) scale(1.01)}100%{transform:rotate(0) scale(1)}}
   .hop{animation:hop .5s ease}
-  @keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-16px)}100%{transform:translateY(0)}}
+  @keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+  .sway{animation:sway .8s ease}
+  @keyframes sway{0%{transform:rotate(0)}25%{transform:rotate(6deg)}50%{transform:rotate(-6deg)}75%{transform:rotate(4deg)}100%{transform:rotate(0)}}
 
-  /* クリックできる名前（1つだけ） */
+  /* 横書き固定の名前（クリック用は1つだけ） */
   .nameWrap{position:absolute;opacity:0;transition:opacity .35s ease;pointer-events:none;z-index:20}
   .nameWrap.show{opacity:1;pointer-events:auto}
   .nameHit{position:relative;display:inline-block;padding:18px 26px;background:transparent;border:none;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
-  #nameText{position:absolute;left:0;top:0;transform:translate(18px,8px);font-weight:900;
-            font-size:clamp(18px,5vw,28px);text-shadow:0 4px 16px rgba(0,0,0,.45);user-select:none;pointer-events:none}
+  #nameText{
+    position:absolute;left:0;top:0;transform:translate(18px,8px);
+    font-weight:900;font-size:clamp(18px,5vw,28px);text-shadow:0 4px 16px rgba(0,0,0,.45);
+    user-select:none;pointer-events:none;
+    writing-mode: horizontal-tb; text-orientation: mixed; white-space: nowrap; direction:ltr;
+  }
 
-  /* 元気ワード（出たり消えたり） */
   .cheer{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);
@@ -58,9 +52,7 @@
   }
   .cheer.show{opacity:1}
 
-  /* 下ボタン固定 */
-  .controls{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);
-            display:flex;gap:10px;flex-wrap:wrap;z-index:30}
+  .controls{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:10px;flex-wrap:wrap;z-index:30}
   .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800;background:#ffd1ec;color:#222}
   .btn[disabled]{opacity:.5;cursor:not-allowed}
   .btn-ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}
@@ -76,16 +68,13 @@
     <span class="chip">pts: <span id="pts">0</span> / 20</span>
   </div>
 
-  <!-- 全画面を回遊するキャラ -->
   <div id="charWrap"><img id="char" alt="キャラクター"></div>
 
-  <!-- クリックできる名前（これだけ） -->
   <div id="nameWrap" class="nameWrap">
     <div id="nameHit" class="nameHit" role="button" aria-label="名前をクリックでポイント"></div>
     <div id="nameText">-</div>
   </div>
 
-  <!-- 元気ワード -->
   <div id="cheer" class="cheer">がんばったね！</div>
 
   <div class="controls">
@@ -95,64 +84,48 @@
   </div>
 
 <script>
-/* ===== 状態キー ===== */
 const K={name:"whoai_name",color:"macaronColor",color2:"whoai_color",pts:"whoai_points"};
 const getName =()=>localStorage.getItem(K.name)||"キャラ";
 const getColor=()=> (localStorage.getItem(K.color)||localStorage.getItem(K.color2)||"pink").toLowerCase();
 const getPts  =()=> parseInt(localStorage.getItem(K.pts)||"0",10);
 const setPts  =(n)=> localStorage.setItem(K.pts,String(n));
 
-/* ===== 画像フォールバック ===== */
 function loadCharImage(imgEl,color){
-  const cand=[`${color}_open.png`,`${color}_closed.png`,`tane_${color}.png`,`tane.png`];
+  const cand=[`${color}_closed.png`,`${color}_open.png`,`tane_${color}.png`,`tane.png`];
   (function tryNext(i){ if(i>=cand.length){imgEl.alt="画像が見つかりません";return;}
     const p=cand[i], t=new Image(); t.onload=()=>imgEl.src=p; t.onerror=()=>tryNext(i+1); t.src=p; })(0);
 }
 
-/* ===== 乱数 ===== */
 const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
 
-/* ===== 全画面回遊 ===== */
 function targetPosition(){
   const w=innerWidth, h=innerHeight, m=6;
-  const cw=document.getElementById('charWrap').offsetWidth||160;
-  const ch=document.getElementById('charWrap').offsetHeight||160;
-  // 上(ラベル)と下(ボタン)のUIを少し避ける
+  const wrap=document.getElementById('charWrap');
+  const cw=wrap.offsetWidth||160, ch=wrap.offsetHeight||160;
   const topPad=50, bottomPad=70;
-  return {
-    x: rand(m, Math.max(m, w - cw - m)),
-    y: rand(topPad, Math.max(topPad, h - ch - bottomPad))
-  };
+  return { x: rand(m, Math.max(m, w - cw - m)), y: rand(topPad, Math.max(topPad, h - ch - bottomPad)) };
 }
 function roamCharacter(){
   const wrap=document.getElementById('charWrap');
   wrap.style.setProperty('--dur',(rand(22,52)/10)+'s');
-  const p=targetPosition();
-  wrap.style.left=p.x+'px';
-  wrap.style.top =p.y+'px';
+  const p=targetPosition(); wrap.style.left=p.x+'px'; wrap.style.top=p.y+'px';
 }
 
-/* ===== 名前をキャラの“反対側”に ===== */
 function placeNameAway(){
   const wrap=document.getElementById('nameWrap');
   const rect=document.getElementById('charWrap').getBoundingClientRect();
   const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
   const w=innerWidth, h=innerHeight;
-  const x = (cx<w/2)? rand(w*0.60,w*0.90) : rand(w*0.10,w*0.40);
-  const y = (cy<h/2)? rand(h*0.60,h*0.85) : rand(h*0.12,h*0.40);
+  const x=(cx<w/2)? rand(w*0.60,w*0.90) : rand(w*0.10,w*0.40);
+  const y=(cy<h/2)? rand(h*0.60,h*0.85) : rand(h*0.12,h*0.40);
   wrap.style.left=x+'px'; wrap.style.top=y+'px';
 }
 function cycleName(){
   const wrap=document.getElementById('nameWrap');
   wrap.classList.remove('show');
-  setTimeout(()=>{
-    placeNameAway();
-    wrap.classList.add('show');
-    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200));
-  }, rand(900,1500));
+  setTimeout(()=>{ placeNameAway(); wrap.classList.add('show'); setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200)); }, rand(900,1500));
 }
 
-/* ===== 元気ワード ===== */
 const CHEERS=[
  'だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','小さな一歩、えらい！',
  '深呼吸、いっかいね','きみのペースで進もう','ミスも進化のタネだよ',
@@ -169,7 +142,6 @@ function cycleCheer(){
   setTimeout(()=>el.classList.remove('show'), rand(1600,2400));
 }
 
-/* ===== ポイントUI ===== */
 const THRESHOLD=20;
 function refreshPtsUI(){
   const n=getPts(); document.getElementById('pts').textContent=String(n);
@@ -179,39 +151,68 @@ function refreshPtsUI(){
 }
 function resetPts(){ setPts(0); refreshPtsUI(); }
 
-/* ===== 名前クリック → ぴょこっ＋ナッジ ===== */
+/* クリックで：口パク優先／無ければ体ゆらし */
+let hasOpen=false, hasClosed=false, mouthReady=false;
+function probeMouth(color){
+  let checked=0;
+  ['open','closed'].forEach(kind=>{
+    const url=`${color}_${kind}.png`;
+    const img=new Image();
+    img.onload=()=>{ if(kind==='open') hasOpen=true; else hasClosed=true; if(++checked===2) mouthReady=true; };
+    img.onerror=()=>{ if(++checked===2) mouthReady=true; };
+    img.src=url;
+  });
+}
+function mouthOrSwayOnce(){
+  const img=document.getElementById('char');
+  // 口パクできる場合：closed→open→closed の順で素早く切替
+  if(hasOpen && hasClosed){
+    const color=getColor();
+    const closed=`${color}_closed.png`, open=`${color}_open.png`;
+    const seq=[open,closed,open,closed];
+    let i=0;
+    const tick=()=>{ if(i>=seq.length) return; img.src=seq[i++]; setTimeout(tick, 120); };
+    tick();
+  }else{
+    // 画像がない場合は体を揺らす
+    img.classList.remove('sway'); void img.offsetWidth; img.classList.add('sway');
+  }
+}
+
 function nudgeCharacter(){
   const ch=document.getElementById('char');
   const wrap=document.getElementById('charWrap');
+
+  // ぴょこっ
   ch.classList.remove('hop'); void ch.offsetWidth; ch.classList.add('hop');
-  ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle');
+
+  // 口パク or 体ゆらし
+  mouthOrSwayOnce();
+
+  // ちょい移動（±12〜28px）
   const r=wrap.getBoundingClientRect();
   const dx=(Math.random()<.5?-1:1)*rand(12,28);
   const dy=(Math.random()<.5?-1:1)*rand(12,28);
   const nx=Math.min(innerWidth - r.width - 6, Math.max(6, r.left + dx));
   const ny=Math.min(innerHeight- r.height- 6, Math.max(6, r.top  + dy));
   const prev=getComputedStyle(wrap).getPropertyValue('--dur');
-  wrap.style.setProperty('--dur','0.35s');
-  wrap.style.left=nx+'px'; wrap.style.top=ny+'px';
+  wrap.style.setProperty('--dur','0.35s'); wrap.style.left=nx+'px'; wrap.style.top=ny+'px';
   setTimeout(()=>wrap.style.setProperty('--dur', prev || '3s'), 380);
 }
 
-/* ===== 起動 ===== */
+/* 起動 */
 (function init(){
   const color=getColor(); document.getElementById('chipColor').textContent=color;
+  probeMouth(color);
   loadCharImage(document.getElementById('char'), color);
 
-  document.getElementById('nameText').textContent = getName();
-
-  document.getElementById('nameHit').onclick=()=>{
-    setPts(Math.min(getPts()+1, THRESHOLD)); refreshPtsUI(); nudgeCharacter();
-  };
+  document.getElementById('nameText').textContent=getName();
+  document.getElementById('nameHit').onclick=()=>{ setPts(Math.min(getPts()+1,THRESHOLD)); refreshPtsUI(); nudgeCharacter(); };
 
   refreshPtsUI();
   roamCharacter(); setInterval(roamCharacter, rand(2200,5200));
   cycleName();     setInterval(cycleName,   3200);
   setTimeout(cycleCheer, 800); setInterval(cycleCheer, 3600);
-
   addEventListener('resize', roamCharacter);
 })();
 </script>
