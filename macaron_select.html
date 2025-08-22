@@ -1,78 +1,46 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>2回目のマカロン選択</title>
-
-  <!-- 404回避用の最小favicon（ブラウザの自動リクエスト対策） -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%23f7b0bf'/%3E%3C/svg%3E">
-
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-      background:#000; /* ←CSSでは画像を読まない（404防止）。JSで存在確認後に適用 */
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px
-    }
-    h1{margin:0 0 6px;font-size:clamp(22px,5vw,40px)}
-    p{margin:0 0 8px}
-    .macaron-container{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-    .macaron-container button{
-      padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.45);
-      background:rgba(255,255,255,.06);color:#fff;cursor:pointer
-    }
-  </style>
-</head>
-<body>
+<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2回目のマカロン選択</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='8' fill='%23f7b0bf'/%3E%3C/svg%3E">
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+       background:#000 url("space_background.png") center/cover fixed no-repeat;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px}
+  h1{margin:0 0 4px;font-size:clamp(22px,5vw,40px)}
+  p{margin:0 0 10px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+  .m{width:96px;height:96px;border-radius:16px;border:1px solid rgba(255,255,255,.25);
+     background:rgba(0,0,0,.25);padding:8px;cursor:pointer}
+  .m img{width:100%;height:100%;object-fit:contain;display:block}
+</style>
+</head><body>
   <h1>2回目のマカロンを選んでね</h1>
   <p>同じ色を <strong>2回</strong> 選ぶと進化します！</p>
-
-  <div class="macaron-container">
-    <button onclick="chooseMacaron('pink',2)">ピンク</button>
-    <button onclick="chooseMacaron('blue',2)">ブルー</button>
-    <button onclick="chooseMacaron('green',2)">グリーン</button>
-    <button onclick="chooseMacaron('purple',2)">パープル</button>
+  <div class="row">
+    <button class="m" onclick="chooseMacaron('pink',2)"><img src="macaron_pink.png"   alt="ピンク"></button>
+    <button class="m" onclick="chooseMacaron('blue',2)"><img src="macaron_blue.png"   alt="ブルー"></button>
+    <button class="m" onclick="chooseMacaron('green',2)"><img src="macaron_green.png" alt="グリーン"></button>
+    <button class="m" onclick="chooseMacaron('purple',2)"><img src="macaron_purple.png" alt="パープル"></button>
   </div>
 
-  <script>
-    /* ===== 背景画像：存在する時だけ適用（404ログを出さない） ===== */
-    (function(){
-      const bg = "space_background.png";       // 同じフォルダにある想定。無ければ何もしない
-      const test = new Image();
-      test.onload  = () => { document.body.style.backgroundImage = `url('${bg}')`; document.body.style.backgroundSize="cover"; document.body.style.backgroundPosition="center"; };
-      test.onerror = () => { /* 背景は黒のまま */ };
-      test.src = bg;
-    })();
+<script>
+(function(){
+  const K={history:"whoai_history",color:"whoai_color",stage:"whoai_stage"};
+  const getHist=()=>JSON.parse(localStorage.getItem(K.history)||"[]");
+  const setHist=a=>localStorage.setItem(K.history,JSON.stringify(a));
+  const setStage=s=>localStorage.setItem(K.stage,s);
+  const setColor=c=>localStorage.setItem(K.color,c);
 
-    /* ===== 2回同色で進化：ローカルストレージ制御（埋め込み版） ===== */
-    (function(){
-      const K={history:"whoai_history",color:"whoai_color",stage:"whoai_stage"};
-
-      function getHist(){ try{return JSON.parse(localStorage.getItem(K.history)||"[]");}catch(e){return[];} }
-      function setHist(a){ localStorage.setItem(K.history, JSON.stringify(a)); }
-      function setStage(s){ localStorage.setItem(K.stage, s); }
-      function setColor(c){ localStorage.setItem(K.color, c); }
-
-      // onclick から呼ぶためにグローバルへ公開
-      window.chooseMacaron = function(color, pickNumber){
-        const hist = getHist();
-        setColor(color);
-
-        if (pickNumber === 1){
-          setHist([color]);
-          setStage("tane");
-          location.href = "whoai_talk.html"; // タネで会話へ
-          return;
-        }
-
-        // 2回目
-        hist.push(color); setHist(hist);
-        const evolved = (hist.length >= 2 && hist[0] === hist[1]);
-        setStage(evolved ? "evolved" : "tane");
-        location.href = evolved ? "evolution.html" : "whoai_talk.html";
-      };
-    })();
-  </script>
-</body>
-</html>
+  window.chooseMacaron=function(color,n){
+    const hist=getHist(); setColor(color);
+    if(n===1){ setHist([color]); setStage("tane"); location.href="whoai_talk.html"; return; }
+    // 2回目
+    hist.push(color); setHist(hist);
+    const evolved=(hist.length>=2 && hist[0]===hist[1]);
+    setStage(evolved?"evolved":"tane");
+    location.href=evolved?"evolution.html":"whoai_talk.html";
+  };
+})();
+</script>
+</body></html>
