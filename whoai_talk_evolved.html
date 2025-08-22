@@ -22,78 +22,48 @@
     border-radius:18px; overflow:hidden;
   }
 
-  /* ガイド */
   .guide{
     position:absolute; left:12px; top:12px;
     background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25);
     padding:6px 10px; border-radius:10px; font-size:12px; opacity:.95
   }
 
-  /* キャラ：ラップをXY移動、画像はwiggle回転 */
+  /* キャラ：ラッパーがXY移動、画像はwiggle回転 */
   #charWrap{
     position:absolute; left:50%; top:60%;
     transform:translate(-50%,-50%);
     transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out;
     will-change:left, top;
   }
-  #char{
-    width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))
-  }
-  .wiggle{ animation: wiggle .55s ease; }
+  #char{width:min(300px,62vw);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  .wiggle{ animation: wiggle .55s ease }
   @keyframes wiggle{
-    0%  { transform:rotate(0deg)   scale(1.00) }
-    30% { transform:rotate(10deg)  scale(1.04) }
-    60% { transform:rotate(-8deg)  scale(1.02) }
-    100%{ transform:rotate(0deg)   scale(1.00) }
+    0%{transform:rotate(0) scale(1)}
+    30%{transform:rotate(10deg) scale(1.04)}
+    60%{transform:rotate(-8deg) scale(1.02)}
+    100%{transform:rotate(0) scale(1)}
   }
 
   /* クリックしやすい “名前”（透明の大きい当たり判定） */
-  .floatWrap{
-    position:absolute; opacity:0; transition:opacity .35s ease, transform .18s ease;
-    pointer-events:none;
-  }
-  .floatWrap.show{opacity:1; pointer-events:auto;}
-  .hit{
-    position:relative; display:inline-block; padding:18px 26px;
-    background:transparent; border:none; outline:none; box-shadow:none;
-    -webkit-tap-highlight-color:transparent;
-  }
-  #floatName{
-    position:absolute; left:0; top:0; transform:translate(18px,12px);
-    font-weight:900; font-size:clamp(18px,5vw,28px);
-    text-shadow:0 4px 16px rgba(0,0,0,.45); user-select:none; pointer-events:none;
-  }
+  .floatWrap{position:absolute;opacity:0;transition:opacity .35s ease, transform .18s ease;pointer-events:none}
+  .floatWrap.show{opacity:1;pointer-events:auto}
+  .hit{position:relative;display:inline-block;padding:18px 26px;background:transparent;border:none;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
+  #floatName{position:absolute;left:0;top:0;transform:translate(18px,12px);font-weight:900;font-size:clamp(18px,5vw,28px);text-shadow:0 4px 16px rgba(0,0,0,.45);user-select:none;pointer-events:none}
 
   /* 名前の“エコー”たち（飾り） */
-  .nameEcho{
-    position:absolute; font-weight:800; opacity:.75; pointer-events:none;
-    font-size:clamp(12px,3.5vw,18px); text-shadow:0 4px 16px rgba(0,0,0,.35);
-    animation: floaty var(--dur,10s) ease-in-out infinite;
-  }
-  @keyframes floaty{
-    0%{ transform:translate(0,0); opacity:.8 }
-    50%{ transform:translate(10px,-14px); opacity:1 }
-    100%{ transform:translate(0,0); opacity:.8 }
-  }
+  .nameEcho{position:absolute;font-weight:800;opacity:.75;pointer-events:none;font-size:clamp(12px,3.5vw,18px);text-shadow:0 4px 16px rgba(0,0,0,.35);animation: floaty var(--dur,10s) ease-in-out infinite}
+  @keyframes floaty{0%{transform:translate(0,0);opacity:.8}50%{transform:translate(10px,-14px);opacity:1}100%{transform:translate(0,0);opacity:.8}}
 
   /* 短いセリフ（出て消える） */
-  .phrase{
-    position:absolute; opacity:0; transition:opacity .35s ease, transform .35s ease;
-    font-weight:600; font-size:clamp(14px,4.5vw,22px); text-shadow:0 4px 16px rgba(0,0,0,.45);
-    pointer-events:none;
-  }
+  .phrase{position:absolute;opacity:0;transition:opacity .35s ease, transform .35s ease;font-weight:600;font-size:clamp(14px,4.5vw,22px);text-shadow:0 4px 16px rgba(0,0,0,.45);pointer-events:none}
   .phrase.show{opacity:1}
 
-  /* 下部操作 */
   .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-  .btn{
-    padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:800;
-    background:#ffd1ec; color:#222;
-  }
-  .btn[disabled]{opacity:.5; cursor:not-allowed}
-  .btn-ghost{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25)}
+  .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800;background:#ffd1ec;color:#222}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}
   .pop{animation: pop .18s ease}
-  @keyframes pop{ 0%{transform:scale(1.02)} 100%{transform:scale(1)} }
+  @keyframes pop{0%{transform:scale(1.02)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -106,19 +76,17 @@
   <section class="stage" aria-label="観察シーン">
     <div class="guide">名前が出たらクリックしてね（+1pt）｜20ptで「マカロンを選ぶ」</div>
 
-    <!-- キャラ（ラッパーがXY移動） -->
+    <!-- キャラ（XY回遊） -->
     <div id="charWrap"><img id="char" alt="キャラクター"></div>
 
-    <!-- クリックしやすい名前（透明ヒット領域） -->
+    <!-- クリックしやすい名前 -->
     <div id="nameWrap" class="floatWrap">
       <div id="nameHit" class="hit" role="button" aria-label="名前をクリックでポイント"></div>
       <div id="floatName">-</div>
     </div>
 
-    <!-- 短いセリフ（1つずつ出て消える） -->
+    <!-- セリフ＆名前エコー -->
     <div id="phrase" class="phrase">……</div>
-
-    <!-- 名前エコーたち（飾り） -->
     <div id="echoWrap"></div>
   </section>
 
@@ -130,120 +98,112 @@
 
 <script>
 /* ===== ステート ===== */
-const K = {
-  name:"whoai_name", color:"macaronColor", color2:"whoai_color",
-  stage:"whoai_stage", pts:"whoai_points",
-  lastNamed:"whoai_last_named", lastColor:"whoai_last_color", lastStage:"whoai_last_stage"
-};
-const getName = ()=> localStorage.getItem(K.name) || "キャラ";
-const getColor= ()=> (localStorage.getItem(K.color) || localStorage.getItem(K.color2) || "pink").toLowerCase();
-const getStage= ()=> localStorage.getItem(K.stage) || "evolved";
-const getPts  = ()=> parseInt(localStorage.getItem(K.pts) || "0",10);
-const setPts  = (n)=> localStorage.setItem(K.pts, String(n));
+const K={name:"whoai_name",color:"macaronColor",color2:"whoai_color",stage:"whoai_stage",pts:"whoai_points",lastNamed:"whoai_last_named",lastColor:"whoai_last_color",lastStage:"whoai_last_stage"};
+const getName =()=>localStorage.getItem(K.name)||"キャラ";
+const getColor=()=> (localStorage.getItem(K.color)||localStorage.getItem(K.color2)||"pink").toLowerCase();
+const getStage=()=> localStorage.getItem(K.stage)||"evolved";
+const getPts  =()=> parseInt(localStorage.getItem(K.pts)||"0",10);
+const setPts  =(n)=> localStorage.setItem(K.pts,String(n));
 
-/* ===== “自然な”リセットロジック =====
-   - 名前が変わったらリセット
-   - 色が変わったらリセット
-   - 段階（tane/evolved）が変わったらリセット
-*/
+/* ===== “自然な”リセット（名前/色/段階の変更時） ===== */
 (function naturalReset(){
-  const nowName = getName();
-  const nowColor= getColor();
-  const nowStage= getStage();
-  const prevName = localStorage.getItem(K.lastNamed);
-  const prevColor= localStorage.getItem(K.lastColor);
-  const prevStage= localStorage.getItem(K.lastStage);
-  if (prevName !== nowName || prevColor !== nowColor || prevStage !== nowStage){
+  const nowName=getName(), nowColor=getColor(), nowStage=getStage();
+  const pN=localStorage.getItem(K.lastNamed), pC=localStorage.getItem(K.lastColor), pS=localStorage.getItem(K.lastStage);
+  if(pN!==nowName || pC!==nowColor || pS!==nowStage){
     setPts(0);
-    localStorage.setItem(K.lastNamed, nowName);
-    localStorage.setItem(K.lastColor, nowColor);
-    localStorage.setItem(K.lastStage, nowStage);
+    localStorage.setItem(K.lastNamed,nowName);
+    localStorage.setItem(K.lastColor,nowColor);
+    localStorage.setItem(K.lastStage,nowStage);
   }
 })();
 
 /* ===== 画像（フォールバック） ===== */
-function loadCharImage(imgEl, color){
-  const cand = [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`];
-  (function tryNext(i){
-    if(i>=cand.length){ imgEl.alt="画像が見つかりません"; return; }
-    const p=cand[i], t=new Image();
-    t.onload = ()=> imgEl.src=p;
-    t.onerror= ()=> tryNext(i+1);
-    t.src=p;
-  })(0);
+function loadCharImage(imgEl,color){
+  const cand=[`${color}_open.png`,`${color}_closed.png`,`pink_open.png`];
+  (function tryNext(i){ if(i>=cand.length){imgEl.alt="画像が見つかりません";return;}
+    const p=cand[i], t=new Image(); t.onload=()=>imgEl.src=p; t.onerror=()=>tryNext(i+1); t.src=p; })(0);
 }
 
 /* ===== ユーティリティ ===== */
-const rand = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
-function place(el, leftMin,leftMax, topMin,topMax){
-  el.style.left = rand(leftMin,leftMax) + '%';
-  el.style.top  = rand(topMin, topMax) + '%';
+const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+function place(el,lmin,lmax,tmin,tmax){ el.style.left=rand(lmin,lmax)+'%'; el.style.top=rand(tmin,tmax)+'%'; }
+
+/* ===== キャラ：ステージ内を広くXY移動 ===== */
+function roamCharacter(){
+  const wrap=document.getElementById('charWrap');
+  const dur=(rand(22,52)/10)+'s'; // 2.2〜5.2s
+  wrap.style.setProperty('--dur',dur);
+  // 端も含めて広めに回遊（安全マージン少し）
+  wrap.style.left=rand(8,92)+'%';
+  wrap.style.top =rand(18,86)+'%';
+}
+
+/* ===== 名前：キャラと重ならない“反対側”に出す ===== */
+function placeNameAwayFromChar(){
+  const wrap=document.getElementById('nameWrap');
+  const cWrap=document.getElementById('charWrap');
+  // 現在の%位置を取得
+  const l=parseFloat(getComputedStyle(cWrap).left);  // px
+  const t=parseFloat(getComputedStyle(cWrap).top);   // px
+  const stageRect=document.querySelector('.stage').getBoundingClientRect();
+  const cx = (l - stageRect.left) / stageRect.width * 100;
+  const cy = (t - stageRect.top)  / stageRect.height* 100;
+
+  // キャラのいる象限の“反対側レンジ”を選択
+  const leftRange = (cx < 50) ? [60, 88] : [10, 40];
+  const topRange  = (cy < 50) ? [60, 82] : [12, 34];
+
+  place(wrap, leftRange[0], leftRange[1], topRange[0], topRange[1]);
 }
 
 /* ===== 名前（出たり消えたり・クリックで+1pt & キャラwiggle） ===== */
 function cycleName(){
-  const wrap = document.getElementById('nameWrap');
+  const wrap=document.getElementById('nameWrap');
   wrap.classList.remove('show');
   setTimeout(()=>{
-    place(wrap, 8,32, 8,28);      // 左上〜中央に出現
+    placeNameAwayFromChar();   // ★重ならない配置
     wrap.classList.add('show');
-    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200)); // 1.8〜3.2秒表示
-  }, rand(900,1500));             // 1.0〜1.5秒休み
+    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200));
+  }, rand(900,1500));
 }
 
 /* ===== セリフ（短い固定フレーズのみ） ===== */
-const PHRASES = [
-  "ここにいるよ","すき","ふわ…","むに","zzz","やっほー","ただいま","こっち",
-  "ぱたぱた","hello","うとうと","みてる","だいじょうぶ","きら","ねぇ","すや…"
-];
+const PHRASES=["ここにいるよ","すき","ふわ…","むに","zzz","やっほー","ただいま","こっち","ぱたぱた","hello","うとうと","みてる","だいじょうぶ","きら","ねぇ","すや…"];
 function cyclePhrase(){
   const el=document.getElementById('phrase');
   el.classList.remove('show');
   setTimeout(()=>{
-    el.textContent = PHRASES[rand(0,PHRASES.length-1)];
-    place(el, 54,80, 24,46);                 // 右側あたり
-    el.style.transform = 'translateY(0)';
+    el.textContent=PHRASES[rand(0,PHRASES.length-1)];
+    // キャラの反対側寄りに出す（おおまかに重なり回避）
+    const cWrap=document.getElementById('charWrap');
+    const l=parseFloat(getComputedStyle(cWrap).left), t=parseFloat(getComputedStyle(cWrap).top);
+    const st=document.querySelector('.stage').getBoundingClientRect();
+    const cx=(l - st.left)/st.width*100, cy=(t - st.top)/st.height*100;
+    const lr=(cx<50)?[56,82]:[14,36];
+    const tr=(cy<50)?[60,82]:[18,40];
+    place(el, lr[0],lr[1], tr[0],tr[1]);
+    el.style.transform='translateY(0)';
     el.classList.add('show');
     setTimeout(()=>{ el.style.transform='translateY(-10px)'; }, 400);
     setTimeout(()=>{ el.classList.remove('show'); }, rand(2200,3400));
   }, rand(800,1600));
 }
 
-/* ===== 名前エコー（いろんな名前がふわふわ） ===== */
+/* ===== 名前エコー（飾り） ===== */
 function renderNameEchoes(base){
-  const variants = Array.from(new Set([
-    base, `${base}ちゃん`, `${base}さん`, `${base}*`, `.${base}`
-  ])).slice(0,5);
-  const wrap = document.getElementById('echoWrap');
-  wrap.innerHTML = "";
-  variants.forEach(v=>{
-    const d=document.createElement('div');
-    d.className='nameEcho';
-    d.textContent=v;
-    d.style.left = rand(6, 88) + '%';
-    d.style.top  = rand(18, 72) + '%';
-    d.style.setProperty('--dur', (9 + Math.random()*4).toFixed(1)+'s');
-    wrap.appendChild(d);
+  const vars=Array.from(new Set([base,`${base}ちゃん`,`${base}さん`,`${base}*`,`.${base}`])).slice(0,5);
+  const wrap=document.getElementById('echoWrap'); wrap.innerHTML="";
+  vars.forEach(v=>{
+    const d=document.createElement('div'); d.className='nameEcho'; d.textContent=v;
+    d.style.left=rand(6,92)+'%'; d.style.top=rand(18,86)+'%';
+    d.style.setProperty('--dur',(9+Math.random()*4).toFixed(1)+'s'); wrap.appendChild(d);
   });
-}
-
-/* ===== キャラ：ステージ内をランダムにXY移動 ===== */
-function roamCharacter(){
-  const wrap = document.getElementById('charWrap');
-  const dur = (rand(22, 50) / 10) + 's'; // 2.2〜5.0s
-  wrap.style.setProperty('--dur', dur);
-  // ステージ内の安全域（端に寄りすぎない）
-  const left = rand(10, 88);   // %
-  const top  = rand(22, 80);   // %
-  wrap.style.left = left + '%';
-  wrap.style.top  = top  + '%';
 }
 
 /* ===== ポイント & ボタン ===== */
 const THRESHOLD=20;
 function refreshPtsUI(){
-  const n=getPts();
-  document.getElementById('pts').textContent=String(n);
+  const n=getPts(); document.getElementById('pts').textContent=String(n);
   const btn=document.getElementById('btnMacaron');
   if(n>=THRESHOLD){ btn.disabled=false; btn.classList.add('pop'); setTimeout(()=>btn.classList.remove('pop'),220); }
   else{ btn.disabled=true; }
@@ -252,28 +212,24 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
 
 /* ===== 起動 ===== */
 (function init(){
-  const color=getColor();
-  document.getElementById('chipColor').textContent=color;
+  const color=getColor(); document.getElementById('chipColor').textContent=color;
   loadCharImage(document.getElementById('char'), color);
 
-  const name=getName();
-  document.getElementById('floatName').textContent=name;
+  const name=getName(); document.getElementById('floatName').textContent=name;
 
   // 名前クリックで +1 pt ＆ キャラwiggle
   document.getElementById('nameHit').onclick=()=>{
-    const n=Math.min(getPts()+1,THRESHOLD);
-    setPts(n); refreshPtsUI();
-    const ch=document.getElementById('char');
-    ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle');
+    const n=Math.min(getPts()+1,THRESHOLD); setPts(n); refreshPtsUI();
+    const ch=document.getElementById('char'); ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle');
   };
 
   renderNameEchoes(name);
   refreshPtsUI();
 
   // ループ開始
-  cycleName();   setInterval(cycleName,   3200);
-  cyclePhrase(); setInterval(cyclePhrase, 3600);
-  roamCharacter(); setInterval(roamCharacter, rand(2200, 5000)); // XYに回遊
+  roamCharacter(); setInterval(roamCharacter, rand(2200,5200));  // ★XY回遊
+  cycleName();     setInterval(cycleName,   3200);               // ★反対側に名前
+  cyclePhrase();   setInterval(cyclePhrase, 3600);
 })();
 </script>
 </body>
