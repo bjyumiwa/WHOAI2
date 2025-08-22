@@ -21,23 +21,39 @@
     background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.2);
     border-radius:18px; overflow:hidden;
   }
-  #char{position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
-        width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+
+  /* キャラ：クリック時にクルッと動く */
+  #char{
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))
+  }
+  .wiggle{ animation: wiggle .55s ease; }
+  @keyframes wiggle{
+    0%  { transform:translateX(-50%) rotate(0deg)   scale(1.00) }
+    30% { transform:translateX(-50%) rotate(10deg)  scale(1.04) }
+    60% { transform:translateX(-50%) rotate(-8deg)  scale(1.02) }
+    100%{ transform:translateX(-50%) rotate(0deg)   scale(1.00) }
+  }
 
   /* クリックしやすい “名前”（透明の大きい当たり判定） */
   .floatWrap{
     position:absolute; opacity:0; transition:opacity .35s ease, transform .18s ease;
-    pointer-events:none; /* 非表示時は拾わない */
+    pointer-events:none;
   }
   .floatWrap.show{opacity:1; pointer-events:auto;}
-  .hit{position:relative; display:inline-block; padding:14px 22px;} /* 透明のクリック領域 */
+  /* ← div に変更（ボタンの灰色枠を根絶） */
+  .hit{
+    position:relative; display:inline-block; padding:18px 26px;
+    background:transparent; border:none; outline:none; box-shadow:none;  /* 完全透明 */
+    -webkit-tap-highlight-color:transparent;
+  }
   #floatName{
-    position:absolute; left:0; top:0; transform:translate(14px,10px);
-    font-weight:900; font-size:clamp(18px,5vw,28px); cursor:pointer;
-    text-shadow:0 4px 16px rgba(0,0,0,.45); user-select:none; pointer-events:none; /* テキストは透過、イベントは .hit で拾う */
+    position:absolute; left:0; top:0; transform:translate(18px,12px);
+    font-weight:900; font-size:clamp(18px,5vw,28px);
+    text-shadow:0 4px 16px rgba(0,0,0,.45); user-select:none; pointer-events:none;
   }
 
-  /* ランダムに出る短いセリフ */
+  /* 短いセリフ（出て消える） */
   .phrase{
     position:absolute; opacity:0; transition:opacity .35s ease, transform .35s ease;
     font-weight:600; font-size:clamp(14px,4.5vw,22px); text-shadow:0 4px 16px rgba(0,0,0,.45);
@@ -45,7 +61,7 @@
   }
   .phrase.show{opacity:1}
 
-  /* 小さなささやき（飾り） */
+  /* 小さな囁き（飾り） */
   .whisp{position:absolute; font-size:12px; opacity:.85; pointer-events:none;
          animation: floaty 10s ease-in-out infinite;}
   @keyframes floaty{
@@ -76,9 +92,9 @@
   <section class="stage" aria-label="進化シーン">
     <img id="char" alt="キャラクター">
 
-    <!-- クリックしやすい名前：大きめの透明ボタン(.hit)の上に文字 -->
+    <!-- クリックしやすい名前（透明ヒット領域） -->
     <div id="nameWrap" class="floatWrap">
-      <button id="nameHit" class="hit" aria-label="名前をクリックでポイント"></button>
+      <div id="nameHit" class="hit" role="button" aria-label="名前をクリックでポイント"></div>
       <div id="floatName">-</div>
     </div>
 
@@ -122,23 +138,21 @@ function place(el, leftMin,leftMax, topMin,topMax){
   el.style.top  = rand(topMin, topMax) + '%';
 }
 
-/* ===== 名前：出たり消えたり（クリックしやすい） ===== */
+/* ===== 名前（出たり消えたり・クリックで+1pt & キャラwiggle） ===== */
 function cycleName(){
   const wrap = document.getElementById('nameWrap');
   wrap.classList.remove('show');
   setTimeout(()=>{
-    // 左上寄りに出現。ヒット領域が大きいのでクリックしやすい
-    place(wrap, 8,32, 8,28);
+    place(wrap, 8,32, 8,28);      // 左上〜中央に出現
     wrap.classList.add('show');
-    // 1.8〜3.2秒表示 → 1.0〜1.6秒休み
-    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200));
-  }, rand(1000,1600));
+    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200)); // 1.8〜3.2秒表示
+  }, rand(900,1500));             // 1.0〜1.5秒休み
 }
 
-/* ===== セリフ：短い固定フレーズから生成して出たり消えたり ===== */
+/* ===== セリフ（短い固定フレーズのみ） ===== */
 const PHRASES = [
-  "ここにいるよ","すき","きら","ふわ…","むに","zzz","おはよう","やっほー",
-  "ただいま","ねぇ","こっち","ぱたぱた","hello","うとうと","みてる","だいじょうぶ"
+  "ここにいるよ","すき","ふわ…","むに","zzz","やっほー","ただいま","こっち",
+  "ぱたぱた","hello","うとうと","みてる","だいじょうぶ","きら","ねぇ","すや…"
 ];
 function cyclePhrase(){
   const el=document.getElementById('phrase');
@@ -148,7 +162,6 @@ function cyclePhrase(){
     place(el, 54,80, 24,46);                 // 右側あたり
     el.style.transform = 'translateY(0)';
     el.classList.add('show');
-    // 少し浮かせてから消える
     setTimeout(()=>{ el.style.transform='translateY(-10px)'; }, 400);
     setTimeout(()=>{ el.classList.remove('show'); }, rand(2200,3400));
   }, rand(800,1600));
@@ -190,10 +203,12 @@ function resetPts(){ setPts(0); refreshPtsUI(); }
   // 名前テキスト
   document.getElementById('floatName').textContent=getName();
 
-  // クリックで +1 pt（1クリックでOK／最大20）
+  // クリックで +1 pt ＆ キャラをwiggle
   document.getElementById('nameHit').onclick=()=>{
     const n=Math.min(getPts()+1,THRESHOLD);
     setPts(n); refreshPtsUI();
+    const ch=document.getElementById('char');
+    ch.classList.remove('wiggle'); void ch.offsetWidth; ch.classList.add('wiggle'); // リスタート
   };
 
   renderWhisps();
