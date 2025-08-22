@@ -36,58 +36,11 @@
   input[type=text]{
     flex:1;min-width:220px;padding:12px 14px;border:none;border-radius:12px;background:rgba(255,255,255,.95);color:#111
   }
-  .btn{
-    padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800
-  }
+  .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800}
   .btn-primary{background:#f7b0bf;color:#222}
   .btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
-
-  /* —— 観察シーン —— */
-  #observeScene{display:none;width:min(980px,96vw)}
-  .stage{
-    position:relative;min-height:56vh;border-radius:18px;padding:18px;
-    background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2);
-    overflow:hidden
-  }
-  #obsChar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:min(260px,60vw);height:auto}
-  .floatName{
-    position:absolute;left:10%;top:12%;
-    font-size:clamp(18px,5vw,28px);font-weight:800;text-shadow:0 3px 12px rgba(0,0,0,.5);
-    animation: drift 8s ease-in-out infinite alternate; cursor: pointer;
-  }
-  @keyframes drift{
-    from{ transform:translate(0,0) rotate(-2deg);}
-    to  { transform:translate(24px,-18px) rotate(3deg);}
-  }
-  .chip{
-    position:absolute;right:12px;top:12px;background:rgba(0,0,0,.45);
-    border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:999px;font-size:12px
-  }
-  .tw{
-    position:absolute;left:6%;top:28%;font-size:14px;opacity:.9;
-    animation: floaty 10s ease-in-out infinite;white-space:nowrap;pointer-events:none
-  }
-  .tw:nth-child(2){ left:70%; top:22%; animation-duration:12s}
-  .tw:nth-child(3){ left:18%; top:48%; animation-duration:11s}
-  .tw:nth-child(4){ left:62%; top:58%; animation-duration:9.5s}
-  @keyframes floaty{
-    0%{ transform:translateY(0) translateX(0); opacity:.8}
-    50%{ transform:translateY(-16px) translateX(6px); opacity:1}
-    100%{ transform:translateY(0) translateX(0); opacity:.8}
-  }
-
-  /* ごほうび：マカロントレイ */
-  .tray{
-    display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
-    background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:8px 10px
-  }
-  .tray.open{display:flex;gap:8px;align-items:center}
-  .tray img{width:54px;height:54px;transition:transform .15s ease}
-  .tray img:active{transform:scale(.94)}
-  .note{font-size:12px;opacity:.9}
-
-  /* 戻る／会話へ */
-  .nav{display:flex;gap:8px;justify-content:center;margin-top:10px}
+  .nav{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .badge{font-size:12px;opacity:.9}
 </style>
 </head>
 <body>
@@ -95,59 +48,102 @@
   <p>同じ色を<strong>2回</strong>選ぶと進化します。選んだら「観察」か「会話」を選択できます。</p>
 
   <div class="row" id="selectRow">
-    <button class="m" onclick="onPick('pink')"><img src="macaron_pink.png" alt="ピンク"></button>
-    <button class="m" onclick="onPick('blue')"><img src="macaron_blue.png" alt="ブルー"></button>
-    <button class="m" onclick="onPick('green')"><img src="macaron_green.png" alt="グリーン"></button>
-    <button class="m" onclick="onPick('purple')"><img src="macaron_purple.png" alt="パープル"></button>
+    <button class="m" data-color="pink"><img src="macaron_pink.png" alt="ピンク"></button>
+    <button class="m" data-color="blue"><img src="macaron_blue.png" alt="ブルー"></button>
+    <button class="m" data-color="green"><img src="macaron_green.png" alt="グリーン"></button>
+    <button class="m" data-color="purple"><img src="macaron_purple.png" alt="パープル"></button>
   </div>
 
   <!-- プリシーン：キャラ登場＆名前入力＆モード選択 -->
-  <div class="overlay" id="preScene">
+  <div class="overlay" id="preScene" aria-modal="true" role="dialog">
     <div class="sheet">
       <div class="hero">
         <img id="preImg" alt="キャラ">
-        <div><small id="preStageTag">-</small></div>
+        <div class="badge" id="preStageTag">-</div>
       </div>
       <div class="controls">
         <input id="nameInput" type="text" placeholder="なまえ" />
-        <button class="btn btn-ghost" onclick="startMode('observe')">観察する</button>
-        <button class="btn btn-primary" onclick="startMode('talk')">会話する</button>
+        <button class="btn btn-ghost" id="btnObserve">観察する</button>
+        <button class="btn btn-primary" id="btnTalk">会話する</button>
       </div>
-      <div class="nav" style="margin-top:8px">
-        <button class="btn btn-ghost" onclick="closePre()">戻る</button>
+      <div class="nav">
+        <button class="btn btn-ghost" id="btnBack">選び直す</button>
       </div>
     </div>
   </div>
 
-  <!-- 観察シーン -->
-  <section id="observeScene" aria-label="観察シーン">
-    <div class="stage">
-      <img id="obsChar" alt="キャラ">
-      <div class="chip">pts: <span id="pts">0</span> / 20</div>
-      <div id="floatingName" class="floatName" title="ダブルクリックでポイントアップ">-</div>
-      <div id="twWrap">
-        <!-- ふわふわ つぶやきは JS で生成 -->
-      </div>
-      <div id="tray" class="tray">
-        <span class="note">ごほうび！</span>
-        <img src="macaron_pink.png"   alt="pink">
-        <img src="macaron_blue.png"   alt="blue">
-        <img src="macaron_green.png"  alt="green">
-        <img src="macaron_purple.png" alt="purple">
-      </div>
-    </div>
-    <div class="nav">
-      <button class="btn btn-ghost" onclick="backToSelect()">選び直す</button>
-      <button class="btn btn-primary" onclick="location.href='whoai_talk.html'">このキャラで会話へ</button>
-    </div>
-  </section>
-
 <script>
-/* ========= ステート／ユーティリティ ========= */
+/* ========= ステート ========= */
 const K = {
-  history: "whoai_history",     // ["pink","pink"] など
-  color:   "whoai_color",       // 互換用
-  color2:  "macaronColor",      // whoai_talk.html 互換
-  stage:   "whoai_stage",       // "tane" | "evolved"
-  name:    "whoai_name",
-  pts:
+  history:"whoai_history", color:"whoai_color", color2:"macaronColor",
+  stage:"whoai_stage", name:"whoai_name"
+};
+const getHist=()=>{ try{return JSON.parse(localStorage.getItem(K.history)||"[]");}catch{return[];} };
+const setHist=a=>localStorage.setItem(K.history, JSON.stringify(a));
+const setStage=s=>localStorage.setItem(K.stage, s);
+const setColor=c=>{ localStorage.setItem(K.color,c); localStorage.setItem(K.color2,c); };
+const getColor=()=>localStorage.getItem(K.color2)||localStorage.getItem(K.color)||"pink";
+const getName =()=>localStorage.getItem(K.name)||"キャラ";
+const setName =v=>localStorage.setItem(K.name, v);
+
+/* ========= 画像読込（フォールバック付） ========= */
+function loadCharImage(imgEl, stage, color){
+  const cand = (stage==="evolved")
+    ? [`${color}_open.png`,`${color}_closed.png`,`pink_open.png`]
+    : [`tane_${color}.png`,`tane_pink.png`,`pink_closed.png`];
+  (function tryNext(i){
+    if(i>=cand.length){ imgEl.alt="画像が見つかりません"; return; }
+    const p=cand[i], t=new Image();
+    t.onload = ()=> imgEl.src=p;
+    t.onerror= ()=> tryNext(i+1);
+    t.src=p;
+  })(0);
+}
+
+/* ========= クリックで処理開始 ========= */
+let pickedColor=null, decidedStage="tane";
+document.getElementById('selectRow').addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-color]');
+  if(!btn) return;
+  const color = btn.getAttribute('data-color');
+  pickedColor = color;
+
+  // 履歴・進化判定（初回対策込み）
+  const hist = getHist();
+  let newHist;
+  if(hist.length===0){ newHist=[color]; decidedStage="tane"; }
+  else{ newHist=[hist[0], color]; decidedStage = (hist[0]===color) ? "evolved" : "tane"; }
+  setHist(newHist);
+  setColor(color);
+  setStage(decidedStage);
+
+  // プリシーンを開く
+  const pre = document.getElementById('preScene');
+  document.getElementById('nameInput').value = getName();
+  document.getElementById('preStageTag').textContent =
+    (decidedStage==="evolved") ? `進化（${color}）` : `タネ（${color}）`;
+  loadCharImage(document.getElementById('preImg'), decidedStage, color);
+  pre.classList.add('open');
+});
+
+/* ========= ボタン操作 ========= */
+document.getElementById('btnBack').onclick = ()=>{
+  document.getElementById('preScene').classList.remove('open');
+};
+
+document.getElementById('btnObserve').onclick = ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(name) setName(name);
+  // 観察シーンへ
+  location.href = 'whoai_talk_evolved.html';
+};
+
+document.getElementById('btnTalk').onclick = ()=>{
+  const name = document.getElementById('nameInput').value.trim();
+  if(name) setName(name);
+  // 会話へ
+  location.href = 'whoai_talk.html';
+};
+</script>
+</body>
+</html>
