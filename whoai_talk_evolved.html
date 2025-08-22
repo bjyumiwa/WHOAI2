@@ -1,151 +1,208 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>会話 | WhoAI（進化後）</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    html,body{height:100%;margin:0;overflow:hidden}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-      background:#000 url("space_background.png") center/cover fixed no-repeat;
-      display:flex;align-items:center;justify-content:center;padding:12px;
-    }
-    .stage{
-      position:relative;width:min(92vw,820px);aspect-ratio:1/0.75;overflow:hidden;
-      border-radius:24px;background:rgba(0,0,0,.22);
-      backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-      border:1px solid rgba(255,255,255,.18);
-      box-shadow:inset 0 10px 28px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
-    }
-    .charWrap{
-      position:absolute;left:50%;top:70%;
-      transform:translate(-50%,-50%);
-      z-index:2;animation:roamPath 36s ease-in-out 1.6s infinite alternate;
-    }
-    .charImg{
-      width:min(22vw,220px);max-width:40vmin;object-fit:contain;
-      filter:drop-shadow(0 10px 22px rgba(0,0,0,.45));
-      animation:bob 7s ease-in-out infinite;
-    }
-    @keyframes bob{0%,100%{transform:translateY(-8px)}50%{transform:translateY(8px)}}
-    @keyframes roamPath{
-      0%{left:20%;top:72%}20%{left:34%;top:56%}
-      40%{left:74%;top:62%}60%{left:68%;top:30%}
-      80%{left:26%;top:32%}100%{left:20%;top:72%}
-    }
-    .bubble{
-      position:absolute;z-index:5;background:rgba(0,0,0,.55);color:#fff;
-      padding:8px 12px;border-radius:14px;font-size:.95rem;opacity:0;
-      transition:opacity .4s ease,left 1.1s ease,top 1.1s ease;user-select:none;
-      box-shadow:0 6px 14px rgba(0,0,0,.25);
-    }
-    .floatBtn{
-      position:absolute;z-index:5;background:rgba(255,255,255,.9);color:#111;
-      font-weight:700;border:none;border-radius:14px;padding:8px 12px;cursor:pointer;
-      opacity:.95;box-shadow:0 6px 18px rgba(0,0,0,.28);
-      transition:left 1.1s ease,top 1.1s ease,opacity .4s ease;
-    }
-    .safety{
-      position:fixed;right:14px;bottom:14px;z-index:10;background:rgba(255,255,255,.95);
-      color:#111;border:none;border-radius:14px;padding:10px 14px;font-weight:700;font-size:.95rem;
-      cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.32);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WhoAI | 進化シーン（ふわふわ）</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
+  }
+
+  .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
+        border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px}
+
+  .stage{
+    position:relative; width:min(980px,96vw); height:min(70vh,78vw);
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.2);
+    border-radius:18px; overflow:hidden;
+  }
+  #char{position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+        width:min(300px,62vw); height:auto; filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+
+  /* ふわふわする名前＆セリフ */
+  .floatText{
+    position:absolute; user-select:none; white-space:pre-wrap; line-height:1.6;
+    text-shadow:0 4px 16px rgba(0,0,0,.45);
+    animation: drift 9s ease-in-out infinite alternate;
+  }
+  #floatName{font-weight:900; font-size:clamp(18px,5vw,28px); cursor:pointer;}
+  #floatSpeech{font-weight:600; font-size:clamp(14px,4.5vw,22px); opacity:.9;}
+
+  @keyframes drift{
+    0%   { transform:translate(0,0) rotate(-1.5deg); }
+    100% { transform:translate(24px,-20px) rotate(2deg); }
+  }
+  /* 追加で小さく漂う囁き */
+  .whisp{
+    position:absolute; font-size:12px; opacity:.85; pointer-events:none;
+    animation: floaty 10s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%{ transform:translate(0,0); opacity:.8 }
+    50%{ transform:translate(10px,-14px); opacity:1 }
+    100%{ transform:translate(0,0); opacity:.8 }
+  }
+
+  /* 下部操作 */
+  .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+  .btn{
+    padding:10px 14px; border-radius:12px; border:0; cursor:pointer; font-weight:800;
+    background:#ffd1ec; color:#222;
+  }
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .btn-ghost{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25)}
+
+  /* ちょい演出 */
+  .pop{animation: pop .18s ease}
+  @keyframes pop{ 0%{transform:scale(1.02)} 100%{transform:scale(1)} }
+</style>
 </head>
 <body>
-  <main class="stage" aria-live="polite">
-    <div class="charWrap"><img id="charImg" class="charImg" alt="キャラ" /></div>
-    <div id="bubble" class="bubble"></div>
-    <button id="floatFeedBtn" class="floatBtn" type="button" style="left:16px;top:16px">🍬 マカロンをあげる</button>
-  </main>
-  <button id="safetyBtn" class="safety" type="button">🍬 マカロン</button>
+  <div class="chips">
+    <span class="chip">色: <span id="chipColor">-</span></span>
+    <span class="chip">段階: evolved</span>
+    <span class="chip">pts: <span id="pts">0</span> / 20</span>
+  </div>
 
-  <script>
-  (function(){
-    // ===== 基本状態 =====
-    const params = new URLSearchParams(location.search);
-    const forceForm = params.get('form');   // "tane" ならタネ固定表示
-    const color = (localStorage.getItem('whoai_color') || localStorage.getItem('macaronColor') || 'pink').toLowerCase();
+  <section class="stage" aria-label="進化シーン">
+    <img id="char" alt="キャラクター">
+    <!-- ふわふわテキスト -->
+    <div id="floatName"   class="floatText" title="ダブルクリックでポイントUP">-</div>
+    <div id="floatSpeech" class="floatText">……</div>
+    <!-- 囁き（飾り） -->
+    <div id="whisps"></div>
+  </section>
 
-    const imgEl   = document.getElementById('charImg');
-    const bubble  = document.getElementById('bubble');
-    const floatBtn= document.getElementById('floatFeedBtn');
-    const safetyBtn=document.getElementById('safetyBtn');
-    const stage   = document.querySelector('.stage');
-    const wrap    = document.querySelector('.charWrap');
+  <div class="controls">
+    <button class="btn-ghost" onclick="location.href='whoai_talk.html'">会話モードへ</button>
+    <button id="btnMacaron" class="btn" disabled onclick="location.href='macaron_select.html'">マカロンを選ぶ</button>
+    <button class="btn-ghost" onclick="resetPts()">ptsリセット</button>
+  </div>
 
-    // ===== 画像切替（口パク or タネ固定） =====
-    const openSrc    = `${color}_open.png`;
-    const closedSrc  = `${color}_closed.png`;
-    const taneSrc    = `tane_${color}.png`;
-    let hasOpen=false, hasClosed=false, isOpen=false, useTaneOnly = (forceForm === 'tane');
+<script>
+/* ========= 既存キーと互換のステート ========= */
+const K = {
+  name:  "whoai_name",
+  color: "macaronColor",   // なければ whoai_color も参照
+  color2:"whoai_color",
+  stage: "whoai_stage",
+  pts:   "whoai_points"
+};
+const getName  = ()=> localStorage.getItem(K.name)  || "キャラ";
+const getColor = ()=> (localStorage.getItem(K.color) || localStorage.getItem(K.color2) || "pink").toLowerCase();
+const getPts   = ()=> parseInt(localStorage.getItem(K.pts) || "0", 10);
+const setPts   = (n)=> localStorage.setItem(K.pts, String(n));
 
-    function probe(url, cb){ const t=new Image(); t.onload=()=>cb(true); t.onerror=()=>cb(false); t.src=url; }
+/* ========= キャラ画像（存在チェック＆フォールバック） ========= */
+function loadCharImage(imgEl, color){
+  const cand = [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`];
+  (function tryNext(i){
+    if(i>=cand.length){ imgEl.alt="画像が見つかりません"; return; }
+    const p = cand[i], t = new Image();
+    t.onload = ()=> imgEl.src = p;
+    t.onerror= ()=> tryNext(i+1);
+    t.src = p;
+  })(0);
+}
 
-    if (!useTaneOnly) {
-      probe(openSrc,   ok=>{hasOpen=ok;});
-      probe(closedSrc, ok=>{hasClosed=ok;});
-    }
+/* ========= 最新のセリフをログから拾う（whoai_talk.html互換） ========= */
+function readLatestAssistantUtterance(){
+  // whoai:evolved:<userId>:evolved_conversation:chatLog
+  const getOrCreate=(k)=>{ let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v; };
+  const userId = getOrCreate('whoai_userId');
+  const keyLog = `whoai:evolved:${userId}:evolved_conversation:chatLog`;
+  let log = [];
+  try{ log = JSON.parse(localStorage.getItem(keyLog) || "[]"); } catch{}
+  const last = [...log].reverse().find(m => m && m.role === 'assistant' && m.content);
+  return last?.content?.trim() || "……（こんにちは）";
+}
 
-    function setImg(url){ imgEl.src=url; }
+/* ========= ふわふわ配置 ========= */
+function positionFloaters(){
+  // ランダム初期位置
+  const stage = document.querySelector('.stage').getBoundingClientRect();
+  const nameEl = document.getElementById('floatName');
+  const speechEl = document.getElementById('floatSpeech');
 
-    // 初期表示
-    if (useTaneOnly) {
-      // タネ優先 / 無ければ汎用に任せる
-      const t1=new Image(); t1.onload=()=>setImg(taneSrc); t1.onerror=()=>setImg(`tane.png`); t1.src=taneSrc;
-    } else {
-      if (hasClosed) setImg(closedSrc);
-      else {
-        // 進化絵が無ければタネにフォールバック
-        const t1=new Image(); t1.onload=()=>setImg(taneSrc); t1.onerror=()=>setImg(`tane.png`); t1.src=taneSrc;
-      }
-      // 1秒ごとに口パク（どちらか欠けていてもフォールバック）
-      setInterval(()=>{
-        if (useTaneOnly) return;
-        isOpen = !isOpen;
-        if (isOpen) setImg(hasOpen ? openSrc : (hasClosed ? closedSrc : taneSrc));
-        else        setImg(hasClosed ? closedSrc : (hasOpen  ? openSrc  : taneSrc));
-      }, 1000);
-    }
+  const rand = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
 
-    // ===== 励ましバブル =====
-    const LINES=[
-      'だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','深呼吸、いっかいね',
-      'きみのペースで進もう','ミスは進化のタネだよ','もう一歩だけ、いっしょに',
-      '休むのも、強さだよ','小さな一歩、えらい！'
-    ];
-    const pick=a=>a[Math.floor(Math.random()*a.length)];
-    let W=stage.offsetWidth,H=stage.offsetHeight;
-    addEventListener('resize',()=>{W=stage.offsetWidth;H=stage.offsetHeight;});
+  // 名前は左上〜中央付近に
+  nameEl.style.left = rand(10, 28) + '%';
+  nameEl.style.top  = rand(8, 24) + '%';
 
-    function charCenter(){
-      const r=wrap.getBoundingClientRect(), s=stage.getBoundingClientRect();
-      return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};
-    }
-    function farPos(minD,margin=14){
-      const c=charCenter(); let x,y,g=0;
-      do{ x=Math.random()*(W-margin*2)+margin; y=Math.random()*(H-margin*2)+margin; g++; if(g>200)break;}
-      while(Math.hypot(x-c.x,y-c.y)<minD);
-      return {left:x,top:y};
-    }
-    function showLine(t){
-      bubble.textContent=t;
-      const p=farPos(160);
-      bubble.style.left=p.left+'px'; bubble.style.top=p.top+'px';
-      bubble.style.opacity=1; setTimeout(()=>bubble.style.opacity=0,2400);
-    }
-    setTimeout(()=>showLine(pick(LINES)),1500);
-    setInterval(()=>showLine(pick(LINES)),4200);
+  // セリフは右側〜中段に
+  speechEl.style.left = rand(56, 78) + '%';
+  speechEl.style.top  = rand(22, 46) + '%';
 
-    // ===== マカロン（再選択へ遷移） =====
-    function toMacaron(){ location.href='macaron_select.html'; }
-    floatBtn.addEventListener('click', toMacaron);
-    safetyBtn.addEventListener('click', toMacaron);
-    addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='m') toMacaron(); });
+  // 囁き（飾り）を数個
+  const whispers = ["……ふわ","いるよ","見てる","すき","きら","zzz","ぱた","hello","嗚呼","♪"];
+  const wWrap = document.getElementById('whisps');
+  wWrap.innerHTML = "";
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div');
+    d.className='whisp';
+    d.style.left = rand(6, 88) + '%';
+    d.style.top  = rand(18, 72) + '%';
+    d.style.animationDuration = (9 + Math.random()*4).toFixed(1) + 's';
+    d.textContent = whispers[(Math.random()*whispers.length)|0];
+    wWrap.appendChild(d);
+  }
+}
 
-  })();
-  </script>
+/* ========= ポイント & ボタン有効化 ========= */
+const THRESHOLD = 20;
+function refreshPtsUI(){
+  const n = getPts();
+  document.getElementById('pts').textContent = String(n);
+  const btn = document.getElementById('btnMacaron');
+  if(n >= THRESHOLD){
+    btn.disabled = false;
+    btn.classList.add('pop');
+    setTimeout(()=>btn.classList.remove('pop'), 220);
+  }else{
+    btn.disabled = true;
+  }
+}
+function resetPts(){
+  setPts(0); refreshPtsUI();
+}
+
+/* ========= 起動 ========= */
+(function init(){
+  const name = getName();
+  const color = getColor();
+  document.getElementById('chipColor').textContent = color;
+
+  // キャラ読み込み
+  loadCharImage(document.getElementById('char'), color);
+
+  // ふわふわテキスト
+  document.getElementById('floatName').textContent   = name;
+  document.getElementById('floatSpeech').textContent = readLatestAssistantUtterance();
+  positionFloaters();
+
+  // pts表示
+  refreshPtsUI();
+
+  // 名前ダブルクリックでポイント+1（最大20）
+  document.getElementById('floatName').ondblclick = ()=>{
+    const n = Math.min(getPts()+1, THRESHOLD);
+    setPts(n);
+    refreshPtsUI();
+    // ちょい演出
+    const el = document.getElementById('floatName');
+    el.style.transform='scale(1.05)';
+    setTimeout(()=>{ el.style.transform=''; }, 150);
+  };
+
+  // セリフを時々ふわふわ位置リフレッシュ（演出）
+  setInterval(positionFloaters, 8000);
+})();
+</script>
 </body>
 </html>
