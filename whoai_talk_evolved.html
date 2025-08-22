@@ -124,4 +124,85 @@ function place(el, leftMin,leftMax, topMin,topMax){
 
 /* ===== 名前：出たり消えたり（クリックしやすい） ===== */
 function cycleName(){
-  const wrap = document.getEl
+  const wrap = document.getElementById('nameWrap');
+  wrap.classList.remove('show');
+  setTimeout(()=>{
+    // 左上寄りに出現。ヒット領域が大きいのでクリックしやすい
+    place(wrap, 8,32, 8,28);
+    wrap.classList.add('show');
+    // 1.8〜3.2秒表示 → 1.0〜1.6秒休み
+    setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200));
+  }, rand(1000,1600));
+}
+
+/* ===== セリフ：短い固定フレーズから生成して出たり消えたり ===== */
+const PHRASES = [
+  "ここにいるよ","すき","きら","ふわ…","むに","zzz","おはよう","やっほー",
+  "ただいま","ねぇ","こっち","ぱたぱた","hello","うとうと","みてる","だいじょうぶ"
+];
+function cyclePhrase(){
+  const el=document.getElementById('phrase');
+  el.classList.remove('show');
+  setTimeout(()=>{
+    el.textContent = PHRASES[rand(0,PHRASES.length-1)];
+    place(el, 54,80, 24,46);                 // 右側あたり
+    el.style.transform = 'translateY(0)';
+    el.classList.add('show');
+    // 少し浮かせてから消える
+    setTimeout(()=>{ el.style.transform='translateY(-10px)'; }, 400);
+    setTimeout(()=>{ el.classList.remove('show'); }, rand(2200,3400));
+  }, rand(800,1600));
+}
+
+/* ===== 小さな囁き（飾り） ===== */
+function renderWhisps(){
+  const whispers = ["……ふわ","いるよ","すき","hello","zzz","♪"];
+  const wWrap = document.getElementById('whisps');
+  wWrap.innerHTML = "";
+  for(let i=0;i<4;i++){
+    const d=document.createElement('div');
+    d.className='whisp';
+    d.style.left = rand(6, 88) + '%';
+    d.style.top  = rand(18, 72) + '%';
+    d.style.animationDuration = (9 + Math.random()*4).toFixed(1) + 's';
+    d.textContent = whispers[rand(0,whispers.length-1)];
+    wWrap.appendChild(d);
+  }
+}
+
+/* ===== ポイント & ボタン ===== */
+const THRESHOLD=20;
+function refreshPtsUI(){
+  const n=getPts();
+  document.getElementById('pts').textContent=String(n);
+  const btn=document.getElementById('btnMacaron');
+  if(n>=THRESHOLD){ btn.disabled=false; btn.classList.add('pop'); setTimeout(()=>btn.classList.remove('pop'),220); }
+  else{ btn.disabled=true; }
+}
+function resetPts(){ setPts(0); refreshPtsUI(); }
+
+/* ===== 起動 ===== */
+(function init(){
+  const color=getColor();
+  document.getElementById('chipColor').textContent=color;
+  loadCharImage(document.getElementById('char'), color);
+
+  // 名前テキスト
+  document.getElementById('floatName').textContent=getName();
+
+  // クリックで +1 pt（1クリックでOK／最大20）
+  document.getElementById('nameHit').onclick=()=>{
+    const n=Math.min(getPts()+1,THRESHOLD);
+    setPts(n); refreshPtsUI();
+  };
+
+  renderWhisps();
+  refreshPtsUI();
+
+  // ループ開始
+  cycleName();   setInterval(cycleName,   3200);
+  cyclePhrase(); setInterval(cyclePhrase, 3600);
+})();
+</script>
+</body>
+</html>
