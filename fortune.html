@@ -1,137 +1,49 @@
-<!-- FILE: fortune.html --><!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>進化の確認 | WhoAI</title>
-<meta name="color-scheme" content="dark light" />
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000 url("space_background.png") center/cover fixed no-repeat;
-    display:flex;align-items:center;justify-content:center;padding:12px;
-  }
-  .stage{
-    position:relative;width:min(92vw,860px);aspect-ratio:1/0.75;overflow:hidden;
-    border-radius:24px;background:rgba(0,0,0,.28);
-    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-    border:1px solid rgba(255,255,255,.18);
-    box-shadow:inset 0 10px 28px rgba(0,0,0,.25),0 10px 28px rgba(0,0,0,.25);
-    padding:16px; text-align:center;
-  }
-  .char{width:min(36vw,240px);filter:drop-shadow(0 12px 26px rgba(0,0,0,.45))}
-  .cta{position:absolute;left:0;right:0;bottom:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-  .btn{appearance:none;border:none;border-radius:14px;cursor:pointer;padding:10px 14px;font-weight:800;
-       font-size:clamp(14px,2.5vw,16px);box-shadow:0 6px 18px rgba(0,0,0,.28)}
-  .btn-primary{background:#fff;color:#111}
-  .btn-ghost{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.28)}
-  /* 名前確認モーダル */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:20}
-  .sheet{width:min(92vw,520px);background:rgba(0,0,0,.85);border:1px solid rgba(255,255,255,.25);
-         border-radius:18px;padding:18px;box-shadow:0 10px 28px rgba(0,0,0,.4)}
-  .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
-  input{padding:10px 12px;border-radius:10px;border:none;min-width:220px;font-size:16px}
-</style>
-</head>
-<body>
-  <section class="stage">
-    <h2 id="title" style="margin:4px 0 8px">このまま見守る？ それとも会話する？</h2>
-    <img id="tane" class="char" alt="たね">
-
-    <div class="cta">
-      <!-- 行き先は“反対”に直した版：観察＝whoai_talk.html / 会話＝whoai_talk_evolved.html ではなく、要望どおり -->
-      <button id="btnObserve" class="btn btn-ghost">👀 観察をつづける</button>
-      <button id="btnTalk" class="btn btn-primary">💬 会話する（WhoAI）</button>
-    </div>
-  </section>
-
-  <!-- 名前を確認・変更するモーダル（進化のたびに毎回出す） -->
-  <div id="renameModal" class="modal">
-    <div class="sheet">
-      <h3 style="margin:4px 0 10px">名前をどうする？</h3>
-      <p id="currentNameLabel" style="opacity:.9;margin:0 0 10px"></p>
-      <div class="row">
-        <input id="nameInput" placeholder="新しい名前（空なら現状維持）" maxlength="16" />
-      </div>
-      <div class="row" style="margin-top:12px">
-        <button id="keepName" class="btn btn-ghost">このまま</button>
-        <button id="changeName" class="btn btn-primary">変更して続ける</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-  const KEY={color:'whoai_color', name:'whoai_name', xp:'whoai_xp'};
-
-  // 表示するタネ（進化させない）
-  const color=(localStorage.getItem(KEY.color)||'pink').toLowerCase();
-  const tane=document.getElementById('tane');
-  (function loadTane(){
-    const srcs=[`tane_${color}.png`,`tane.png`];
-    let i=0;
-    const next=()=>{ if(i>=srcs.length){tane.style.display='none';return;}
-      const u=srcs[i++]; const t=new Image(); t.onload=()=>tane.src=u; t.onerror=next; t.src=u;
-    }; next();
-  })();
-
-  // ---- 名前確認（毎回出す） ----
-  const modal=document.getElementById('renameModal');
-  const nameInput=document.getElementById('nameInput');
-  const currentName=(localStorage.getItem(KEY.name)||'ななし').trim();
-  document.getElementById('currentNameLabel').textContent = `現在の名前：${currentName}`;
-  modal.style.display='grid';         // ← ページを開いたら毎回表示
-
-  function saveNameIfTyped(){
-    const v=(nameInput.value||'').trim();
-    if(v){ localStorage.setItem(KEY.name,v); }
-  }
-  document.getElementById('keepName').addEventListener('click', ()=>{ saveNameIfTyped(); modal.style.display='none'; });
-  document.getElementById('changeName').addEventListener('click', ()=>{ saveNameIfTyped(); modal.style.display='none'; });
-
-  // ---- 行き先（どちらもタネのまま） ----
-  const OBSERVE_URL='whoai_talk_evolved.html?form=tane';
-  const TALK_URL   ='whoai_talk.html?form=tane';
-  document.getElementById('btnObserve').addEventListener('click', ()=>location.href=OBSERVE_URL);
-  document.getElementById('btnTalk').addEventListener('click', ()=>location.href=TALK_URL);
-</script>
-</body>
-</html>
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>占いイベント | WhoAI</title>
+  <title>名前をつける | WhoAI</title>
   <style>
-    html,body{
-      height:100%;margin:0;
-      font-family:"Noto Sans JP",sans-serif;
-      color:#fff;
-      background:#000 url("space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      text-align:center;
+    body {
+      margin: 0;
+      font-family: "Noto Sans JP", sans-serif;
+      background: url("space_background.png") center/cover fixed no-repeat;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
-    h1{font-size:28px;margin-bottom:16px;}
-    p{font-size:18px;max-width:80%;line-height:1.6;margin-bottom:24px;}
-    button{
-      background:linear-gradient(135deg,#ff9a9e,#fad0c4);
-      border:none;color:#000;font-weight:bold;
-      padding:12px 24px;border-radius:12px;
-      cursor:pointer;font-size:18px;
-      box-shadow:0 4px 10px rgba(0,0,0,.3);
-      transition:transform .2s;
+    h1 { font-size: 22px; margin-bottom: 20px; }
+    .row { display: flex; gap: 8px; }
+    input {
+      padding: 8px 12px; border-radius: 8px; border: none;
+      font-size: 16px;
     }
-    button:hover{transform:scale(1.05);}
+    button {
+      padding: 8px 14px; border: none; border-radius: 8px;
+      font-size: 16px; cursor: pointer; background:#f5a;
+      color:#fff; font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>🔮 あなたのマカロン占い 🔮</h1>
-  <p>
-    今日の気分や運命をマカロンが導いてくれます。<br>
-    次の画面で名前を入力して、冒険を始めましょう！
-  </p>
-  <button onclick="location.href='macaron.html'">次へ（マカロンを選ぶ）</button>
+  <h1>キャラクターに名前をつけてね</h1>
+  <div class="row">
+    <input id="nameInput" placeholder="なまえ（例：ほしのこ）" maxlength="16" />
+    <button id="btnSave">決定</button>
+  </div>
+
+  <script>
+    const KEY = "whoai_name";
+    document.getElementById("btnSave").addEventListener("click", () => {
+      const name = document.getElementById("nameInput").value.trim();
+      if(!name){ alert("名前を入力してください"); return; }
+      localStorage.setItem(KEY, name);
+      location.href = "macaron.html"; // 次の画面へ
+    });
+  </script>
 </body>
 </html>
