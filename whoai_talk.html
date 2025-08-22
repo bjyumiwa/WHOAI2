@@ -1,84 +1,216 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>キャラと会話する | WhoAI2</title>
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000; /* 画像はJSで存在チェック後に適用 */
-    display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
-  }
-  h1{margin:8px 0 0;font-size:clamp(22px,5vw,36px)}
-  #stageTag{opacity:.85;font-size:14px}
-  #characterImg{width:min(60vw,340px);height:auto}
-  .chat{
-    width:min(92vw,980px);
-    display:flex;flex-direction:column;gap:10px;
-    background:rgba(0,0,0,.35);
-    border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px
-  }
-  .log{max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
-  .bubble{max-width:80%;padding:10px 12px;border-radius:14px;line-height:1.7}
-  .me   {align-self:flex-end;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2)}
-  .bot  {align-self:flex-start;background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14)}
-  .composer{display:flex;gap:8px}
-  .composer input{
-    flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.25);
-    background:rgba(0,0,0,.35);color:#fff
-  }
-  .composer button{
-    padding:10px 14px;border-radius:12px;border:0;cursor:pointer;
-    background:#f7b0bf;color:#222;font-weight:800
-  }
-  .nav{margin-top:8px}.nav a{color:#fff;text-decoration:underline}
-  small.mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;opacity:.8}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>会話 | WhoAI（進化後）</title>
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;
+      color:#fff;
+      /* ← ここを同階層に修正！ */
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
+      /* overflow:hidden; だと下が切れるので外してOK */
+    }
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);padding:6px 10px;border-radius:999px;font-size:12px}
+    .title{font-size:28px;font-weight:800;letter-spacing:.06em;margin-top:2px}
+    .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
+    .hero{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0}
+    .hero img{width:180px;max-width:52vw;height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5))}
+    .hero small{opacity:.85}
+    .card{width:min(920px,96vw);background:rgba(0,0,0,.35);backdrop-filter:blur(4px);border-radius:18px;padding:12px}
+    #chatArea{max-height:38vh;overflow-y:auto;scroll-behavior:smooth;background:rgba(255,255,255,.10);border-radius:14px;padding:12px}
+    .msg{display:flex;margin:10px 0}
+    .msg.user{justify-content:flex-end}
+    .msg.assistant{justify-content:flex-start}
+    .bubble{max-width:82%;padding:12px 14px;border-radius:16px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;background:rgba(255,255,255,.12)}
+    .msg.user .bubble{background:rgba(61,180,255,.20)}
+    .msg.assistant .bubble{background:rgba(255,97,200,.20)}
+    .role{display:block;font-size:12px;opacity:.8;margin-bottom:4px}
+    .controls{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    input[type=text]{flex:1;min-width:200px;padding:12px 14px;border:none;border-radius:12px;background:rgba(255,255,255,.92);color:#111;outline:none}
+    button,select,label.switch{padding:10px 12px;border:none;border-radius:12px;background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    select{padding:10px;font-weight:600}
+    .switch{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.2)}
+    .switch input{accent-color:#6f4cff}
+    .hint{font-size:12px;opacity:.85;margin:4px 2px 0}
+  </style>
 </head>
 <body>
-  <h1>キャラと会話する</h1>
-  <div id="stageTag"></div>
-  <img id="characterImg" alt="キャラクターが読み込み中…" />
+  <div class="chips">
+    <span class="chip"><span id="chipColor">-</span> | evolved</span>
+    <span class="chip">turn: <span id="turnChip">0</span>/10</span>
+  </div>
+  <div class="title">会話</div>
+  <div class="subtitle">進化キャラで10回会話すると、復活の儀式 or アンケートへ</div>
 
-  <section class="chat" aria-label="chat">
-    <div class="log" id="log"></div>
-    <form class="composer" id="composer">
-      <input id="msg" type="text" autocomplete="off" placeholder="メッセージを入力（Enterで送信）" />
-      <button id="sendBtn" type="submit">送信</button>
-    </form>
-    <div class="nav">
-      <a href="macaron_select.html">2回目のマカロンを選ぶ</a>
-      &nbsp;|&nbsp;<a href="index.html">最初に戻る</a>
-      &nbsp;|&nbsp;<button type="button" id="resetBtn">リセット</button>
-      <div><small class="mono">エンドポイント: <span id="ep"></span></small></div>
+  <div class="hero">
+    <img id="charImg" alt="進化後キャラ">
+    <small id="charLabel">キャラ</small>
+  </div>
+
+  <div class="card">
+    <div id="chatArea"></div>
+    <div class="controls">
+      <input id="userInput" type="text" placeholder="メッセージを入力（音声でもOK）">
+      <button id="btnSend">送信</button>
+      <button id="btnMic">🎙️</button>
+      <button id="btnTTS">🔊</button>
+      <select id="langSelect">
+        <option value="ja-JP">日本語</option>
+        <option value="en-US">English</option>
+        <option value="zh-CN">中文(简体)</option>
+        <option value="zh-TW">中文(繁體)</option>
+        <option value="ko-KR">한국어</option>
+      </select>
+      <label class="switch"><input type="checkbox" id="autoSend" checked> 自動送信</label>
     </div>
-  </section>
+    <div class="hint">※ 会話は localStorage に保存。10ターン到達で「復活の儀式」または「アンケート」へ。</div>
+  </div>
 
 <script>
-/* ========= 設定 =========
- * GitHub Pages から Vercel の Serverless Function へPOSTします。
- * ここをあなたのデプロイURLに変更してください。
- */
-const TALK_ENDPOINT = "https://YOUR-APP-NAME.vercel.app/api/talk"; // ←★要変更★
+  const TALK_ENDPOINT="https://macaron-one.vercel.app/api/talk";
+  const WINDOW_N=12, TURN_LIMIT=10;
 
-document.getElementById("ep").textContent = TALK_ENDPOINT;
+  // 復活モード処理（そのまま）
+  const keepMode=localStorage.getItem("whoai_keep");
+  if(keepMode==="appearance"){
+    localStorage.removeItem("whoai_keep");
+    localStorage.removeItem(`whoai:evolved:${localStorage.getItem('whoai_userId')}:evolved_conversation:chatLog`);
+    localStorage.removeItem(`whoai:evolved:${localStorage.getItem('whoai_userId')}:evolved_conversation:turn`);
+  }else if(keepMode==="memory"){
+    localStorage.removeItem("whoai_keep");
+  }
 
-/* ========= 背景：存在すれば適用 ========= */
-(function(){
-  const bg = "space_background.png";
-  const t = new Image();
-  t.onload  = ()=>{ Object.assign(document.body.style,{
-    backgroundImage:`url('${bg}')`,backgroundSize:"cover",
-    backgroundPosition:"center",backgroundAttachment:"fixed"
-  }); };
-  t.onerror = ()=>{};
-  t.src = bg;
-})();
+  /* ←←← ここが重要：同階層のファイル名に修正 */
+  const EVOLVED_SRC={
+    pink:   {closed:'pink_closed.png',   open:'pink_open.png'},
+    blue:   {closed:'blue_closed.png',   open:'blue_open.png'},
+    green:  {closed:'green_closed.png',  open:'green_open.png'},
+    purple: {closed:'purple_closed.png', open:'purple_open.png'}
+  };
 
-/* ========= ステート（色/段階）と画像フォールバック ========= */
-const stage = localStorage.getItem("whoai_stage") || "tane";
-const color = localStorage.getItem("whoai_color") || "pink";
-document.getElementById("stageTag").textContent =
-  (stage==="evolved") ? `
+  const color=(localStorage.getItem('macaronColor')||'pink').toLowerCase();
+  document.getElementById('chipColor').textContent=color;
+
+  // ID & ログ（そのまま）
+  const getOrCreate=(k)=>{let v=localStorage.getItem(k);if(v)return v;v=crypto.randomUUID();localStorage.setItem(k,v);return v;};
+  const userId=getOrCreate('whoai_userId');
+  const convoId='evolved_conversation';
+  const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
+  const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
+  const writeLog=(log)=>localStorage.setItem(key('chatLog'),JSON.stringify(log));
+  const readTurn=()=>parseInt(localStorage.getItem(key('turn'))||'0',10);
+  const writeTurn=(n)=>localStorage.setItem(key('turn'),String(n));
+
+  // キャラ表示（フォールバック付き）
+  const charImg=document.getElementById('charImg');
+  const charName=localStorage.getItem("whoai_name")||"キャラ";
+  document.getElementById("charLabel").textContent=charName;
+
+  function loadWithFallback(kind){ // 'open' or 'closed'
+    const c=EVOLVED_SRC[color] || EVOLVED_SRC.pink;
+    const primary=c[kind], fallback=EVOLVED_SRC.pink[kind];
+    const t=new Image();
+    t.onload=()=>{charImg.src=primary;};
+    t.onerror=()=>{charImg.src=fallback;};
+    t.src=primary;
+  }
+  const setClosed=()=>loadWithFallback('closed');
+  const setOpen=()=>loadWithFallback('open');
+  setClosed();
+
+  // 描画
+  const chatArea=document.getElementById('chatArea');
+  const playerName=localStorage.getItem('whoai_player_name')||'あなた';
+  const assistantName=charName;
+  function render(){
+    const log=readLog();chatArea.innerHTML='';
+    for(const m of log){
+      const row=document.createElement('div');row.className=`msg ${m.role}`;
+      const b=document.createElement('div');b.className='bubble';
+      const r=document.createElement('span');r.className='role';
+      r.textContent=(m.role==='user'?playerName:assistantName)+'：';
+      b.appendChild(r);b.appendChild(document.createTextNode(m.content||''));row.appendChild(b);
+      chatArea.appendChild(row);
+    }
+    chatArea.scrollTop=chatArea.scrollHeight;
+    document.getElementById('turnChip').textContent=String(readTurn());
+  }
+  render();
+
+  // 送信
+  async function talk(text){
+    if(!text.trim())return;
+    if(readTurn()>=TURN_LIMIT){
+      const phase = localStorage.getItem("whoai_phase") || "pre";
+      if(phase === "pre"){ setTimeout(()=>location.href='rebirth.html',900); }
+      else { setTimeout(()=>location.href='identity_check.html',900); }
+      return;
+    }
+
+    let log=readLog();log.push({role:'user',content:text,ts:Date.now()});writeLog(log);render();
+    setOpen();
+    const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
+    const messages=[{role:'system',content:'You are a kind partner AI. Reply briefly in the user’s language.'},...history,{role:'user',content:text}];
+    let reply='…';
+    try{
+      const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})});
+      const data=await res.json().catch(()=>({}));reply=data.reply||reply;
+    }catch(e){reply='（通信エラー）';console.error(e);}
+    log=readLog();log.push({role:'assistant',content:reply,ts:Date.now()});writeLog(log);render();
+    setTimeout(setClosed,450);
+    speakCute(reply,document.getElementById('langSelect').value);
+    const t=readTurn()+1;writeTurn(t);
+    document.getElementById('turnChip').textContent=String(t);
+  }
+
+  // 入力UI
+  const userInput=document.getElementById('userInput');
+  document.getElementById('btnSend').onclick=()=>{const v=userInput.value.trim();if(!v)return;userInput.value='';talk(v);};
+  userInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();document.getElementById('btnSend').click();}});
+
+  // 音声認識
+  let recognition=null,recognizing=false;
+  const btnMic=document.getElementById('btnMic');
+  const autoSend=document.getElementById('autoSend');
+  function ensureRec(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR)return null;
+    if(recognition)return recognition;
+    recognition=new SR();recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=1;
+    recognition.onresult=(e)=>{const t=e.results[0][0].transcript||'';if(autoSend.checked){talk(t);}else{userInput.value=t;userInput.focus();}};
+    recognition.onend=()=>{recognizing=false;btnMic.textContent='🎙️';};
+    recognition.onerror=()=>{recognizing=false;btnMic.textContent='🎙️';};
+    return recognition;
+  }
+  btnMic.onclick=()=>{
+    const rec=ensureRec();if(!rec){alert('このブラウザは音声入力に未対応です');return;}
+    rec.lang=document.getElementById('langSelect').value||(navigator.language||'ja-JP');
+    if(recognizing){rec.stop();return;}recognizing=true;btnMic.textContent='🛑';try{rec.start();}catch{}
+  };
+
+  // TTS
+  document.getElementById('btnTTS').onclick=()=>{
+    const last=[...readLog()].reverse().find(m=>m.role==='assistant');
+    if(last)speakCute(last.content,document.getElementById('langSelect').value);
+  };
+  function speakCute(text,lang){
+    if(!('speechSynthesis' in window))return;
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang;u.rate=1.05;u.pitch=1.6;u.volume=1;
+    const voices=speechSynthesis.getVoices();
+    const cute=voices.find(v=>v.lang===lang && /(girl|child|female|Kyoko|Google 日本語)/i.test(v.name))
+               || voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
+    if(cute)u.voice=cute;
+    try{window.speechSynthesis.cancel();}catch{}
+    window.speechSynthesis.speak(u);
+  }
+  if('speechSynthesis' in window){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{};}
+</script>
+</body>
+</html>
