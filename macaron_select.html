@@ -1,149 +1,117 @@
+<!-- FILE: /macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>2回目のマカロン選択 | WHOAI2</title>
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000 url("space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px
-  }
-  h1{margin:6px 0 0;font-size:clamp(22px,5vw,36px)}
-  p{margin:4px 0 0}
-  .row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  .m{
-    width:96px;height:96px;border-radius:16px;border:1px solid rgba(255,255,255,.25);
-    background:rgba(0,0,0,.25);padding:8px;cursor:pointer;display:grid;place-items:center
-  }
-  .m img{width:100%;height:100%;object-fit:contain;display:block}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhoAI | マカロンを選ぶ（進化）</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --glass: rgba(0,0,0,.35);
+      --brd: rgba(255,255,255,.18);
+      --ok:#86efac;--warn:#fde047;--bad:#fda4af
+    }
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px
+    }
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .chip{background:var(--glass);backdrop-filter:blur(4px);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
+    .title{font-size:26px;font-weight:800;letter-spacing:.06em;margin-top:2px;text-align:center}
+    .subtitle{font-size:12px;opacity:.9;margin-top:-4px;text-align:center}
 
-  /* —— プリシーン（キャラ登場＆名前入力）モーダル —— */
-  .overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;
-    z-index:20
-  }
-  .overlay.open{display:flex}
-  .sheet{
-    width:min(92vw,640px);background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px
-  }
-  .hero{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 10px}
-  .hero img{width:min(180px,52vw);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:8px}
-  input[type=text]{
-    flex:1;min-width:220px;padding:12px 14px;border:none;border-radius:12px;background:rgba(255,255,255,.95);color:#111
-  }
-  .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800}
-  .btn-primary{background:#f7b0bf;color:#222}
-  .btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
-  .nav{display:flex;gap:8px;justify-content:center;margin-top:8px}
-  .badge{font-size:12px;opacity:.9}
-</style>
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:14px;margin:10px auto;width:min(980px,96vw)}
+    .card{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;border-radius:18px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;outline:none;user-select:none}
+    .card:focus-visible{box-shadow:0 0 0 3px #fff6}
+    .card img{width:120px;max-width:42vw;height:auto;filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+    .name{font-weight:800}
+    .desc{font-size:12px;opacity:.88;text-align:center}
+    .badge{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.45);border:1px solid var(--brd);padding:4px 8px;border-radius:10px;font-size:12px}
+
+    .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+    .ghostbtn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer}
+
+    @media (max-width:780px){.grid{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+    @media (max-width:420px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-  <h1>2回目のマカロンを選んでね</h1>
-  <p>同じ色を<strong>2回</strong>選ぶと進化します。選んだら「観察」か「会話」を選択できます。</p>
+  <div class="chips">
+    <span class="chip">👤 <span id="chipPlayer">あなた</span></span>
+    <span class="chip">現在の色: <span id="chipColor">pink</span></span>
+    <span class="chip">進化のキー：マカロン</span>
+  </div>
+  <div class="title">進化のためのマカロンを選ぼう</div>
+  <div class="subtitle">選んだ色に合わせてキャラが進化します。あとで色を変えてもOK。</div>
 
-  <div class="row" id="selectRow">
-    <button class="m" data-color="pink"><img src="macaron_pink.png" alt="ピンク"></button>
-    <button class="m" data-color="blue"><img src="macaron_blue.png" alt="ブルー"></button>
-    <button class="m" data-color="green"><img src="macaron_green.png" alt="グリーン"></button>
-    <button class="m" data-color="purple"><img src="macaron_purple.png" alt="パープル"></button>
+  <div class="grid">
+    <button class="card" id="pick-pink"   onclick="choose('pink')"   aria-label="ピンクのマカロン">
+      <span class="badge">桃 🍑</span>
+      <img src="macaron_pink.png" alt="ピンクのマカロン">
+      <div class="name">ピンク</div>
+      <div class="desc">やさしくて甘めの性格に進化</div>
+    </button>
+
+    <button class="card" id="pick-green"  onclick="choose('green')"  aria-label="グリーンのマカロン">
+      <span class="badge">葉っぱ 🍃</span>
+      <img src="macaron_green.png" alt="グリーンのマカロン">
+      <div class="name">グリーン</div>
+      <div class="desc">落ち着きと回復が得意な性格に進化</div>
+    </button>
+
+    <button class="card" id="pick-blue"   onclick="choose('blue')"   aria-label="ブルーのマカロン">
+      <span class="badge">青い絵の具 🎨</span>
+      <img src="macaron_blue.png" alt="ブルーのマカロン">
+      <div class="name">ブルー</div>
+      <div class="desc">クールで知的な性格に進化</div>
+    </button>
+
+    <button class="card" id="pick-purple" onclick="choose('purple')" aria-label="パープルのマカロン">
+      <span class="badge">ぶどう 🍇</span>
+      <img src="macaron_purple.png" alt="パープルのマカロン">
+      <div class="name">パープル</div>
+      <div class="desc">ミステリアスで想像力豊かな性格に進化</div>
+    </button>
   </div>
 
-  <!-- プリシーン：キャラ登場＆名前入力＆モード選択 -->
-  <div class="overlay" id="preScene" aria-modal="true" role="dialog">
-    <div class="sheet">
-      <div class="hero">
-        <img id="preImg" alt="キャラ">
-        <div class="badge" id="preStageTag">-</div>
-      </div>
-      <div class="controls">
-        <input id="nameInput" type="text" placeholder="なまえ" />
-        <button class="btn btn-ghost" id="btnObserve">観察する</button>
-        <button class="btn btn-primary" id="btnTalk">会話する</button>
-      </div>
-      <div class="nav">
-        <button class="btn btn-ghost" id="btnBack">選び直す</button>
-      </div>
-    </div>
+  <div class="nav">
+    <button class="ghostbtn" onclick="location.href='whoai_talk_tane.html'">🔙 戻る（タネ観察）</button>
+    <button class="ghostbtn" onclick="location.href='index.html'">🏠 ホーム</button>
   </div>
 
 <script>
-/* ========= ステート ========= */
-const K = {
-  history:"whoai_history", color:"whoai_color", color2:"macaronColor",
-  stage:"whoai_stage", name:"whoai_name"
-};
-const getHist=()=>{ try{return JSON.parse(localStorage.getItem(K.history)||"[]");}catch{return[];} };
-const setHist=a=>localStorage.setItem(K.history, JSON.stringify(a));
-const setStage=s=>localStorage.setItem(K.stage, s);
-const setColor=c=>{ localStorage.setItem(K.color,c); localStorage.setItem(K.color2,c); };
-const getColor=()=>localStorage.getItem(K.color2)||localStorage.getItem(K.color)||"pink";
-const getName =()=>localStorage.getItem(K.name)||"キャラ";
-const setName =v=>localStorage.setItem(K.name, v);
+  // 共有表示
+  const read = (k,d='')=>{const v=localStorage.getItem(k);return (v===null||v==='undefined'||v==='null')?d:v};
+  document.getElementById('chipPlayer').textContent = read('PLAYER_NAME', read('whoai_player_name','あなた'));
+  document.getElementById('chipColor').textContent  = (read('macaronColor','pink')||'pink').toLowerCase();
 
-/* ========= 画像読込（フォールバック付） ========= */
-function loadCharImage(imgEl, stage, color){
-  const cand = (stage==="evolved")
-    ? [`${color}_open.png`,`${color}_closed.png`,`pink_open.png`]
-    : [`tane_${color}.png`,`tane_pink.png`,`pink_closed.png`];
-  (function tryNext(i){
-    if(i>=cand.length){ imgEl.alt="画像が見つかりません"; return; }
-    const p=cand[i], t=new Image();
-    t.onload = ()=> imgEl.src=p;
-    t.onerror= ()=> tryNext(i+1);
-    t.src=p;
-  })(0);
-}
+  // 選択処理：色を保存→進化フラグ→演出画面へ
+  function choose(color){
+    localStorage.setItem('macaronColor', color);
+    localStorage.setItem('EVOLVED','1');
+    localStorage.setItem('EVOLVED_AT', String(Date.now()));
 
-/* ========= クリックで処理開始 ========= */
-let pickedColor=null, decidedStage="tane";
-document.getElementById('selectRow').addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-color]');
-  if(!btn) return;
-  const color = btn.getAttribute('data-color');
-  pickedColor = color;
+    // 進化後に使う軽い初期化（会話回数/ログなどは進化後ページで個別管理）
+    const uid = localStorage.getItem('whoai_userId');
+    if(uid){
+      try{
+        localStorage.removeItem(`whoai:evolved:${uid}:evolved_conversation:chatLog`);
+        localStorage.removeItem(`whoai:evolved:${uid}:evolved_conversation:turn`);
+      }catch{}
+    }
 
-  // 履歴・進化判定（初回対策込み）
-  const hist = getHist();
-  let newHist;
-  if(hist.length===0){ newHist=[color]; decidedStage="tane"; }
-  else{ newHist=[hist[0], color]; decidedStage = (hist[0]===color) ? "evolved" : "tane"; }
-  setHist(newHist);
-  setColor(color);
-  setStage(decidedStage);
+    // 進化演出へ
+    location.href = 'evolution.html';
+  }
 
-  // プリシーンを開く
-  const pre = document.getElementById('preScene');
-  document.getElementById('nameInput').value = getName();
-  document.getElementById('preStageTag').textContent =
-    (decidedStage==="evolved") ? `進化（${color}）` : `タネ（${color}）`;
-  loadCharImage(document.getElementById('preImg'), decidedStage, color);
-  pre.classList.add('open');
-});
-
-/* ========= ボタン操作 ========= */
-document.getElementById('btnBack').onclick = ()=>{
-  document.getElementById('preScene').classList.remove('open');
-};
-
-document.getElementById('btnObserve').onclick = ()=>{
-  const name = document.getElementById('nameInput').value.trim();
-  if(name) setName(name);
-  // 観察シーンへ
-  location.href = 'whoai_talk_evolved.html';
-};
-
-document.getElementById('btnTalk').onclick = ()=>{
-  const name = document.getElementById('nameInput').value.trim();
-  if(name) setName(name);
-  // 会話へ
-  location.href = 'whoai_talk.html';
-};
+  // キーボード操作（Enterで決定）
+  document.querySelectorAll('.card').forEach((el)=>{
+    el.tabIndex = 0;
+    el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); el.click(); } });
+  });
 </script>
 </body>
 </html>
