@@ -1,4 +1,3 @@
-<!-- FILE: /WHOAI2/naming.html（置き換え） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -39,32 +38,44 @@
   </main>
 
 <script>
-  const KEY={color:'whoai_color', name:'whoai_name'};
-  const color = (localStorage.getItem(KEY.color)||'pink').toLowerCase();
+  // ====== seedType から色を決める ======
+  const seed = localStorage.getItem("seedType");
+  let color = "pink"; // デフォルト
+  if(seed === "apple") color = "pink";
+  if(seed === "leaf")  color = "green";
 
-  // 直下にある画像を順に試す
-  const candidates=[`${color}_closed.png`,`tane_${color}.png`];
+  // 保存して他画面でも使えるようにする
+  localStorage.setItem("macaronColor", color);
 
-  const img=document.getElementById('charImg');
+  // キャラ画像読み込み
+  const img = document.getElementById('charImg');
+  const candidates = [`tane_${color}.png`, `${color}_closed.png`];
   let i=0;
-  function next(){ if(i>=candidates.length){ img.style.display='none'; return; }
-    const url=candidates[i++]; const t=new Image();
-    t.onload=()=>{ img.src=url; }; t.onerror=next; t.src=url;
+  function tryNext(){
+    if(i>=candidates.length){ img.style.display='none'; return; }
+    const url=candidates[i++];
+    const t=new Image();
+    t.onload=()=>{ img.src=url; };
+    t.onerror=tryNext;
+    t.src=url;
   }
-  next();
+  tryNext();
 
-  // 色名ラベル（任意）
+  // ラベル表示
   const jp={pink:'ピンク',blue:'ブルー',green:'グリーン',purple:'パープル'};
   document.getElementById('colorLabel').textContent = `色：${jp[color]||color}`;
 
-  // 保存して次の画面へ（最初の観察 or 会話へ好きに接続）
+  // 名前決定処理
   document.getElementById('okBtn').addEventListener('click', ()=>{
     const name=(document.getElementById('nameInput').value||'ななし').trim();
-   // 命名決定
-localStorage.setItem('PLAYER_NAME', playerName);
-localStorage.setItem('CHAR_NAME', charName);
-// 次へ
-location.href = 'color_pick.html';
+
+    // 保存（どちらのキーでも参照できるように複数保存）
+    localStorage.setItem('PLAYER_NAME', name);
+    localStorage.setItem('CHAR_NAME', name);
+    localStorage.setItem('whoai_name', name);
+
+    // 次の画面へ（タネ観察/会話）
+    location.href = 'whoai_talk_tane.html';
   });
 </script>
 </body>
