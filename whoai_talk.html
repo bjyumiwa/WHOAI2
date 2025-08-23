@@ -1,3 +1,4 @@
+<!-- FILE: /whoai_talk.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,12 +8,10 @@
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;
-      color:#fff;
-      /* ← ここを同階層に修正！ */
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      /* 同階層参照（プロジェクト仕様） */
       background:#000 url("space_background.png") center/cover fixed no-repeat;
       display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px;
-      /* overflow:hidden; だと下が切れるので外してOK */
     }
     .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
     .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);padding:6px 10px;border-radius:999px;font-size:12px}
@@ -38,9 +37,23 @@
     .switch{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.2)}
     .switch input{accent-color:#6f4cff}
     .hint{font-size:12px;opacity:.85;margin:4px 2px 0}
+    /* 右上トップバー */
+    .topbar{position:fixed;top:10px;right:10px;display:flex;gap:8px;z-index:10}
+    .ghostbtn{
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.18);
+      color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer
+    }
+    .ghostbtn:active{transform:translateY(1px)}
   </style>
 </head>
 <body>
+  <!-- 右上ナビ：宝箱 / ホーム -->
+  <div class="topbar">
+    <button class="ghostbtn" onclick="location.href='chest.html'">🎁 宝箱</button>
+    <button class="ghostbtn" onclick="location.href='index.html'">🏠 ホーム</button>
+  </div>
+
   <div class="chips">
     <span class="chip"><span id="chipColor">-</span> | evolved</span>
     <span class="chip">turn: <span id="turnChip">0</span>/10</span>
@@ -73,10 +86,11 @@
   </div>
 
 <script>
+  /* === 設定 === */
   const TALK_ENDPOINT="https://macaron-one.vercel.app/api/talk";
   const WINDOW_N=12, TURN_LIMIT=10;
 
-  // 復活モード処理（そのまま）
+  /* === 復活モード処理（既存仕様踏襲） === */
   const keepMode=localStorage.getItem("whoai_keep");
   if(keepMode==="appearance"){
     localStorage.removeItem("whoai_keep");
@@ -86,7 +100,7 @@
     localStorage.removeItem("whoai_keep");
   }
 
-  /* ←←← ここが重要：同階層のファイル名に修正 */
+  /* === 同階層の進化後画像 === */
   const EVOLVED_SRC={
     pink:   {closed:'pink_closed.png',   open:'pink_open.png'},
     blue:   {closed:'blue_closed.png',   open:'blue_open.png'},
@@ -97,7 +111,7 @@
   const color=(localStorage.getItem('macaronColor')||'pink').toLowerCase();
   document.getElementById('chipColor').textContent=color;
 
-  // ID & ログ（そのまま）
+  /* === ID / ログ === */
   const getOrCreate=(k)=>{let v=localStorage.getItem(k);if(v)return v;v=crypto.randomUUID();localStorage.setItem(k,v);return v;};
   const userId=getOrCreate('whoai_userId');
   const convoId='evolved_conversation';
@@ -107,24 +121,25 @@
   const readTurn=()=>parseInt(localStorage.getItem(key('turn'))||'0',10);
   const writeTurn=(n)=>localStorage.setItem(key('turn'),String(n));
 
-  // キャラ表示（フォールバック付き）
+  /* === キャラクター表示 === */
   const charImg=document.getElementById('charImg');
   const charName=localStorage.getItem("whoai_name")||"キャラ";
   document.getElementById("charLabel").textContent=charName;
 
-  function loadWithFallback(kind){ // 'open' or 'closed'
+  function loadWithFallback(kind){
     const c=EVOLVED_SRC[color] || EVOLVED_SRC.pink;
     const primary=c[kind], fallback=EVOLVED_SRC.pink[kind];
+    // 先にフォールバック表示 → 成功したら差し替え
+    charImg.src = fallback;
     const t=new Image();
     t.onload=()=>{charImg.src=primary;};
-    t.onerror=()=>{charImg.src=fallback;};
-    t.src=primary;
+    t.src=primary; // 失敗時はfallbackのまま
   }
   const setClosed=()=>loadWithFallback('closed');
   const setOpen=()=>loadWithFallback('open');
   setClosed();
 
-  // 描画
+  /* === 会話 UI === */
   const chatArea=document.getElementById('chatArea');
   const playerName=localStorage.getItem('whoai_player_name')||'あなた';
   const assistantName=charName;
@@ -143,7 +158,14 @@
   }
   render();
 
-  // 送信
+  /* === ステータス共有（宝箱と同じキー） === */
+  const STATE_KEY="whoai_state_v1";
+  const defaultState={hunger:50, energy:50, mood:50, bond:10};
+  const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
+  const loadState=()=>{try{const raw=localStorage.getItem(STATE_KEY);return raw?{...defaultState,...JSON.parse(raw)}:{...defaultState};}catch{return {...defaultState}}};
+  const saveState=(st)=>localStorage.setItem(STATE_KEY, JSON.stringify(st));
+
+  /* === 送信処理 === */
   async function talk(text){
     if(!text.trim())return;
     if(readTurn()>=TURN_LIMIT){
@@ -155,26 +177,46 @@
 
     let log=readLog();log.push({role:'user',content:text,ts:Date.now()});writeLog(log);render();
     setOpen();
+
     const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
-    const messages=[{role:'system',content:'You are a kind partner AI. Reply briefly in the user’s language.'},...history,{role:'user',content:text}];
+    const messages=[
+      {role:'system',content:'You are a kind partner AI. Reply briefly in the user’s language.'},
+      ...history,
+      {role:'user',content:text}
+    ];
     let reply='…';
     try{
-      const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})});
+      const res=await fetch(TALK_ENDPOINT,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})
+      });
       const data=await res.json().catch(()=>({}));reply=data.reply||reply;
     }catch(e){reply='（通信エラー）';console.error(e);}
+
     log=readLog();log.push({role:'assistant',content:reply,ts:Date.now()});writeLog(log);render();
     setTimeout(setClosed,450);
     speakCute(reply,document.getElementById('langSelect').value);
+
+    // 会話で少しだけ “愛着 / ごきげん” を上げる（宝箱と同じステートに加点）
+    const st = loadState();
+    st.bond = clamp(st.bond + 1);
+    st.mood = clamp(st.mood + 1);
+    saveState(st);
+
     const t=readTurn()+1;writeTurn(t);
     document.getElementById('turnChip').textContent=String(t);
   }
 
-  // 入力UI
+  /* === 入力UI === */
   const userInput=document.getElementById('userInput');
-  document.getElementById('btnSend').onclick=()=>{const v=userInput.value.trim();if(!v)return;userInput.value='';talk(v);};
-  userInput.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();document.getElementById('btnSend').click();}});
+  document.getElementById('btnSend').onclick=()=>{
+    const v=userInput.value.trim();if(!v)return;userInput.value='';talk(v);
+  };
+  userInput.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'&&!e.isComposing){e.preventDefault();document.getElementById('btnSend').click();}
+  });
 
-  // 音声認識
+  /* === 音声認識 === */
   let recognition=null,recognizing=false;
   const btnMic=document.getElementById('btnMic');
   const autoSend=document.getElementById('autoSend');
@@ -183,7 +225,10 @@
     if(!SR)return null;
     if(recognition)return recognition;
     recognition=new SR();recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=1;
-    recognition.onresult=(e)=>{const t=e.results[0][0].transcript||'';if(autoSend.checked){talk(t);}else{userInput.value=t;userInput.focus();}};
+    recognition.onresult=(e)=>{
+      const t=e.results[0][0].transcript||'';
+      if(autoSend.checked){talk(t);}else{userInput.value=t;userInput.focus();}
+    };
     recognition.onend=()=>{recognizing=false;btnMic.textContent='🎙️';};
     recognition.onerror=()=>{recognizing=false;btnMic.textContent='🎙️';};
     return recognition;
@@ -191,10 +236,12 @@
   btnMic.onclick=()=>{
     const rec=ensureRec();if(!rec){alert('このブラウザは音声入力に未対応です');return;}
     rec.lang=document.getElementById('langSelect').value||(navigator.language||'ja-JP');
-    if(recognizing){rec.stop();return;}recognizing=true;btnMic.textContent='🛑';try{rec.start();}catch{}
+    if(recognizing){rec.stop();return;}
+    recognizing=true;btnMic.textContent='🛑';
+    try{rec.start();}catch{}
   };
 
-  // TTS
+  /* === 読み上げ === */
   document.getElementById('btnTTS').onclick=()=>{
     const last=[...readLog()].reverse().find(m=>m.role==='assistant');
     if(last)speakCute(last.content,document.getElementById('langSelect').value);
