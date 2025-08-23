@@ -1,0 +1,156 @@
+<!-- FILE: /whoai_talk_tane.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhoAI | タネ観察（ポイント→マカロン解放）</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --glass: rgba(0,0,0,.35);
+      --brd: rgba(255,255,255,.18);
+      --ok: #86efac; --warn:#fde047; --bad:#fda4af;
+    }
+    html,body{height:100%;margin:0;overflow:hidden}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
+    }
+
+    /* 上部情報 */
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .chip{background:var(--glass);backdrop-filter:blur(4px);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
+
+    .title{font-size:26px;font-weight:800;letter-spacing:.06em;margin-top:2px}
+    .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
+
+    .stage{position:relative;width:min(92vw,520px);aspect-ratio:1/1;background:rgba(0,0,0,.25);border:1px solid var(--brd);border-radius:20px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .tane{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .tane img{width:min(46vmin,220px);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5));user-select:none}
+
+    /* 名前バッジ（クリックでポイント） */
+    #char-name{padding:6px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;user-select:none}
+    #char-name:active{transform:translateY(1px)}
+
+    /* マカロン解放バッジ */
+    #unlock{position:absolute;right:10px;top:10px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;z-index:5}
+    #unlock:active{transform:translateY(1px)}
+
+    /* ポイントバー */
+    .bar{position:relative;width:min(92vw,520px);height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
+    .bar>i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--ok),#a7f3d0)}
+    .barrow{display:flex;align-items:center;gap:8px}
+    .pts{font-variant-numeric:tabular-nums;background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:10px}
+
+    /* 下部ナビ */
+    .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .ghostbtn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer}
+
+    @media (max-width:480px){
+      .tane img{width:min(52vmin,180px)}
+    }
+  </style>
+</head>
+<body>
+  <div class="chips">
+    <span class="chip">👤 <span id="chipPlayer">あなた</span></span>
+    <span class="chip">🎨 色: <span id="chipColor">pink</span></span>
+    <span class="chip">🍀 モード: タネ観察</span>
+  </div>
+  <div class="title">タネを観察して育てよう</div>
+  <div class="subtitle">名前をクリックしてポイントをためると、マカロンが解放されて進化できます</div>
+
+  <div class="stage" id="stage">
+    <div id="unlock">🍬 マカロン解放！</div>
+    <div class="tane">
+      <img id="taneImg" alt="tane">
+      <div id="char-name" title="クリックでポイント+1"></div>
+    </div>
+  </div>
+
+  <div class="barrow" style="margin-top:10px">
+    <div class="bar"><i id="bar"></i></div>
+    <div class="pts">ポイント: <span id="pts">0</span> / <span id="th">15</span></div>
+  </div>
+
+  <div class="nav" style="margin-top:10px">
+    <button class="ghostbtn" onclick="location.href='color_pick.html'">🔄 色をえらび直す</button>
+    <button class="ghostbtn" onclick="location.href='index.html'">🏠 ホーム</button>
+  </div>
+
+<script>
+  // ===== 共通読み出しヘルパー =====
+  const read = (k, d='') => { const v = localStorage.getItem(k); return (v===null||v==='undefined'||v==='null')? d : v; };
+
+  // 設定・初期値
+  const PLAYER_NAME = read('PLAYER_NAME', read('whoai_player_name', 'あなた'));
+  const CHAR_NAME   = read('CHAR_NAME',   read('whoai_name', 'タネ'));
+  const COLOR       = (read('macaronColor','pink')||'pink').toLowerCase();
+  const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15'));
+
+  // UI要素
+  const chipPlayer = document.getElementById('chipPlayer');
+  const chipColor  = document.getElementById('chipColor');
+  const charNameEl = document.getElementById('char-name');
+  const img        = document.getElementById('taneImg');
+  const ptsEl      = document.getElementById('pts');
+  const thEl       = document.getElementById('th');
+  const barFill    = document.getElementById('bar');
+  const unlock     = document.getElementById('unlock');
+
+  chipPlayer.textContent = PLAYER_NAME;
+  chipColor.textContent  = COLOR;
+  charNameEl.textContent = CHAR_NAME;
+  thEl.textContent = THRESHOLD;
+
+  // キャラ画像（クリックしても絶対に切り替えない）
+  function setTaneSrc(){
+    const primary = `tane_${COLOR}.png`;
+    const fallback = 'tane_pink.png';
+    img.src = fallback; // まずフォールバック
+    const t = new Image();
+    t.onload = ()=> img.src = primary;
+    t.onerror = ()=> {/* fallbackのまま */};
+    t.src = primary;
+  }
+  setTaneSrc();
+
+  // ポイント管理
+  let pts = Number(read('tanePoints','0'));
+
+  function refresh(){
+    ptsEl.textContent = String(pts);
+    const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
+    barFill.style.width = `${ratio*100}%`;
+    barFill.style.background = ratio>0.66? 'linear-gradient(90deg,var(--ok),#a7f3d0)'
+                              : ratio>0.33? 'linear-gradient(90deg,var(--warn),#fde68a)'
+                                           : 'linear-gradient(90deg,var(--bad),#fecaca)';
+    unlock.style.display = (pts >= THRESHOLD) ? 'inline-flex' : 'none';
+  }
+  refresh();
+
+  // 名前クリックで +1（画像は変えない）
+  charNameEl.addEventListener('click', ()=>{
+    pts += 1;
+    localStorage.setItem('tanePoints', String(pts));
+    // 小さな演出
+    charNameEl.style.transform = 'translateY(1px) scale(1.02)';
+    setTimeout(()=>{ charNameEl.style.transform = ''; }, 120);
+    refresh();
+  });
+
+  // マカロン解放 → 進化へ
+  unlock.addEventListener('click', ()=>{
+    localStorage.setItem('EVOLVED','0'); // まだ進化前
+    location.href = 'macaron_select.html';
+  });
+
+  // （任意）キーボードでも加点：Enterキー
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter'){ charNameEl.click(); }
+  });
+</script>
+</body>
+</html>
