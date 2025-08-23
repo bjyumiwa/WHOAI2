@@ -39,49 +39,57 @@
   </main>
 
 <script>
-  // たねを選んでいない人は戻す
+  // たね未選択なら戻す
   document.addEventListener('DOMContentLoaded', ()=>{
     if(!localStorage.getItem('seedType')){
       location.href = 'seed_select.html';
     }
   });
 
-  // seedType → macaronColor（色）にマッピング
+  // seedType → macaronColor
   const seed = localStorage.getItem("seedType");
-  let color = "pink";                 // デフォルト
+  let color = "pink";
   if(seed === "apple") color = "pink";
   if(seed === "leaf")  color = "green";
-  if(seed === "paint") color = "blue";    // 2週目追加
-  if(seed === "grape") color = "purple";  // 2週目追加
+  if(seed === "paint") color = "blue";
+  if(seed === "grape") color = "purple";
   localStorage.setItem("macaronColor", color);
 
-  // プレビュー画像（存在する方を自動採用）
+  // プレビュー画像（即フォールバック）
   const img = document.getElementById('charImg');
-  const candidates = [`tane_${color}.png`, `${color}_closed.png`];
-  let i=0;
-  function tryNext(){
-    if(i>=candidates.length){ img.style.display='none'; return; }
-    const url=candidates[i++];
-    const t=new Image();
-    t.onload=()=>{ img.src=url; };
-    t.onerror=tryNext;
-    t.src=url;
-  }
-  tryNext();
+  (function loadPreview(){
+    const primary = `tane_${color}.png`;
+    const fallback = 'tane_pink.png';
+    const t = new Image();
+    t.onload  = ()=> img.src = primary;
+    t.onerror = ()=> img.src = fallback;
+    t.src = primary;
+  })();
 
   // ラベル
   const jp={pink:'ピンク',blue:'ブルー',green:'グリーン',purple:'パープル'};
   document.getElementById('colorLabel').textContent = `色：${jp[color]||color}`;
 
-  // 名前保存 → タネ会話へ
-  document.getElementById('okBtn').addEventListener('click', ()=>{
-    const name=(document.getElementById('nameInput').value||'ななし').trim();
+  // 名前保存 → タネ画面へ
+  const input = document.getElementById('nameInput');
+  const okBtn = document.getElementById('okBtn');
+  input.setAttribute('autofocus','true');
+
+  function decide(){
+    const raw = (input.value || '').trim();
+    const name = raw.length ? raw : 'ななし';
     localStorage.setItem('PLAYER_NAME', name);
     localStorage.setItem('CHAR_NAME',   name);
     localStorage.setItem('whoai_name',  name);
+    localStorage.setItem('whoai_player_name', name); // 互換キー
     localStorage.setItem('whoai_phase','named');
     location.href = 'whoai_talk_tane.html';
+  }
+  okBtn.addEventListener('click', decide);
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') decide();
   });
 </script>
+
 </body>
 </html>
