@@ -1,0 +1,20 @@
+<!-- naming.html の <script> 内にこの2点を反映 -->
+
+// (A) 先頭の DOMContentLoaded 内の最初で seedType チェックを追加
+document.addEventListener("DOMContentLoaded", () => {
+  // ★ たね選択がまだなら戻す
+  if (!localStorage.getItem("seedType")) {
+    location.href = "seed_select.html";
+    return;
+  }
+
+  applyI18n();
+  maybeOpenLangModal();
+  // ...（以下は昨日版の処理を継続）...
+});
+
+// (B) 決定後の遷移先を tane 会話に
+function goNext() {
+  // 仕様：名前決定 → まずはタネとして会話へ
+  location.href = "whoai_talk_tane.html";
+}
