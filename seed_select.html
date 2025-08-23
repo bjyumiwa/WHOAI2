@@ -1,95 +1,166 @@
-<!-- FILE: /WHOAI2/naming.html -->
+<!-- FILE: /WHOAI2/seed_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>名前をつける | WhoAI</title>
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-      background:#000 url("space_background.png") center/cover fixed no-repeat;
-      display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;
-    }
-    .card{
-      width:min(92vw,720px);background:rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:18px;
-      backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-      box-shadow:0 8px 24px rgba(0,0,0,.3)
-    }
-    h1{margin:0 0 10px}
-    .char{width:min(38vw,240px);height:auto;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
-    .row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
-    input{padding:12px 14px;border-radius:10px;border:none;min-width:220px;font-size:16px}
-    button{padding:12px 16px;border:none;border-radius:10px;font-weight:800;cursor:pointer}
-    .primary{background:#fff;color:#111;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>タネを選ぶ | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<link rel="icon"
+  href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🌱%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{--fg:#fff;--glass:rgba(0,0,0,.45);--line:rgba(255,255,255,.2);--accent:#7ac7ff;--ink:#00283e}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--fg);
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;
+  }
+  h1{margin:0;font-size:clamp(22px,4.5vw,30px);text-shadow:0 2px 10px rgba(0,0,0,.55)}
+  .lead{opacity:.9;margin:0}
+  .wrap{width:min(960px,94vw)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .card{
+    background:var(--glass);backdrop-filter:blur(4px);border:1px solid var(--line);
+    border-radius:16px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:12px;
+    transition:transform .06s ease, outline .06s ease; outline:2px solid transparent;
+  }
+  .card:hover{transform:translateY(-1px)}
+  .card.selected{outline:2px solid var(--accent)}
+  .emoji{font-size:28px}
+  .name{font-size:18px;font-weight:800}
+  .desc{font-size:12px;opacity:.9;margin-top:2px}
+  .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .btn{padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;border:0;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .primary{background:var(--accent);color:var(--ink)}
+  .ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+  .primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+  @media (max-width:520px){ .grid{grid-template-columns:1fr} }
+
+  /* フォールバックリンク（常時表示→JS成功時に隠す） */
+  .fallback{margin-top:14px}
+  .fallback a{
+    display:inline-block;margin:4px;padding:10px 14px;border-radius:12px;
+    border:1px solid var(--line);background:var(--glass);color:#fff;text-decoration:none;
+  }
+  .fallback.hidden{display:none}
+
+  /* 右下のリセットボタン */
+  .reset{
+    position:fixed;right:16px;bottom:16px;background:rgba(255,255,255,.1);
+    border:1px solid var(--line);color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer
+  }
+</style>
 </head>
 <body>
-  <main class="card">
-    <h1>この子に名前をつけよう</h1>
-    <p id="colorLabel" style="opacity:.9;margin:0 0 12px"></p>
-    <img id="charImg" class="char" alt="キャラクターのプレビュー" />
-    <div class="row">
-      <input id="nameInput" placeholder="なまえ（例：ほしのこ）" maxlength="16" />
-      <button id="okBtn" class="primary">決定</button>
+  <div class="wrap">
+    <h1 id="title">最初のタネを選んでください</h1>
+    <p class="lead" id="lead">あとから変更できます。選んだタイプは性格・見た目のベースになります。</p>
+
+    <div class="grid" id="choices"><!-- JS で差し込み --></div>
+
+    <div class="actions">
+      <button class="btn ghost" id="backBtn">戻る</button>
+      <button class="btn primary" id="nextBtn" disabled>次へ（名前を付ける）</button>
     </div>
-    <p style="opacity:.8;margin-top:10px">※あとで変更できます</p>
-  </main>
+
+    <!-- JSが壊れても進めるフォールバック -->
+    <div class="fallback" id="fallback">
+      <p>選択肢が表示されない場合はこちらから：</p>
+      <a href="naming.html?seed=apple">🍎 リンゴタイプで進む</a>
+      <a href="naming.html?seed=leaf">🍃 葉っぱタイプで進む</a>
+      <a href="naming.html?seed=paint">🎨 青の絵の具で進む</a>
+      <a href="naming.html?seed=grape">🍇 ブドウで進む</a>
+    </div>
+  </div>
+
+  <!-- 保存を初期化（表示がおかしい時に使うと復旧しやすい） -->
+  <button class="reset" id="resetBtn">保存をリセット</button>
 
 <script>
-  // たね未選択なら戻す
-  document.addEventListener('DOMContentLoaded', ()=>{
-    if(!localStorage.getItem('seedType')){
-      location.href = 'seed_select.html';
+(function(){
+  // --- run（周回カウンタ）を安全に取得 ---
+  function safeInt(key, def){
+    var v = localStorage.getItem(key);
+    var n = parseInt(v,10);
+    return isNaN(n)? def : n;
+  }
+  var run = safeInt('run',1);
+
+  // --- 表示テキスト（2週目以降は4種類） ---
+  if(run >= 2){
+    document.getElementById('title').textContent = 'タネを選んでください（2週目は4種類）';
+    document.getElementById('lead').textContent  = 'リンゴ／葉っぱ／青の絵の具／ブドウから選べます。';
+  }
+
+  // --- 選択肢リスト（常に表示。保存済みでも“変更OK”） ---
+  var options = [
+    {type:'apple', emoji:'🍎', name:'リンゴタイプ', desc:'バランスがよく、素直に育ちやすい。'},
+    {type:'leaf',  emoji:'🍃', name:'葉っぱタイプ', desc:'自由奔放。遊ぶのが大好き。'}
+  ];
+  if(run>=2){
+    options.push(
+      {type:'paint', emoji:'🎨', name:'青の絵の具', desc:'表現派。気分屋だけど創造的。'},
+      {type:'grape', emoji:'🍇', name:'ブドウ',     desc:'ミステリアス。深く考えるタイプ。'}
+    );
+  }
+
+  // --- DOMに差し込み ---
+  var choicesEl = document.getElementById('choices');
+  var html='';
+  options.forEach(function(o){
+    html += '<div class="card" data-type="'+o.type+'" tabindex="0" aria-label="'+o.name+'">'
+          + '  <div class="emoji">'+o.emoji+'</div>'
+          + '  <div><div class="name">'+o.name+'</div><div class="desc">'+o.desc+'</div></div>'
+          + '</div>';
+  });
+  choicesEl.innerHTML = html;
+
+  // --- 選択挙動（保存があっても常に変更可） ---
+  var current = localStorage.getItem('seedType') || null;
+  function render(){
+    Array.from(choicesEl.children).forEach(function(c){
+      c.classList.toggle('selected', c.getAttribute('data-type')===current);
+    });
+    document.getElementById('nextBtn').disabled = !current;
+  }
+  choicesEl.addEventListener('click', function(e){
+    var t=e.target; while(t && !t.classList.contains('card')) t=t.parentNode;
+    if(!t) return; current=t.getAttribute('data-type'); render();
+  });
+  choicesEl.addEventListener('keydown', function(e){
+    if((e.key==='Enter'||e.key===' ') && e.target.classList.contains('card')){
+      current=e.target.getAttribute('data-type'); render();
     }
   });
-
-  // seedType → macaronColor
-  const seed = localStorage.getItem("seedType");
-  let color = "pink";
-  if(seed === "apple") color = "pink";
-  if(seed === "leaf")  color = "green";
-  if(seed === "paint") color = "blue";
-  if(seed === "grape") color = "purple";
-  localStorage.setItem("macaronColor", color);
-
-  // プレビュー画像（即フォールバック）
-  const img = document.getElementById('charImg');
-  (function loadPreview(){
-    const primary = `tane_${color}.png`;
-    const fallback = 'tane_pink.png';
-    const t = new Image();
-    t.onload  = ()=> img.src = primary;
-    t.onerror = ()=> img.src = fallback;
-    t.src = primary;
-  })();
-
-  // ラベル
-  const jp={pink:'ピンク',blue:'ブルー',green:'グリーン',purple:'パープル'};
-  document.getElementById('colorLabel').textContent = `色：${jp[color]||color}`;
-
-  // 名前保存 → タネ画面へ
-  const input = document.getElementById('nameInput');
-  const okBtn = document.getElementById('okBtn');
-  input.setAttribute('autofocus','true');
-
-  function decide(){
-    const raw = (input.value || '').trim();
-    const name = raw.length ? raw : 'ななし';
-    localStorage.setItem('PLAYER_NAME', name);
-    localStorage.setItem('CHAR_NAME',   name);
-    localStorage.setItem('whoai_name',  name);
-    localStorage.setItem('whoai_player_name', name); // 互換キー
-    localStorage.setItem('whoai_phase','named');
-    location.href = 'whoai_talk_tane.html';
-  }
-  okBtn.addEventListener('click', decide);
-  input.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter') decide();
+  document.getElementById('backBtn').addEventListener('click', function(){ history.back(); });
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    if(!current) return;
+    try{
+      localStorage.setItem('seedType', current);
+      // 2週目マッピングは naming.html 側で macaronColor に反映されます
+    }catch(_){}
+    location.href='naming.html';
   });
-</script>
 
+  // --- 成功したらフォールバック非表示 ---
+  document.getElementById('fallback').classList.add('hidden');
+
+  // --- 保存リセット（表示がおかしい時の復旧用） ---
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    ['seedType','macaronColor','tanePoints','whoai_xp','whoai_phase',
+     'PLAYER_NAME','CHAR_NAME','whoai_name','whoai_player_name'].forEach(function(k){
+      try{ localStorage.removeItem(k); }catch(_){}
+    });
+    alert('保存をリセットしました。ページを再読み込みします。');
+    location.reload();
+  });
+
+  // 初期レンダリング（保存済みの seedType を反映）
+  render();
+})();
+</script>
 </body>
 </html>
