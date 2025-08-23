@@ -29,69 +29,45 @@
   .title{position:fixed;left:50%;top:44px;transform:translateX(-50%);font-weight:800;text-align:center;z-index:4}
   .subtitle{position:fixed;left:50%;top:72px;transform:translateX(-50%);font-size:12px;opacity:.9;text-align:center;z-index:4}
 
-  /* プレイフィールド＝全画面。枠は無し！ */
   .field{position:fixed;inset:0;overflow:hidden}
 
-  /* キャラ */
-  .tane{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2;
-  }
-  .tane img{
-    width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));
-    user-select:none; pointer-events:none; transition:transform .18s ease;
-  }
+  .tane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
+  .tane img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));user-select:none;pointer-events:none;transition:transform .18s ease}
   @media (max-width:480px){ .tane img{width:min(54vmin,160px)} }
   .pop{animation:pop .25s ease}
   @keyframes pop{0%{transform:scale(1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
 
-  /* 名前タグ（出たり消えたり・クリックでポイント） */
-  .nameTag{
-    position:absolute;left:50%;top:-10px;transform:translate(-50%,-100%);
-    padding:8px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);
-    cursor:pointer;user-select:none;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.35);
-    opacity:0; pointer-events:none; transition:opacity .25s ease;
-  }
+  .nameTag{position:absolute;left:50%;top:-10px;transform:translate(-50%,-100%);padding:8px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;user-select:none;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s ease}
   .nameTag.show{opacity:1;pointer-events:auto}
   .spin{animation:spin 500ms ease both}
   @keyframes spin{to{transform:translate(-50%,-100%) rotate(360deg)}}
 
-  /* 励ましフキダシ */
-  .bubble{
-    position:absolute;left:50%;top:-14px;transform:translate(-50%,-100%);
-    background:#0f1220d0;border:1px solid var(--brd);border-radius:14px;padding:10px 12px;font-size:13px;
-    box-shadow:0 10px 26px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;
-  }
+  .bubble{position:absolute;left:50%;top:-14px;transform:translate(-50%,-100%);background:#0f1220d0;border:1px solid var(--brd);border-radius:14px;padding:10px 12px;font-size:13px;box-shadow:0 10px 26px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease}
   .bubble.show{opacity:1;transform:translate(-50%,-110%)}
 
-  /* マカロン解放バッジ */
   #unlock{position:fixed;right:10px;top:10px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;z-index:6}
-  #unlock:active{transform:translateY(1px)}
 
-  /* ポイントバー */
   .barwrap{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);width:min(92vw,720px);display:flex;gap:8px;align-items:center;z-index:5}
   .bar{position:relative;flex:1;height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
   .bar>i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--ok),#a7f3d0)}
   .pts{font-variant-numeric:tabular-nums;background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:10px}
 
-  /* お世話パネル＋リセット */
   .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(920px,96vw);display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
   .care{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
   .btncare{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
-  .btncare:disabled{opacity:.55;cursor:not-allowed}
   .btnreset{background:rgba(255,255,255,.14);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;cursor:pointer}
+  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:50%;padding:6px 10px;cursor:pointer;font-size:16px}
+
   .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
   .gbar>span{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
   .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
 
-  /* 進化トースト */
   .toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#0f1220;border:1px solid var(--brd);border-radius:16px;padding:14px 16px;z-index:10;display:none;box-shadow:0 18px 50px rgba(0,0,0,.5);text-align:center}
   .toast.show{display:block;animation:pop .25s ease}
 </style>
 </head>
 <body>
-  <!-- HUD -->
   <div class="chips">
     <span class="chip">👤 <span id="chipPlayer">あなた</span></span>
     <span class="chip">🎨 色: <span id="chipColor">pink</span></span>
@@ -100,31 +76,31 @@
   <div class="title">タネを観察して育てよう</div>
   <div class="subtitle">“名前タッチ”やお世話でポイントをためると、マカロンが解放されて進化できます</div>
 
-  <!-- マカロン解放 -->
   <div id="unlock">🍬 マカロン解放！</div>
 
-  <!-- プレイフィールド（全画面） -->
   <div class="field" id="field">
     <div class="tane" id="tane">
-      <div class="nameTag" id="nameTag" title="タッチでポイント+1"></div>
+      <div class="nameTag" id="nameTag"></div>
       <div class="bubble" id="bubble"></div>
       <img id="taneImg" alt="tane">
     </div>
   </div>
 
-  <!-- ポイント -->
   <div class="barwrap">
     <div class="bar"><i id="bar"></i></div>
     <div class="pts">ポイント: <span id="pts">0</span> / <span id="th">15</span></div>
   </div>
 
-  <!-- お世話＋リセット -->
   <div class="panel">
     <div class="care">
       <button class="btncare" id="btnToilet">🚽 トイレ</button>
       <button class="btncare" id="btnBath">🛁 おふろ</button>
       <button class="btncare" id="btnPlay">🎲 あそぶ</button>
-      <button class="btnreset" id="btnReset">🔄 ポイントリセット</button>
+      <button class="btnreset" id="btnReset">🔄 リセット</button>
+      <!-- 速度切替 -->
+      <button class="btnspeed" onclick="setSpeed('slow')">🐢</button>
+      <button class="btnspeed" onclick="setSpeed('normal')">⚖</button>
+      <button class="btnspeed" onclick="setSpeed('fast')">🐇</button>
     </div>
     <div class="gauges">
       <div class="gbar" id="gClean"><span></span><div class="glbl">きれい</div></div>
@@ -136,192 +112,40 @@
   <div class="toast" id="toast">ポイントがたまりました！<br/>マカロン選択へ進みます…</div>
 
 <script>
-  /* ===== ユーティリティ ===== */
-  const read = (k, d='') => { const v = localStorage.getItem(k); return (v===null||v==='undefined'||v==='null')? d : v; };
-  const clamp = v => Math.max(0, Math.min(100, v));
+/* === 必要部分だけ抜粋 === */
+const SPEEDS = { slow:0.018, normal:0.03, fast:0.05 };
+let curSpeed='slow', vx=0,vy=0;
+function randomSign(){ return Math.random()<0.5?-1:1; }
+function setSpeed(mode=curSpeed){
+  curSpeed=mode;
+  const s=SPEEDS[mode];
+  vx=s*randomSign(); vy=s*randomSign();
+}
+setSpeed('slow');
 
-  /* ===== 初期値＆既存キー互換 ===== */
-  const PLAYER_NAME = read('PLAYER_NAME', read('whoai_player_name','あなた'));
-  const CHAR_NAME   = read('CHAR_NAME',   read('whoai_name','タネ'));
-  const COLOR       = (read('macaronColor','pink')||'pink').toLowerCase(); // pink/green/blue/purple
-  const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15'));
-  let pts           = Number(read('tanePoints','0'));
-
-  /* ===== DOM ===== */
-  const chipPlayer = document.getElementById('chipPlayer');
-  const chipColor  = document.getElementById('chipColor');
-  const taneImg    = document.getElementById('taneImg');
-  const nameTag    = document.getElementById('nameTag');
-  const bubble     = document.getElementById('bubble');
-  const barFill    = document.getElementById('bar');
-  const ptsEl      = document.getElementById('pts');
-  const thEl       = document.getElementById('th');
-  const unlock     = document.getElementById('unlock');
-  const field      = document.getElementById('field');
-  const taneEl     = document.getElementById('tane');
-
-  const gClean     = document.getElementById('gClean');
-  const gFun       = document.getElementById('gFun');
-  const gRelief    = document.getElementById('gRelief');
-  const btnToilet  = document.getElementById('btnToilet');
-  const btnBath    = document.getElementById('btnBath');
-  const btnPlay    = document.getElementById('btnPlay');
-  const btnReset   = document.getElementById('btnReset');
-  const toast      = document.getElementById('toast');
-
-  /* ===== HUD適用 ===== */
-  chipPlayer.textContent = PLAYER_NAME;
-  chipColor.textContent  = COLOR;
-  thEl.textContent       = THRESHOLD;
-
-  /* ===== 画像読み込み（4色対応） ===== */
-  (function setTaneSrc(){
-    const file = `tane_${COLOR}.png`;
-    const t = new Image();
-    t.onload = ()=> (taneImg.src = file);
-    t.onerror = ()=> (taneImg.src = 'tane_pink.png');
-    t.src = file;
-  })();
-
-  /* ===== ポイント表示 ===== */
-  function refreshPoints(){
-    ptsEl.textContent = String(pts);
-    const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
-    barFill.style.width = `${ratio*100}%`;
-    barFill.style.background = ratio>0.66? 'linear-gradient(90deg,var(--ok),#a7f3d0)'
-                              : ratio>0.33? 'linear-gradient(90deg,var(--warn),#fde68a)'
-                                           : 'linear-gradient(90deg,var(--bad),#fecaca)';
-    unlock.style.display = (pts >= THRESHOLD) ? 'inline-flex' : 'none';
-  }
-  function addPoints(n=1){
-    pts = Math.max(0, pts + n);
-    localStorage.setItem('tanePoints', String(pts));
-    refreshPoints();
-    taneImg.classList.add('pop'); setTimeout(()=>taneImg.classList.remove('pop'), 250);
-    if(pts >= THRESHOLD){ showToastAndEvolve(); }
-  }
-  btnReset.addEventListener('click', ()=>{
-    pts = 0; localStorage.setItem('tanePoints','0'); refreshPoints();
-  });
-
-  /* ===== “名前タッチ”の出現・クリック ===== */
-  nameTag.textContent = CHAR_NAME;
-  function toggleNameTag(show){
-    nameTag.classList.toggle('show', !!show);
-  }
-  nameTag.addEventListener('click', ()=>{
-    nameTag.classList.remove('spin'); void nameTag.offsetWidth; nameTag.classList.add('spin');
-    addPoints(1);
-  });
-  // ランダムに出たり消えたり
-  setInterval(()=>{
-    const show = Math.random() < 0.55; // 55%の確率で表示
-    toggleNameTag(show);
-  }, 3000);
-
-  /* ===== 励ましセリフ（ランダム） ===== */
-  const LINES = [
-    'いいペース！','がんばってるね','その調子✨','ありがとう！','うれしい〜','休憩も大事だよ','あと少し！','一緒にいこう'
-  ];
-  function showBubble(){
-    bubble.textContent = LINES[(Math.random()*LINES.length)|0];
-    bubble.classList.add('show');
-    setTimeout(()=>bubble.classList.remove('show'), 2000);
-  }
-  setInterval(()=>{
-    if(Math.random()<0.45) showBubble();
-  }, 5000);
-
-  /* ===== キャラ移動（全画面・ゆっくり／端でバウンド） ===== */
-  let vx = (Math.random()*0.4+0.2) * (Math.random()<0.5?-1:1); // px/ms
-  let vy = (Math.random()*0.4+0.2) * (Math.random()<0.5?-1:1);
-  let last = performance.now();
-
-  function bounds(){
-    const rect = field.getBoundingClientRect();
-    const w = taneImg.clientWidth || 160;
-    const h = taneImg.clientHeight || 160;
-    return {minX:10, minY:100, maxX:rect.width-10, maxY:rect.height-120, w, h};
-  }
-  let pos = {x: window.innerWidth/2, y: window.innerHeight/2};
-
-  function step(now){
-    const dt = now - last; last = now;
-    const b = bounds();
-    pos.x += vx*dt; pos.y += vy*dt;
-
-    const halfW = b.w/2, halfH = b.h/2;
-    if(pos.x < b.minX+halfW){ pos.x = b.minX+halfW; vx *= -1; }
-    if(pos.x > b.maxX-halfW){ pos.x = b.maxX-halfW; vx *= -1; }
-    if(pos.y < b.minY+halfH){ pos.y = b.minY+halfH; vy *= -1; }
-    if(pos.y > b.maxY-halfH){ pos.y = b.maxY-halfH; vy *= -1; }
-
-    taneEl.style.left = `${pos.x}px`;
-    taneEl.style.top  = `${pos.y}px`;
-
-    requestAnimationFrame(step);
-  }
-  // 初期配置
-  (function initPos(){
-    const b = bounds();
-    pos.x = (b.minX + b.maxX)/2; pos.y = (b.minY + b.maxY)/2;
-    taneEl.style.left = `${pos.x}px`;
-    taneEl.style.top  = `${pos.y}px`;
-  })();
+/* キャラ移動 */
+let last=performance.now();
+let pos={x:window.innerWidth/2,y:window.innerHeight/2};
+function bounds(){
+  const rect=field.getBoundingClientRect();
+  const w=taneImg.clientWidth||160,h=taneImg.clientHeight||160;
+  return{minX:10,minY:100,maxX:rect.width-10,maxY:rect.height-120,w,h};
+}
+function step(now){
+  let dt=now-last; last=now;
+  if(dt>40)dt=40;
+  const b=bounds();
+  pos.x+=vx*dt; pos.y+=vy*dt;
+  const hw=b.w/2,hh=b.h/2;
+  if(pos.x<b.minX+hw){pos.x=b.minX+hw;vx*=-1;}
+  if(pos.x>b.maxX-hw){pos.x=b.maxX-hw;vx*=-1;}
+  if(pos.y<b.minY+hh){pos.y=b.minY+hh;vy*=-1;}
+  if(pos.y>b.maxY-hh){pos.y=b.maxY-hh;vy*=-1;}
+  taneEl.style.left=`${pos.x}px`;
+  taneEl.style.top =`${pos.y}px`;
   requestAnimationFrame(step);
-  window.addEventListener('resize', ()=>{ /* boundsは都度計算するので何もしない */ });
-
-  /* ===== お世話：ゲージ管理 ===== */
-  const SKEY = { clean:'taneClean', fun:'taneFun', relief:'taneRelief', last:'taneLastTick' };
-  let clean  = Number(localStorage.getItem(SKEY.clean)  ?? 70);
-  let fun    = Number(localStorage.getItem(SKEY.fun)    ?? 70);
-  let relief = Number(localStorage.getItem(SKEY.relief) ?? 70);
-  let lastTick = Number(localStorage.getItem(SKEY.last) ?? Date.now());
-
-  const DECAY_MS = 2600, DECAY = 1, COOLDOWN = 1200;
-
-  function setGauge(el, val){
-    const span = el.querySelector('span');
-    val = clamp(val);
-    span.style.width = `${val}%`;
-    span.style.background = val>=66
-      ? 'linear-gradient(90deg,#8EE6A2,#c9f9d6)'
-      : val>=33
-      ? 'linear-gradient(90deg,#FFD36E,#ffe4a8)'
-      : 'linear-gradient(90deg,#FF8A8A,#ffc2c2)';
-  }
-  function renderGauges(){ setGauge(gClean,clean); setGauge(gFun,fun); setGauge(gRelief,relief); }
-  function persistGauges(){
-    localStorage.setItem(SKEY.clean,clean);
-    localStorage.setItem(SKEY.fun,fun);
-    localStorage.setItem(SKEY.relief,relief);
-    localStorage.setItem(SKEY.last,Date.now());
-  }
-  function tick(){
-    const now = Date.now();
-    if(now - lastTick >= DECAY_MS){
-      clean = clamp(clean-DECAY); fun = clamp(fun-DECAY); relief = clamp(relief-DECAY);
-      lastTick = now; renderGauges(); persistGauges();
-    }
-    requestAnimationFrame(tick);
-  }
-  function cooldown(btn){ btn.disabled=true; setTimeout(()=>btn.disabled=false, COOLDOWN); }
-  btnToilet.addEventListener('click', ()=>{ cooldown(btnToilet); relief=clamp(relief+18); clean=clamp(clean+4);  renderGauges(); persistGauges(); addPoints(2); });
-  btnBath.addEventListener('click',   ()=>{ cooldown(btnBath);   clean =clamp(clean +22);                    renderGauges(); persistGauges(); addPoints(2); });
-  btnPlay.addEventListener('click',   ()=>{ cooldown(btnPlay);   fun   =clamp(fun   +18);                    renderGauges(); persistGauges(); addPoints(2); });
-
-  /* ===== 進化 ===== */
-  function showToastAndEvolve(){
-    toast.classList.add('show');
-    setTimeout(()=>{ location.href='macaron_select.html'; }, 900);
-  }
-  unlock.addEventListener('click', showToastAndEvolve);
-
-  /* ===== 起動 ===== */
-  (function init(){
-    refreshPoints(); renderGauges(); requestAnimationFrame(tick);
-    toggleNameTag(true); // 最初は名前見せる
-  })();
+}
+requestAnimationFrame(step);
 </script>
 </body>
 </html>
