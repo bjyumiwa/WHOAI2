@@ -1,16 +1,17 @@
-<!-- FILE: /whoai_talk_tane.html -->
+<!-- FILE: /WHOAI2/whoai_talk_tane.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI | タネ観察（ポイント→マカロン解放）</title>
+  <title>WhoAI | タネ観察（お世話＋ポイント→マカロン）</title>
   <meta name="color-scheme" content="dark light" />
   <style>
     :root{
       --glass: rgba(0,0,0,.35);
       --brd: rgba(255,255,255,.18);
       --ok: #86efac; --warn:#fde047; --bad:#fda4af;
+      --accent:#7ac7ff;
     }
     html,body{height:100%;margin:0;overflow:hidden}
     body{
@@ -26,13 +27,23 @@
     .title{font-size:26px;font-weight:800;letter-spacing:.06em;margin-top:2px}
     .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
 
+    /* ステージ */
     .stage{position:relative;width:min(92vw,520px);aspect-ratio:1/1;background:rgba(0,0,0,.25);border:1px solid var(--brd);border-radius:20px;display:flex;align-items:center;justify-content:center;overflow:hidden}
     .tane{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
-    .tane img{width:min(46vmin,220px);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5));user-select:none}
+    .tane img{width:min(46vmin,220px);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5));user-select:none;transition:transform .2s ease}
+    .pop{animation:pop .25s ease}
+    @keyframes pop{0%{transform:scale(1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
 
-    /* 名前バッジ（クリックでポイント） */
-    #char-name{padding:6px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;user-select:none}
-    #char-name:active{transform:translateY(1px)}
+    /* 旧：固定名バッジは非表示に（互換のため残す） */
+    #char-name{display:none}
+
+    /* 浮遊する“名前タッチ”バッジ */
+    .nameTag{
+      position:absolute;left:50%;top:18%;transform:translate(-50%,-50%);
+      padding:6px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);
+      cursor:pointer;user-select:none;font-weight:800;z-index:6;box-shadow:0 6px 18px rgba(0,0,0,.35)
+    }
+    .nameTag:active{transform:translate(-50%,-50%) scale(1.02)}
 
     /* マカロン解放バッジ */
     #unlock{position:absolute;right:10px;top:10px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;z-index:5}
@@ -44,13 +55,31 @@
     .barrow{display:flex;align-items:center;gap:8px}
     .pts{font-variant-numeric:tabular-nums;background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:10px}
 
-    /* 下部ナビ */
+    /* お世話パネル */
+    .panel{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);width:min(920px,94vw);display:grid;grid-template-columns:1fr;gap:10px;z-index:7}
+    .care{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .btncare{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+    .btncare:disabled{opacity:.55;cursor:not-allowed}
+    .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .gbar{position:relative;height:14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
+    .gbar>span{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
+    .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+    /* 下部ナビ（既存） */
     .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
     .ghostbtn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer}
 
     @media (max-width:480px){
       .tane img{width:min(52vmin,180px)}
     }
+
+    /* 進化トースト */
+    .toast{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      background:#0f1220;border:1px solid var(--brd);border-radius:16px;
+      padding:14px 16px;z-index:50;display:none;box-shadow:0 18px 50px rgba(0,0,0,.5)
+    }
+    .toast.show{display:block;animation:pop .25s ease}
   </style>
 </head>
 <body>
@@ -60,14 +89,17 @@
     <span class="chip">🍀 モード: タネ観察</span>
   </div>
   <div class="title">タネを観察して育てよう</div>
-  <div class="subtitle">名前をクリックしてポイントをためると、マカロンが解放されて進化できます</div>
+  <div class="subtitle">“名前タッチ”やお世話でポイントをためると、マカロンが解放されて進化できます</div>
 
   <div class="stage" id="stage">
     <div id="unlock">🍬 マカロン解放！</div>
     <div class="tane">
       <img id="taneImg" alt="tane">
+      <!-- 互換のため残すが非表示 -->
       <div id="char-name" title="クリックでポイント+1"></div>
     </div>
+    <!-- 浮遊する名前タッチ -->
+    <div class="nameTag" id="nameTag" title="タッチでポイント+1"></div>
   </div>
 
   <div class="barrow" style="margin-top:10px">
@@ -75,52 +107,54 @@
     <div class="pts">ポイント: <span id="pts">0</span> / <span id="th">15</span></div>
   </div>
 
-  <div class="nav" style="margin-top:10px">
+  <div class="panel">
+    <div class="care">
+      <button class="btncare" id="btnToilet">🚽 トイレ</button>
+      <button class="btncare" id="btnBath">🛁 おふろ</button>
+      <button class="btncare" id="btnPlay">🎲 あそぶ</button>
+    </div>
+    <div class="gauges">
+      <div class="gbar" id="gClean"><span></span><div class="glbl">きれい</div></div>
+      <div class="gbar" id="gFun"><span></span><div class="glbl">たのしさ</div></div>
+      <div class="gbar" id="gRelief"><span></span><div class="glbl">スッキリ</div></div>
+    </div>
+  </div>
+
+  <div class="nav" style="margin-top:6px">
     <button class="ghostbtn" onclick="location.href='color_pick.html'">🔄 色をえらび直す</button>
     <button class="ghostbtn" onclick="location.href='index.html'">🏠 ホーム</button>
   </div>
 
+  <div class="toast" id="toast">ポイントがたまりました！<br/>マカロン選択へ進みます…</div>
+
 <script>
-  // ===== 共通読み出しヘルパー =====
+  // ===== 読み出しヘルパー =====
   const read = (k, d='') => { const v = localStorage.getItem(k); return (v===null||v==='undefined'||v==='null')? d : v; };
 
-  // 設定・初期値
+  // 設定・初期値（既存キー互換）
   const PLAYER_NAME = read('PLAYER_NAME', read('whoai_player_name', 'あなた'));
   const CHAR_NAME   = read('CHAR_NAME',   read('whoai_name', 'タネ'));
   const COLOR       = (read('macaronColor','pink')||'pink').toLowerCase();
-  const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15'));
+  const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15')); // 既存しきい値
+  let pts           = Number(read('tanePoints','0'));             // 既存ポイントキー
 
-  // UI要素
-  const chipPlayer = document.getElementById('chipPlayer');
-  const chipColor  = document.getElementById('chipColor');
-  const charNameEl = document.getElementById('char-name');
-  const img        = document.getElementById('taneImg');
-  const ptsEl      = document.getElementById('pts');
-  const thEl       = document.getElementById('th');
-  const barFill    = document.getElementById('bar');
-  const unlock     = document.getElementById('unlock');
-
+  // HUD
   chipPlayer.textContent = PLAYER_NAME;
   chipColor.textContent  = COLOR;
-  charNameEl.textContent = CHAR_NAME;
-  thEl.textContent = THRESHOLD;
+  document.getElementById('th').textContent = THRESHOLD;
 
-  // キャラ画像（クリックしても絶対に切り替えない）
-  function setTaneSrc(){
+  // キャラ画像（色→tane_{color}.png、無ければpink）
+  (function setTaneSrc(){
     const primary = `tane_${COLOR}.png`;
     const fallback = 'tane_pink.png';
-    img.src = fallback; // まずフォールバック
     const t = new Image();
-    t.onload = ()=> img.src = primary;
-    t.onerror = ()=> {/* fallbackのまま */};
+    t.onload = ()=> (taneImg.src = primary);
+    t.onerror = ()=> (taneImg.src = fallback);
     t.src = primary;
-  }
-  setTaneSrc();
+  })();
 
-  // ポイント管理
-  let pts = Number(read('tanePoints','0'));
-
-  function refresh(){
+  // ===== ポイントバー表示 =====
+  function refreshPoints(){
     ptsEl.textContent = String(pts);
     const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
     barFill.style.width = `${ratio*100}%`;
@@ -129,28 +163,145 @@
                                            : 'linear-gradient(90deg,var(--bad),#fecaca)';
     unlock.style.display = (pts >= THRESHOLD) ? 'inline-flex' : 'none';
   }
-  refresh();
 
-  // 名前クリックで +1（画像は変えない）
-  charNameEl.addEventListener('click', ()=>{
-    pts += 1;
-    localStorage.setItem('tanePoints', String(pts));
-    // 小さな演出
-    charNameEl.style.transform = 'translateY(1px) scale(1.02)';
-    setTimeout(()=>{ charNameEl.style.transform = ''; }, 120);
-    refresh();
+  // ===== 名前タッチ（浮遊バッジ） =====
+  const nameTag = document.getElementById('nameTag');
+  nameTag.textContent = CHAR_NAME;
+
+  function moveNameTagRandom(){
+    const pad = 40, avoidBottom = 190; // 端＆下パネル回避
+    const W = window.innerWidth, H = window.innerHeight;
+    const x = Math.random() * (W - pad*2) + pad;
+    const y = Math.random() * (H - pad*2 - avoidBottom) + pad;
+    nameTag.style.left = `${x}px`;
+    nameTag.style.top  = `${y}px`;
+    nameTag.style.transform = 'translate(-50%,-50%)';
+  }
+  function addPoints(n=1){
+    pts += n;
+    localStorage.setItem('tanePoints', String(pts)); // 既存キーに保存
+    refreshPoints();
+    popChar();
+    if(pts >= THRESHOLD){ evolveToast(); }
+  }
+  nameTag.addEventListener('click', ()=>{
+    addPoints(1);
+    moveNameTagRandom();
   });
 
-  // マカロン解放 → 進化へ
-  unlock.addEventListener('click', ()=>{
-    localStorage.setItem('EVOLVED','0'); // まだ進化前
-    location.href = 'macaron_select.html';
+  // 旧#char-nameのEnter互換（残してもOK）
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ addPoints(1); } });
+
+  function popChar(){
+    taneImg.classList.add('pop');
+    setTimeout(()=>taneImg.classList.remove('pop'), 250);
+  }
+
+  // ===== お世話：ゲージ管理（localStorageは新規キー） =====
+  const SKEY = { clean:'taneClean', fun:'taneFun', relief:'taneRelief', last:'taneLastTick' };
+  let clean  = Number(localStorage.getItem(SKEY.clean)  ?? 70);
+  let fun    = Number(localStorage.getItem(SKEY.fun)    ?? 70);
+  let relief = Number(localStorage.getItem(SKEY.relief) ?? 70);
+  let lastTick = Number(localStorage.getItem(SKEY.last) ?? Date.now());
+
+  const DECAY_MS = 2500;  // 減衰間隔
+  const DECAY    = 1;     // 減衰量/ tick
+  const COOLDOWN = 1500;  // お世話ボタンのクールダウン(ms)
+
+  function clamp(v){ return Math.max(0, Math.min(100, v)); }
+  function setGauge(el, val){
+    const span = el.querySelector('span');
+    val = clamp(val);
+    span.style.width = `${val}%`;
+    span.style.background = val>=66
+      ? 'linear-gradient(90deg,#8EE6A2,#c9f9d6)'
+      : val>=33
+      ? 'linear-gradient(90deg,#FFD36E,#ffe4a8)'
+      : 'linear-gradient(90deg,#FF8A8A,#ffc2c2)';
+  }
+  function renderGauges(){
+    setGauge(gClean,  clean);
+    setGauge(gFun,    fun);
+    setGauge(gRelief, relief);
+  }
+  function persistGauges(){
+    localStorage.setItem(SKEY.clean,  clean);
+    localStorage.setItem(SKEY.fun,    fun);
+    localStorage.setItem(SKEY.relief, relief);
+    localStorage.setItem(SKEY.last,   Date.now());
+  }
+  function tick(){
+    const now = Date.now();
+    if(now - lastTick >= DECAY_MS){
+      clean  = clamp(clean  - DECAY);
+      fun    = clamp(fun    - DECAY);
+      relief = clamp(relief - DECAY);
+      lastTick = now;
+      renderGauges(); persistGauges();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // お世話ボタン
+  function cooldown(btn){ btn.disabled = true; setTimeout(()=>btn.disabled=false, COOLDOWN); }
+  btnToilet.addEventListener('click', ()=>{
+    cooldown(btnToilet);
+    relief = clamp(relief + 18);
+    clean  = clamp(clean + 4);
+    renderGauges(); persistGauges();
+    addPoints(2);
+  });
+  btnBath.addEventListener('click', ()=>{
+    cooldown(btnBath);
+    clean = clamp(clean + 22);
+    renderGauges(); persistGauges();
+    addPoints(2);
+  });
+  btnPlay.addEventListener('click', ()=>{
+    cooldown(btnPlay);
+    fun = clamp(fun + 18);
+    renderGauges(); persistGauges();
+    addPoints(2);
   });
 
-  // （任意）キーボードでも加点：Enterキー
-  document.addEventListener('keydown', (e)=>{
-    if(e.key==='Enter'){ charNameEl.click(); }
-  });
+  // ===== 進化 =====
+  function evolveToast(){
+    if(pts < THRESHOLD) return;
+    toast.classList.add('show');
+    setTimeout(()=>{ location.href = 'macaron_select.html'; }, 1000);
+  }
+  unlock.addEventListener('click', evolveToast);
+
+  // ===== 起動 =====
+  function init(){
+    // 旧UIの表示値適用
+    ptsEl.textContent = String(pts);
+    refreshPoints();
+
+    // 名前タグ初期配置
+    moveNameTagRandom();
+
+    // ゲージ
+    renderGauges();
+    requestAnimationFrame(tick);
+  }
+  // 要素参照
+  const chipPlayer = document.getElementById('chipPlayer');
+  const chipColor  = document.getElementById('chipColor');
+  const taneImg    = document.getElementById('taneImg');
+  const ptsEl      = document.getElementById('pts');
+  const barFill    = document.getElementById('bar');
+  const unlock     = document.getElementById('unlock');
+  const gClean     = document.getElementById('gClean');
+  const gFun       = document.getElementById('gFun');
+  const gRelief    = document.getElementById('gRelief');
+  const btnToilet  = document.getElementById('btnToilet');
+  const btnBath    = document.getElementById('btnBath');
+  const btnPlay    = document.getElementById('btnPlay');
+  const toast      = document.getElementById('toast');
+
+  // go
+  init();
 </script>
 </body>
 </html>
