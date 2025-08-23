@@ -1,20 +1,166 @@
-<!-- naming.html の <script> 内にこの2点を反映 -->
-
-// (A) 先頭の DOMContentLoaded 内の最初で seedType チェックを追加
-document.addEventListener("DOMContentLoaded", () => {
-  // ★ たね選択がまだなら戻す
-  if (!localStorage.getItem("seedType")) {
-    location.href = "seed_select.html";
-    return;
+<!-- FILE: /WHOAI2/seed_select.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>タネを選ぶ | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+  :root{
+    --fg:#fff; --glass:rgba(0,0,0,.45); --line:rgba(255,255,255,.2);
+    --accent:#7ac7ff; --ink:#00283e;
   }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--fg);
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:18px;padding:16px;
+  }
+  h1{margin:0;font-size:clamp(22px,4.5vw,30px);text-shadow:0 2px 10px rgba(0,0,0,.55)}
+  p.lead{margin:0 0 6px;opacity:.9}
 
-  applyI18n();
-  maybeOpenLangModal();
-  // ...（以下は昨日版の処理を継続）...
+  .wrap{width:min(960px,94vw)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .card{
+    background:var(--glass);backdrop-filter:blur(4px);
+    border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;
+    display:flex;align-items:center;gap:12px;transition:transform .06s ease, outline .06s ease;
+    outline:2px solid transparent;
+  }
+  .card:hover{transform:translateY(-1px)}
+  .card.selected{outline:2px solid var(--accent)}
+  .emoji{font-size:28px}
+  .name{font-size:18px;font-weight:800}
+  .desc{font-size:12px;opacity:.9;margin-top:2px}
+
+  .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .btn{
+    padding:10px 16px;border-radius:12px;font-weight:800;cursor:pointer;border:0;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
+  }
+  .primary{background:var(--accent);color:var(--ink)}
+  .ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+  .primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+
+  .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap}
+  .chip{background:rgba(0,0,0,.35);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+  <!-- 言語クイック切替（任意） -->
+  <div class="chips" id="chips">
+    <div class="chip" data-lang="ja">日本語</div>
+    <div class="chip" data-lang="en">English</div>
+    <div class="chip" data-lang="zh-CN">简体</div>
+    <div class="chip" data-lang="zh-TW">繁體</div>
+    <div class="chip" data-lang="ko">한국어</div>
+  </div>
+
+  <div class="wrap">
+    <h1 id="t_title">最初のタネを選んでください</h1>
+    <p id="t_desc" class="lead">あとから変更できません。選んだタイプは性格・見た目のベースになります。</p>
+
+    <div class="grid" id="choices">
+      <div class="card" data-type="apple" tabindex="0" aria-label="りんごタイプ">
+        <div class="emoji">🍎</div>
+        <div>
+          <div class="name" id="t_apple">リンゴタイプ</div>
+          <div class="desc" id="t_apple_d">バランスがよく、素直に育ちやすい。</div>
+        </div>
+      </div>
+
+      <div class="card" data-type="leaf" tabindex="0" aria-label="はっぱタイプ">
+        <div class="emoji">🍃</div>
+        <div>
+          <div class="name" id="t_leaf">葉っぱタイプ</div>
+          <div class="desc" id="t_leaf_d">自由奔放。遊ぶのが大好き。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn ghost" onclick="history.back()" id="t_back">戻る</button>
+      <button class="btn primary" id="nextBtn" disabled>次へ（名前を付ける）</button>
+    </div>
+  </div>
+
+<script>
+/* ===== i18n ===== */
+const MSG = {
+  ja:{ title:"最初のタネを選んでください", desc:"あとから変更できません。選んだタイプは性格・見た目のベースになります。",
+       apple:"リンゴタイプ", apple_d:"バランスがよく、素直に育ちやすい。",
+       leaf:"葉っぱタイプ", leaf_d:"自由奔放。遊ぶのが大好き。",
+       back:"戻る", next:"次へ（名前を付ける）" },
+  en:{ title:"Pick your initial seed", desc:"This cannot be changed later. It affects personality and appearance.",
+       apple:"Apple type", apple_d:"Balanced and obedient.",
+       leaf:"Leaf type", leaf_d:"Free-spirited and playful.",
+       back:"Back", next:"Next (Name your character)" },
+  "zh-CN":{ title:"请选择最初的种子", desc:"之后无法更改，将影响性格与外观。",
+       apple:"苹果类型", apple_d:"均衡、容易培养。",
+       leaf:"树叶类型", leaf_d:"自由奔放，喜欢玩耍。",
+       back:"返回", next:"下一步（命名）" },
+  "zh-TW":{ title:"請選擇最初的種子", desc:"之後無法更改，會影響性格與外觀。",
+       apple:"蘋果類型", apple_d:"均衡、好培育。",
+       leaf:"葉子類型", leaf_d:"自由奔放，最愛玩耍。",
+       back:"返回", next:"下一步（命名）" },
+  ko:{ title:"처음 씨앗을 선택하세요", desc:"나중에 바꿀 수 없고 성격/외형에 영향을 줍니다.",
+       apple:"사과 타입", apple_d:"균형 잡히고 순하게 자라요.",
+       leaf:"나뭇잎 타입", leaf_d:"자유분방, 노는 걸 좋아해요.",
+       back:"뒤로", next:"다음 (이름 짓기)" }
+};
+function getLang(){ return localStorage.getItem('lang') || 'ja'; }
+function setLangCode(code){
+  localStorage.setItem('lang', code);
+  const L = MSG[code] || MSG.ja;
+  document.getElementById('t_title').textContent = L.title;
+  document.getElementById('t_desc').textContent  = L.desc;
+  document.getElementById('t_apple').textContent = L.apple;
+  document.getElementById('t_apple_d').textContent = L.apple_d;
+  document.getElementById('t_leaf').textContent  = L.leaf;
+  document.getElementById('t_leaf_d').textContent  = L.leaf_d;
+  document.getElementById('t_back').textContent  = L.back;
+  document.getElementById('nextBtn').textContent = L.next;
+  document.documentElement.lang =
+    code==='zh-TW' ? 'zh-Hant' : code==='zh-CN' ? 'zh-Hans' : code;
+}
+
+/* ===== UI wiring ===== */
+const $ = q=>document.querySelector(q);
+const $$= q=>Array.from(document.querySelectorAll(q));
+
+let current = localStorage.getItem('seedType') || null;
+
+function render(){
+  $$('.card').forEach(c=>c.classList.toggle('selected', c.dataset.type===current));
+  $('#nextBtn').disabled = !current;
+}
+
+// 選択
+$$('.card').forEach(c=>{
+  c.addEventListener('click', ()=>{ current = c.dataset.type; render(); });
+  c.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); current=c.dataset.type; render(); }});
 });
 
-// (B) 決定後の遷移先を tane 会話に
-function goNext() {
-  // 仕様：名前決定 → まずはタネとして会話へ
-  location.href = "whoai_talk_tane.html";
-}
+// 言語チップ
+$$('#chips .chip').forEach(ch=>ch.addEventListener('click', ()=>setLangCode(ch.dataset.lang)));
+
+// 次へ
+$('#nextBtn').addEventListener('click', ()=>{
+  if(!current) return;
+  localStorage.setItem('seedType', current);
+  // ここでは macaronColor は設定しない（後段の macaron_select.html で決める）
+  location.href = 'naming.html';
+});
+
+// 初期化
+document.addEventListener('DOMContentLoaded', ()=>{
+  setLangCode(getLang());
+  render();
+});
+</script>
+</body>
+</html>
