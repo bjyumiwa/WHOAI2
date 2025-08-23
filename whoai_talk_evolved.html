@@ -1,374 +1,432 @@
-<!-- FILE: /whoai_talk_evolved.html（進化後）
-  追加: 「トイレ」「あそぶ」ケア要素 + ステータス保存（localStorage）
-  画像ルール: 背景はルート直下の space_background.png を使用。
-  キャラ画像: {color}_open.png / {color}_closed.png を想定（例: pink_open.png）。
-  ※存在しない場合は tane_{color}.png をフォールバック。
--->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>会話 | WhoAI（進化後・ケア）</title>
+  <title>会話 | WhoAI（進化後・ケア機能）</title>
   <meta name="color-scheme" content="dark light" />
   <style>
+    :root{
+      --glass-bg: rgba(0,0,0,.35);
+      --glass-brd: rgba(255,255,255,.2);
+      --accent: #8ad5ff;
+      --ok: #6ee7b7;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+    }
     html,body{height:100%;margin:0;overflow:hidden}
     body{
       position:relative;
       font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
       background:#000 url("space_background.png") center/cover fixed no-repeat;
+      user-select:none;
     }
+    /* Top chips */
+    .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;z-index:30}
+    .chip{background:var(--glass-bg);backdrop-filter:blur(3px);border:1px solid var(--glass-brd);padding:6px 10px;border-radius:999px;font-size:12px}
 
-    /* ===== レイアウト ===== */
-    .hud{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;z-index:50}
-    .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:999px;font-size:12px}
+    /* Floating character */
+    .stage{position:absolute;inset:0}
+    .char{position:absolute;width:min(22vmin,200px);aspect-ratio:1/1.05;z-index:5;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45));transition:transform .12s ease}
+    .char img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+    .name-tag{position:absolute;left:50%;top:-22px;transform:translateX(-50%);padding:4px 10px;border-radius:999px;border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(3px);font-size:12px;white-space:nowrap}
 
-    .stage{position:absolute;inset:64px 12px 148px;/* 上,左右,下 */
-      border-radius:24px;border:1px solid rgba(255,255,255,.16);
-      background:radial-gradient(120% 120% at 50% 10%, rgba(255,255,255,.04), rgba(0,0,0,.35));
-      overflow:hidden;isolation:isolate
-    }
+    /* Speech bubble */
+    .bubble{position:absolute;left:50%;top:-72px;transform:translateX(-50%);max-width:min(70vw,380px);padding:10px 12px;border-radius:14px;border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(4px);font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+    .bubble.show{opacity:1}
 
-    /* キャラ */
-    .avatar{position:absolute;left:50%;top:50%;translate:-50% -50%;width:min(40vmin,320px);aspect-ratio:1/1;image-rendering:auto;filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));
-      transition:transform .2s ease}
-    .float{animation:float 6s ease-in-out infinite}
-    @keyframes float{0%,100%{transform:translateY(-2%)}50%{transform:translateY(2%)}}
+    /* Poop */
+    .poop{position:absolute;font-size:clamp(20px,4vmin,34px);filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
 
-    /* 💩 表示 */
-    .poo{position:absolute;font-size:clamp(28px,4vmin,42px);filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));cursor:pointer;user-select:none}
+    /* Bottom panel */
+    .panel{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:40;width:min(960px,94vw)}
+    .status{display:grid;grid-template-columns:120px 1fr 52px;gap:8px;align-items:center;width:100%;}
+    .status .label{font-size:12px;opacity:.9}
+    .bar{height:12px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;overflow:hidden;border:1px solid var(--glass-brd)}
+    .bar > i{position:absolute;left:0;top:0;bottom:0;width:50%;border-radius:999px}
+    .val{font-variant-numeric:tabular-nums;font-size:12px;opacity:.9;text-align:right}
 
-    /* 吹き出し */
-    .bubble{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);max-width:min(70vw,520px);
-      background:rgba(0,0,0,.65);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);
-      padding:8px 12px;border-radius:12px;font-size:14px;line-height:1.5;opacity:0;translate:0 6px;
-      transition:opacity .2s, translate .2s}
-    .bubble.show{opacity:1;translate:0 0}
+    .buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .btn{border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(3px);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
+    .btn:active{transform:translateY(1px)}
 
-    /* アクションドック */
-    .dock{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:60;width:min(960px,94vw)}
-    .panel{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-      border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:10px}
-    .btn{display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;user-select:none;
-      border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:12px 10px;font-weight:700;font-size:16px;
-      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.06));
-      transition:transform .05s ease, background .2s}
-    .btn:active{transform:translateY(2px)}
-    .btn .emoji{font-size:22px}
+    /* Chat */
+    .chat{display:grid;grid-template-columns:1fr auto;gap:8px;width:100%}
+    .chat input{width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--glass-brd);background:rgba(0,0,0,.25);color:#fff}
+    .chat button{padding:12px 16px;border-radius:12px;border:1px solid var(--glass-brd);background:var(--glass-bg);color:#fff;font-weight:700;cursor:pointer}
 
-    /* ステータスバー */
-    .bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
-    .bar{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;overflow:hidden}
-    .bar b{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 8px}
-    .bar .track{height:8px;background:rgba(255,255,255,.08)}
-    .bar .fill{height:100%;width:0%;background:linear-gradient(90deg,rgba(255,255,255,.85),rgba(255,255,255,.45))}
+    /* Hint */
+    .hint{position:fixed;left:12px;top:12px;font-size:12px;background:var(--glass-bg);border:1px solid var(--glass-brd);padding:6px 10px;border-radius:10px;z-index:50}
 
-    /* チャット（簡易） */
-    .chat{position:absolute;right:10px;bottom:10px;display:flex;gap:6px;z-index:45}
-    .chat input{width:min(46vw,400px);padding:10px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
-      background:rgba(0,0,0,.4);backdrop-filter:blur(4px);color:#fff}
-    .chat button{padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);
-      background:rgba(0,0,0,.4);color:#fff;cursor:pointer}
-
-    /* モバイル調整 */
-    @media (max-width:760px){
-      .panel{grid-template-columns:1fr}
-      .chat{left:50%;right:auto;transform:translateX(-50%)}
+    /* Safe area */
+    @media (max-width:480px){
+      .char{width:min(28vmin,160px)}
+      .status{grid-template-columns:88px 1fr 46px}
     }
   </style>
 </head>
 <body>
-  <!-- HUD / 名前など -->
-  <div class="hud" id="hud">
-    <div class="chip" id="chipUser">あなた：-</div>
-    <div class="chip" id="chipChar">キャラ：-</div>
-    <div class="chip" id="chipColor">色：pink</div>
-    <div class="chip">進化後</div>
-  </div>
+  <div class="hint">キャラをクリック：なでる / 🚽トイレ / 🎮あそぶ</div>
+  <div class="chips" id="chips"></div>
 
-  <!-- ステージ / キャラ・吹き出し・💩 -->
-  <div class="stage" id="stage">
-    <img id="avatar" class="avatar float" alt="character" />
-    <div id="bubble" class="bubble" aria-live="polite"></div>
-    <!-- 💩 は JS で追加/削除 -->
-  </div>
+  <div class="stage" id="stage"></div>
 
-  <!-- 入力（簡易チャット。Enter送信）-->
-  <div class="chat">
-    <input id="chatInput" type="text" placeholder="話しかける（Enterで送信）" />
-    <button id="chatSend">送信</button>
-  </div>
+  <div class="panel">
+    <div class="status">
+      <div class="label">きれいさ</div>
+      <div class="bar"><i id="bar-clean"></i></div>
+      <div class="val" id="val-clean">--%</div>
 
-  <!-- アクションドック（ステータス + ボタン）-->
-  <div class="dock">
-    <div class="bars">
-      <div class="bar"><b>きれいさ</b><div class="track"><div class="fill" id="barClean"></div></div></div>
-      <div class="bar"><b>たのしさ</b><div class="track"><div class="fill" id="barFun"></div></div></div>
-      <div class="bar"><b>げんき</b><div class="track"><div class="fill" id="barEnergy"></div></div></div>
+      <div class="label">たのしさ</div>
+      <div class="bar"><i id="bar-fun"></i></div>
+      <div class="val" id="val-fun">--%</div>
+
+      <div class="label">げんき</div>
+      <div class="bar"><i id="bar-energy"></i></div>
+      <div class="val" id="val-energy">--%</div>
     </div>
-    <div class="panel">
-      <div class="btn" id="btnToilet" title="トイレに連れていく"><span class="emoji">🚽</span>トイレ</div>
-      <div class="btn" id="btnPlay" title="いっしょに遊ぶ"><span class="emoji">🎮</span>あそぶ</div>
+
+    <div class="buttons">
+      <button class="btn" id="btn-toilet">🚽 トイレ</button>
+      <button class="btn" id="btn-play">🎮 あそぶ</button>
+      <button class="btn" id="btn-rest">💤 ねる</button>
+      <button class="btn" id="btn-snack">🍪 おやつ</button>
+      <button class="btn" id="btn-bath">🛁 おふろ</button>
+    </div>
+
+    <div class="chat">
+      <input id="chat-input" placeholder="話しかける… (Enterで送信)" />
+      <button id="chat-send">送信</button>
     </div>
   </div>
 
   <script>
-  ;(() => {
-    // ====== 設定・保存系 ======
-    const LS_KEYS = {
-      state: 'whoai.evolved.care.state',
-      user: 'your_name',            // あなたの名前（既存仕様に合わせて）
-      char: 'char_name',            // キャラの名前
-      color: 'macaron_color',       // 選択色（pink/blue/green/purple...）
-      talkEndpoint: 'TALK_ENDPOINT' // 既存のエンドポイントを localStorage から読む
+    // ====== 基本設定・状態管理 ======
+    const LS_COLOR_KEYS = ["macaronColor","MACARON_COLOR","color"];
+    const LS_PLAYER_KEYS = ["playerName","PLAYER_NAME","あなたの名前"];
+    const LS_CHAR_KEYS = ["characterName","CHAR_NAME","キャラの名前","キャラクターの名前"];
+    const TALK_ENDPOINT = localStorage.getItem("TALK_ENDPOINT") || ""; // 既存APIあれば利用
+
+    function readFirst(keys, fallback=""){
+      for(const k of keys){
+        const v = localStorage.getItem(k);
+        if(v && v !== "undefined" && v !== "null") return v;
+      }
+      return fallback;
     }
 
-    const DEFAULTS = {
-      clean: 80, fun: 70, energy: 80, waste: 0, // waste: 0-100 （💩量）
-      lastTs: Date.now()
+    const color = (readFirst(LS_COLOR_KEYS, "pink")||"pink").toLowerCase();
+    const playerName = readFirst(LS_PLAYER_KEYS, "あなた");
+    const charName = readFirst(LS_CHAR_KEYS, "マカロン");
+
+    // 状態（保存）
+    const STATE_KEY = "whoai_state_evolved";
+    const now = () => Date.now();
+    function loadState(){
+      try{
+        const obj = JSON.parse(localStorage.getItem(STATE_KEY) || "null");
+        if(!obj) return null;
+        return obj;
+      }catch{ return null }
+    }
+    function saveState(){
+      state.updatedAt = now();
+      localStorage.setItem(STATE_KEY, JSON.stringify(state));
     }
 
-    const $ = (sel) => document.querySelector(sel)
-    const stage = $('#stage')
-    const avatar = $('#avatar')
-    const bubble = $('#bubble')
+    let state = loadState() || {
+      clean: 80,   // 0-100
+      fun: 70,
+      energy: 75,
+      waste: 0,   // 0-100（💩発生量）
+      poops: [],  // {x,y} 配置
+      updatedAt: now()
+    };
 
-    const barClean = $('#barClean')
-    const barFun = $('#barFun')
-    const barEnergy = $('#barEnergy')
-
-    const chipUser = $('#chipUser')
-    const chipChar = $('#chipChar')
-    const chipColor = $('#chipColor')
-
-    const btnToilet = $('#btnToilet')
-    const btnPlay = $('#btnPlay')
-
-    const chatInput = $('#chatInput')
-    const chatSend = $('#chatSend')
-
-    // 名前・色の読込
-    const userName = localStorage.getItem(LS_KEYS.user) || 'あなた'
-    const charName = localStorage.getItem(LS_KEYS.char) || 'マカロン'
-    const color = (localStorage.getItem(LS_KEYS.color) || 'pink').toLowerCase()
-
-    chipUser.textContent = `あなた：${userName}`
-    chipChar.textContent = `キャラ：${charName}`
-    chipColor.textContent = `色：${color}`
-
-    // ---- 画像ローダ（フォールバック） ----
-    const srcCandidates = [
-      `${color}_open.png`,
-      `public/assets/stage2/${color}_open.png`,
-      `public/assets/stage1/${color}_open.png`,
-      `tane_${color}.png`
-    ]
-    const srcCandidatesClosed = [
-      `${color}_closed.png`,
-      `public/assets/stage2/${color}_closed.png`,
-      `public/assets/stage1/${color}_closed.png`,
-      `tane_${color}.png`
-    ]
-
-    let imgOpen = null, imgClosed = null
-
-    function loadWithFallback(candidates){
-      return new Promise(resolve => {
-        const tryNext = (i) => {
-          if(i >= candidates.length){ resolve(null);return }
-          const img = new Image()
-          img.onload = () => resolve(candidates[i])
-          img.onerror = () => tryNext(i+1)
-          img.src = candidates[i]
-        }
-        tryNext(0)
-      })
+    // 経過時間で自然劣化（1分あたり）
+    function applyDecayByElapsed(){
+      const minutes = Math.max(0, (now() - state.updatedAt) / 60000);
+      if(minutes > 0){
+        state.clean = clamp(state.clean - 2*minutes, 0, 100);
+        state.fun   = clamp(state.fun   - 1.2*minutes, 0, 100);
+        state.energy= clamp(state.energy- 1.0*minutes, 0, 100);
+        state.waste = clamp(state.waste + 1.5*minutes, 0, 100);
+        // 💩しきい値
+        maybeSpawnPoop();
+      }
     }
 
-    async function prepareImages(){
-      imgOpen = await loadWithFallback(srcCandidates)
-      imgClosed = await loadWithFallback(srcCandidatesClosed)
-      avatar.src = imgClosed || imgOpen || ''
+    function clamp(v,min,max){return Math.max(min, Math.min(max, v));}
+
+    // ====== UI生成：キャラ ======
+    const stage = document.getElementById('stage');
+    const chips = document.getElementById('chips');
+
+    // chips
+    chips.innerHTML = `
+      <div class="chip">👤 ${playerName}</div>
+      <div class="chip">✨ 進化後：${charName}</div>
+      <div class="chip">🍬 色：${color}</div>
+      ${TALK_ENDPOINT?'<div class="chip">API接続: ON</div>':'<div class="chip">API接続: OFF</div>'}
+    `;
+
+    // キャラDOM
+    const char = document.createElement('div');
+    char.className = 'char';
+    char.style.left = '50%';
+    char.style.top = '52%';
+    char.style.transform = 'translate(-50%,-50%)';
+
+    const imgClosed = document.createElement('img');
+    const imgOpen = document.createElement('img');
+    imgClosed.alt = 'character';
+    imgOpen.alt = 'character';
+    imgClosed.src = `${color}_closed.png`;
+    imgOpen.src = `${color}_open.png`;
+    imgOpen.style.opacity = 0;
+
+    // フォールバック（tane_*）
+    imgClosed.onerror = () => { imgClosed.onerror=null; imgClosed.src = `tane_${color}.png`; };
+    imgOpen.onerror   = () => { imgOpen.onerror=null; imgOpen.src   = `tane_${color}.png`; };
+
+    const nameTag = document.createElement('div');
+    nameTag.className = 'name-tag';
+    nameTag.textContent = charName;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    char.appendChild(imgClosed);
+    char.appendChild(imgOpen);
+    char.appendChild(nameTag);
+    char.appendChild(bubble);
+    stage.appendChild(char);
+
+    // クリックでなでる
+    char.addEventListener('click', () => {
+      speak(randomPick([
+        'なでなで…♪','うれしい！','もっと～','ふにゃ…','ごきげん！'
+      ]));
+      gain({fun:+6, energy:+2});
+      mouthOpen(260);
+    });
+
+    // ゆる移動（画面内ランダム）
+    let vx = 0.08, vy = -0.06; // vmin/フレーム相当
+    function loop(){
+      const rect = stage.getBoundingClientRect();
+      const cw = char.offsetWidth, ch = char.offsetHeight;
+      let x = char.offsetLeft, y = char.offsetTop;
+      x += vx; y += vy;
+      if(x < 10){x=10; vx*=-1} if(y < 10){y=10; vy*=-1}
+      if(x > rect.width - cw - 10){x=rect.width - cw - 10; vx*=-1}
+      if(y > rect.height - ch - 10){y=rect.height - ch - 10; vy*=-1}
+      char.style.left = x + 'px';
+      char.style.top = y + 'px';
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // ====== ステータスUI ======
+    const barClean = document.getElementById('bar-clean');
+    const barFun = document.getElementById('bar-fun');
+    const barEnergy = document.getElementById('bar-energy');
+    const valClean = document.getElementById('val-clean');
+    const valFun = document.getElementById('val-fun');
+    const valEnergy = document.getElementById('val-energy');
+
+    function setBar(el, v){
+      el.style.width = `${v}%`;
+      el.style.background = gradientFor(v);
+    }
+    function gradientFor(v){
+      // good->warn->bad の簡易グラデ
+      if(v>66) return `linear-gradient(90deg, var(--ok), #a7f3d0)`;
+      if(v>33) return `linear-gradient(90deg, var(--warn), #fde68a)`;
+      return `linear-gradient(90deg, var(--bad), #fecaca)`;
+    }
+    function refreshBars(){
+      setBar(barClean, state.clean);
+      setBar(barFun, state.fun);
+      setBar(barEnergy, state.energy);
+      valClean.textContent = `${Math.round(state.clean)}%`;
+      valFun.textContent = `${Math.round(state.fun)}%`;
+      valEnergy.textContent = `${Math.round(state.energy)}%`;
     }
 
-    // ====== 状態のロード・保存 ======
-    let state = DEFAULTS
-    try{
-      const saved = JSON.parse(localStorage.getItem(LS_KEYS.state) || 'null')
-      if(saved){ state = { ...DEFAULTS, ...saved } }
-    }catch{}
-
-    // オフライン劣化（前回からの経過で減衰）
-    const elapsedMin = Math.max(0, Math.floor((Date.now() - (state.lastTs||Date.now())) / 60000))
-    if(elapsedMin > 0){
-      // 経過1分ごとに少しずつ劣化
-      decay(Math.min(elapsedMin, 240)) // 上限4時間ぶん
+    // 💩描画
+    function renderPoops(){
+      // 既存削除
+      stage.querySelectorAll('.poop').forEach(n=>n.remove());
+      state.poops.forEach(p=>{
+        const d = document.createElement('div');
+        d.className = 'poop';
+        d.textContent = '💩';
+        d.style.left = p.x + 'px';
+        d.style.top = p.y + 'px';
+        stage.appendChild(d);
+      });
     }
 
-    function clamp(v){ return Math.max(0, Math.min(100, v)) }
-
-    function save(){
-      state.lastTs = Date.now()
-      localStorage.setItem(LS_KEYS.state, JSON.stringify(state))
+    // 💩出現ロジック
+    function maybeSpawnPoop(){
+      if(state.waste >= 30){
+        // 足元に💩生成
+        const rect = stage.getBoundingClientRect();
+        const x = clamp(char.offsetLeft + char.offsetWidth/2 + (Math.random()*40-20), 10, rect.width-30);
+        const y = clamp(char.offsetTop + char.offsetHeight - 10, 10, rect.height-30);
+        state.poops.push({x,y});
+        state.waste = 0; // 一度出たらリセット
+        speak('うう…出ちゃった…');
+      }
     }
 
-    function updateBars(){
-      barClean.style.width = clamp(state.clean) + '%'
-      barFun.style.width = clamp(state.fun) + '%'
-      barEnergy.style.width = clamp(state.energy) + '%'
+    // ====== 行動ボタン ======
+    document.getElementById('btn-toilet').addEventListener('click', ()=>{
+      // 💩掃除＆きれいさ回復
+      const cleaned = state.poops.length;
+      state.poops = [];
+      state.clean = clamp(state.clean + 10 + cleaned*5, 0, 100);
+      state.waste = 0;
+      speak(cleaned>0?`おトイレ完了！${cleaned}こ片付けたよ！`:'スッキリ！');
+      mouthOpen(420);
+      saveAndRender();
+    });
+
+    document.getElementById('btn-play').addEventListener('click', ()=>{
+      // 遊ぶ：楽しい↑ 元気↓ たまに💩増
+      state.fun = clamp(state.fun + 12, 0, 100);
+      state.energy = clamp(state.energy - 6, 0, 100);
+      state.waste = clamp(state.waste + (Math.random()<0.5?10:4), 0, 100);
+      speak('あそぼあそぼ！');
+      mouthOpen(500);
+      maybeSpawnPoop();
+      saveAndRender();
+    });
+
+    document.getElementById('btn-rest').addEventListener('click', ()=>{
+      state.energy = clamp(state.energy + 16, 0, 100);
+      state.fun = clamp(state.fun - 4, 0, 100);
+      speak('すやぁ… (回復中)');
+      mouthOpen(300);
+      saveAndRender();
+    });
+
+    document.getElementById('btn-snack').addEventListener('click', ()=>{
+      state.fun = clamp(state.fun + 8, 0, 100);
+      state.energy = clamp(state.energy + 4, 0, 100);
+      state.waste = clamp(state.waste + 8, 0, 100);
+      speak('もぐもぐ♪');
+      mouthOpen(300);
+      maybeSpawnPoop();
+      saveAndRender();
+    });
+
+    document.getElementById('btn-bath').addEventListener('click', ()=>{
+      state.clean = clamp(state.clean + 18, 0, 100);
+      speak('さっぱり～！');
+      mouthOpen(360);
+      saveAndRender();
+    });
+
+    // ====== 口パク ======
+    let mouthTimer=null;
+    function mouthOpen(ms=300){
+      if(mouthTimer) clearTimeout(mouthTimer);
+      imgOpen.style.opacity = 1;
+      imgClosed.style.opacity = 0;
+      mouthTimer = setTimeout(()=>{
+        imgOpen.style.opacity = 0;
+        imgClosed.style.opacity = 1;
+      }, ms);
     }
 
-    function say(text){
-      bubble.textContent = text
-      bubble.classList.add('show')
-      clearTimeout(say._t)
-      say._t = setTimeout(()=> bubble.classList.remove('show'), 2400)
+    // ====== セリフ ======
+    let bubbleTimer=null;
+    function speak(text){
+      bubble.textContent = text;
+      bubble.classList.add('show');
+      if(bubbleTimer) clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(()=> bubble.classList.remove('show'), 2400);
+    }
+    function statusSpeak(){
+      const msgs=[];
+      if(state.clean<35) msgs.push('おそうじしたい…');
+      if(state.fun<35) msgs.push('たいくつだよ…');
+      if(state.energy<35) msgs.push('ちょっと休みたい…');
+      if(state.poops.length>0) msgs.push('足元に何かある…💩');
+      if(!msgs.length) msgs.push('今日はいい感じ！');
+      speak(randomPick(msgs));
     }
 
-    // 💩 の表示・管理
-    function ensurePoo(){
-      // waste 60 以上で 1〜3 個まで出現
-      const existing = stage.querySelectorAll('.poo').length
-      if(state.waste >= 60 && existing === 0){ addPoo() }
-      if(state.waste < 60){ stage.querySelectorAll('.poo').forEach(e=>e.remove()) }
-    }
+    function randomPick(arr){return arr[Math.floor(Math.random()*arr.length)];}
 
-    function addPoo(){
-      const e = document.createElement('div')
-      e.className = 'poo'
-      e.textContent = '💩'
-      // ステージ内のランダム位置
-      const rect = stage.getBoundingClientRect()
-      const x = Math.random()*(rect.width-40)+20
-      const y = Math.random()*(rect.height-80)+40
-      e.style.left = x + 'px'
-      e.style.top = y + 'px'
-      e.addEventListener('click', () => {
-        // 直接片付けても OK（きれいさ +5）
-        state.waste = clamp(state.waste - 40)
-        state.clean = clamp(state.clean + 5)
-        e.remove(); persistAndRefresh(); say('おそうじ、ありがとう！')
-      })
-      stage.appendChild(e)
-    }
-
-    function persistAndRefresh(){ save(); updateBars(); ensurePoo() }
-
-    // ====== 劣化（30秒ごと） ======
+    // ====== 自然劣化タイマー ======
     function tick(){
-      // 30 秒ごとに少しだけ劣化
-      decay(1) // 1単位=30秒
-      persistAndRefresh()
-      mood()
+      state.clean = clamp(state.clean - 1, 0, 100);
+      state.fun   = clamp(state.fun   - 0.6, 0, 100);
+      state.energy= clamp(state.energy- 0.5, 0, 100);
+      state.waste = clamp(state.waste + 0.8, 0, 100);
+      maybeSpawnPoop();
+      if(Math.random()<0.25) statusSpeak();
+      saveAndRender();
     }
 
-    function decay(units){
-      // 単位あたり:
-      // ・たのしさ -0.6, げんき -0.5, きれいさ -0.4
-      // ・waste +0.8（一定以上で💩）
-      state.fun = clamp(state.fun - 0.6*units)
-      state.energy = clamp(state.energy - 0.5*units)
-      state.clean = clamp(state.clean - 0.4*units)
-      state.waste = clamp(state.waste + 0.8*units)
+    function saveAndRender(){
+      saveState();
+      refreshBars();
+      renderPoops();
     }
 
-    function mood(){
-      if(state.clean < 25) say('うぅ…ちょっとくさいかも…')
-      else if(state.fun < 25) say('たいくつ…あそぼう？')
-      else if(state.energy < 20) say('ねむい…ちょっと休みたいな')
-    }
+    // ====== チャット送信 ======
+    const chatInput = document.getElementById('chat-input');
+    const chatSend = document.getElementById('chat-send');
 
-    // ====== アクション ======
-    btnToilet.addEventListener('click', () => {
-      if(state.waste <= 10){
-        say('いまは大丈夫！')
-        // 外した場合は少しだけ clean 回復
-        state.clean = clamp(state.clean + 2)
-      }else{
-        state.waste = clamp(state.waste - 60)
-        state.clean = clamp(state.clean + 12)
-        state.energy = clamp(state.energy + 4)
-        stage.querySelectorAll('.poo').forEach(e=>e.remove())
-        say('すっきり！')
-      }
-      persistAndRefresh()
-    })
+    chatSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 
-    btnPlay.addEventListener('click', () => {
-      // あそぶ: たのしさ↑ エネルギー↓ たまに💩誘発
-      state.fun = clamp(state.fun + 14)
-      state.energy = clamp(state.energy - 6)
-      if(Math.random()<0.35){ state.waste = clamp(state.waste + 10) }
-      // 視覚効果（小ジャンプ）
-      avatar.style.transform = 'scale(1.04)'
-      setTimeout(()=> avatar.style.transform = '', 160)
-      say('わーい！')
-      persistAndRefresh()
-    })
+    async function sendChat(){
+      const text = chatInput.value.trim();
+      if(!text) return;
+      chatInput.value = '';
+      mouthOpen(300);
+      speak(`${playerName}：${text}`);
 
-    // ====== 簡易チャット（既存 TALK_ENDPOINT に対応） ======
-    async function sendChat(msg){
-      if(!msg) return
-      const endpoint = localStorage.getItem(LS_KEYS.talkEndpoint)
-      if(endpoint){
-        try{
-          const res = await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg, name:userName, char:charName, color})})
-          const data = await res.json().catch(()=>null)
-          say((data && (data.reply||data.message)) || '…')
-        }catch{
-          say('（通信できなかった…）')
+      try{
+        if(TALK_ENDPOINT){
+          const res = await fetch(TALK_ENDPOINT, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role:'user', name: playerName, content: text, charName, color})});
+          const data = await res.json().catch(()=>({reply:'…'}));
+          const reply = data.reply || data.content || JSON.stringify(data).slice(0,180);
+          setTimeout(()=>{ speak(`${charName}：${reply}`); mouthOpen(500); }, 450);
+        }else{
+          // 簡易エコー
+          setTimeout(()=>{ speak(`${charName}：${text.replace(/\?$/,'！')}`); mouthOpen(400); }, 420);
         }
-      }else{
-        // エンドポイント未設定時は簡易エコー
-        say(`「${msg}」…ふむふむ！`)
+        // 会話でちょい回復
+        gain({fun:+4});
+      }catch(err){
+        speak('通信できなかったみたい…');
+      }finally{
+        saveAndRender();
       }
-      // 話す間は口パク
-      mouthOpen(900)
     }
 
-    chatSend.addEventListener('click', ()=>{
-      const v = chatInput.value.trim(); if(!v) return; chatInput.value=''; sendChat(v)
-    })
-    chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); chatSend.click() } })
-
-    // ====== 口パク制御 ======
-    let mouthTimer = null
-    function mouthOpen(ms=900){
-      if(imgOpen){ avatar.src = imgOpen }
-      clearTimeout(mouthTimer)
-      mouthTimer = setTimeout(()=>{ if(imgClosed){ avatar.src = imgClosed } }, ms)
-    }
-
-    // ====== ゆるいランダム移動（XY） ======
-    function wander(){
-      const r = stage.getBoundingClientRect()
-      const ax = Math.random()*(r.width*0.6) + r.width*0.2
-      const ay = Math.random()*(r.height*0.6) + r.height*0.2
-      avatar.style.left = ax + 'px'
-      avatar.style.top  = ay + 'px'
+    function gain({clean=0,fun=0,energy=0}){
+      state.clean = clamp(state.clean + clean, 0, 100);
+      state.fun = clamp(state.fun + fun, 0, 100);
+      state.energy = clamp(state.energy + energy, 0, 100);
     }
 
     // ====== 初期化 ======
-    function init(){
-      updateBars(); ensurePoo(); mood();
-      setInterval(tick, 30000) // 30秒ごとに劣化
-      setInterval(()=> mouthOpen(400), 4200) // たまに口を開ける
-      setInterval(wander, 3800) // ゆる移動
-      persistAndRefresh()
-    }
+    applyDecayByElapsed();
+    saveAndRender();
+    statusSpeak();
 
-    prepareImages().then(init)
+    // 30秒ごとに自然劣化
+    setInterval(tick, 30000);
 
-    // クリックでなでる（少し回復）
-    avatar.addEventListener('click', ()=>{
-      state.fun = clamp(state.fun + 3)
-      state.energy = clamp(state.energy + 1)
-      say('なでなで…♡')
-      mouthOpen(600)
-      persistAndRefresh()
-    })
-
-  })()
+    // 初回描画後、💩も表示
+    renderPoops();
   </script>
 </body>
 </html>
