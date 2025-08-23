@@ -60,9 +60,11 @@
   // 保存して次の画面へ（最初の観察 or 会話へ好きに接続）
   document.getElementById('okBtn').addEventListener('click', ()=>{
     const name=(document.getElementById('nameInput').value||'ななし').trim();
-    localStorage.setItem(KEY.name,name);
-    // 次の行き先：まずは観察（会話なし）
-    location.href='whoai_talk_evolved.html';
+   // 命名決定
+localStorage.setItem('PLAYER_NAME', playerName);
+localStorage.setItem('CHAR_NAME', charName);
+// 次へ
+location.href = 'color_pick.html';
   });
 </script>
 </body>
