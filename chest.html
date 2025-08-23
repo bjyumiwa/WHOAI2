@@ -1,386 +1,235 @@
-<!-- FILE: /observe.html（観察・全画面） -->
+<!-- FILE: /chest.html（宝箱：24hロック／即時適用） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhoAI | 観察（全画面）</title>
-<meta name="color-scheme" content="dark light" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WhoAI 宝箱</title>
 <style>
-  html,body{height:100%;margin:0;overflow:hidden}
+  html,body{height:100%;margin:0}
   body{
-    position:relative;
-    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;background:#000;
+    background-image:url("space_background.png");
+    background-size:cover;background-position:center;background-attachment:fixed;
+    display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px
   }
-  .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;z-index:30}
-  .chip{background:rgba(0,0,0,.35);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px}
-  .guide{position:fixed;left:12px;top:12px;z-index:30;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);padding:6px 10px;border-radius:10px;font-size:12px;opacity:.95}
-
-  #charWrap{
-    position:absolute; left:50%; top:60%; transform:translate(-50%,-50%); z-index:10;
-    transition:left var(--dur,3s) ease-in-out, top var(--dur,3s) ease-in-out; will-change:left, top;
+  .wrap{width:min(720px,94vw)}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .ghostbtn{
+    background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.18);
+    color:#fff;border-radius:12px;padding:10px 12px;cursor:pointer
   }
-  #char{
-    width: clamp(90px, 22vw, 200px); height:auto; object-fit:contain;
-    filter: drop-shadow(0 8px 22px rgba(0,0,0,.55)); animation:bob 7s ease-in-out infinite;
+  .nameBadge{
+    background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.18);
+    border-radius:12px;padding:8px 12px;font-weight:700
   }
-  @keyframes bob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
-  .wiggle{animation:wiggle .55s ease}
-  @keyframes wiggle{0%{transform:rotate(0) scale(1)}30%{transform:rotate(8deg) scale(1.03)}60%{transform:rotate(-6deg) scale(1.01)}100%{transform:rotate(0) scale(1)}}
-  .hop{animation:hop .5s ease}
-  @keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
-  .sway{animation:sway .8s ease}
-  @keyframes sway{0%{transform:rotate(0)}25%{transform:rotate(6deg)}50%{transform:rotate(-6deg)}75%{transform:rotate(4deg)}100%{transform:rotate(0)}}
-
-  /* 横書き固定の名前（クリック用は1つだけ） */
-  .nameWrap{position:absolute;opacity:0;transition:opacity .35s ease;pointer-events:none;z-index:20}
-  .nameWrap.show{opacity:1;pointer-events:auto}
-  .nameHit{position:relative;display:inline-block;padding:18px 26px;background:transparent;border:none;outline:none;box-shadow:none;-webkit-tap-highlight-color:transparent}
-  #nameText{
-    position:absolute;left:0;top:0;transform:translate(18px,8px);
-    font-weight:900;font-size:clamp(18px,5vw,28px);text-shadow:0 4px 16px rgba(0,0,0,.45);
-    user-select:none;pointer-events:none;
-    writing-mode: horizontal-tb; text-orientation: mixed; white-space: nowrap; direction:ltr;
+  .card{
+    background:rgba(0,0,0,.38);backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.18);border-radius:18px;
+    padding:18px;box-shadow:0 10px 26px rgba(0,0,0,.4)
   }
-
-  .cheer{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);
-    padding:6px 10px;border-radius:12px;font-weight:700;opacity:0;z-index:15;
-    transition:opacity .4s ease, transform 1.1s ease, left 1.1s ease, top 1.1s ease;
-    box-shadow:0 6px 14px rgba(0,0,0,.25);font-size:clamp(12px,3.4vw,16px)
+  h1{margin:0 0 10px;font-size:22px}
+  .lead{opacity:.95;margin:0 0 10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
+  .primary{
+    cursor:pointer;border:0;border-radius:14px;padding:12px 16px;font-weight:800;
+    background:#6ae28b;color:#062413;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:.06s
   }
-  .cheer.show{opacity:1}
-
-  .controls{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:10px;flex-wrap:wrap;z-index:30}
-  .btn{padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:800;background:#ffd1ec;color:#222}
-  .btn[disabled]{opacity:.5;cursor:not-allowed}
-  .btn-ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25)}
-  .pop{animation:pop .18s ease}
-  @keyframes pop{0%{transform:scale(1.02)}100%{transform:scale(1)}}
-
-  /* ---- Care Dock & Modal ---- */
-  .care-dock{
-    position:fixed;left:50%;bottom:64px;transform:translateX(-50%);
-    display:flex;gap:10px;z-index:28;flex-wrap:wrap;justify-content:center
+  .primary:active{transform:translateY(1px)}
+  .meta{opacity:.9}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+  .pill{
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;padding:10px;text-align:center
   }
-  .cbtn{
-    background:rgba(0,0,0,.35);
-    border:1px solid rgba(255,255,255,.18);
-    color:#fff;border-radius:14px;padding:10px 14px;cursor:pointer;font-weight:800
+  .msg{
+    margin-top:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;padding:12px;min-height:56px;line-height:1.6
   }
-  .cbtn:active{transform:translateY(1px)}
-  .badge{
-    background:rgba(255,255,255,.10);
-    border:1px solid rgba(255,255,255,.18);
-    border-radius:10px;padding:6px 10px;font-size:12px
-  }
-  #careStats{position:fixed;left:10px;top:10px;display:flex;gap:6px;z-index:29;flex-wrap:wrap}
-
-  .modal{
-    position:fixed;inset:0;background:rgba(0,0,0,.5);
-    display:none;align-items:center;justify-content:center;z-index:40
-  }
-  .modal.open{display:flex}
-  .modal .box{
-    width:min(520px,92vw);
-    background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
-    border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:16px
-  }
+  .footBtns{position:fixed;right:16px;bottom:16px;display:flex;gap:10px}
+  .tiny{font-size:12px;opacity:.85}
 </style>
 </head>
 <body>
-  <div class="guide">名前をクリックで +1pt ｜ 20ptで「マカロンを選ぶ」</div>
-  <div class="chips">
-    <span class="chip">色: <span id="chipColor">-</span></span>
-    <span class="chip">段階: evolved</span>
-    <span class="chip">pts: <span id="pts">0</span> / 20</span>
-  </div>
+  <div class="wrap">
+    <div class="bar">
+      <button class="ghostbtn" onclick="location.href='observe.html'">← 観察へ</button>
+      <div id="nameBadge" class="nameBadge" style="display:none"></div>
+    </div>
 
-  <!-- 左上：ステータス簡易バッジ -->
-  <div id="careStats" aria-live="polite">
-    <span class="badge">満腹:<span id="b_hunger">—</span></span>
-    <span class="badge">元気:<span id="b_energy">—</span></span>
-    <span class="badge">ごきげん:<span id="b_mood">—</span></span>
-    <span class="badge">愛着:<span id="b_bond">—</span></span>
-    <span class="badge">きれい:<span id="b_hygiene">—</span></span>
-  </div>
+    <div class="card" role="region" aria-label="daily chest">
+      <h1>🎁 宝箱（観察モードでも使えます）</h1>
+      <p class="lead">タップした瞬間に中身が出ます。24時間に1回だけ開けられます。</p>
 
-  <!-- キャラ -->
-  <div id="charWrap"><img id="char" alt="キャラクター"></div>
-
-  <!-- 浮遊する名前クリック -->
-  <div id="nameWrap" class="nameWrap">
-    <div id="nameHit" class="nameHit" role="button" aria-label="名前をクリックでポイント"></div>
-    <div id="nameText">-</div>
-  </div>
-
-  <div id="cheer" class="cheer">がんばったね！</div>
-
-  <!-- ケア・ドック（お世話系） -->
-  <div class="care-dock">
-    <button id="btnToilet" class="cbtn">🧻 トイレ掃除</button>
-    <button id="btnPlay" class="cbtn">🎮 あそぶ</button>
-    <button class="cbtn" onclick="location.href='chest.html'">🎁 宝箱</button>
-  </div>
-
-  <!-- 下部ナビ -->
-  <div class="controls">
-    <button class="btn-ghost" onclick="location.href='whoai_talk.html'">会話モードへ</button>
-    <button id="btnMacaron" class="btn" disabled onclick="location.href='macaron_select.html'">マカロンを選ぶ</button>
-    <button class="btn-ghost" onclick="resetPts()">ptsリセット</button>
-  </div>
-
-  <!-- ミニゲーム（5秒タップ） -->
-  <div id="playModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
-    <div class="box">
-      <h3 id="pmTitle" style="margin:0 0 6px">🎮 タップゲーム（5秒）</h3>
-      <p style="margin:0 0 8px;opacity:.9">5秒間に <b>15回</b> 以上タップできたら成功！</p>
-      <div style="display:flex;gap:8px;align-items:center;margin:10px 0">
-        <button id="pmStart" class="cbtn">▶ スタート</button>
-        <div>カウント: <b id="pmCount">0</b> | 残り: <b id="pmLeft">5.0</b>s</div>
+      <div class="row">
+        <button id="openBtn" class="primary">宝箱を開ける</button>
+        <div id="cooldownInfo" class="meta"></div>
       </div>
-      <button id="pmTap" class="cbtn" style="width:100%;height:56px">ここを連打！</button>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px">
-        <button id="pmClose" class="cbtn">閉じる</button>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="row" style="justify-content:space-between;margin-top:10px">
+        <div class="meta">最後のアイテム：<span id="lastItem">—</span></div>
+        <div class="meta">最終開封：<span id="lastOpenedAt">—</span></div>
       </div>
+
+      <div id="msg" class="msg">（キャラのひとことが表示されます）</div>
+      <div class="tiny" style="margin-top:8px">※ 開封済みのあいだに押すと「まだ開けられないよ！」とだけ表示します。</div>
     </div>
   </div>
 
+  <div class="footBtns">
+    <button class="ghostbtn" onclick="location.href='index.html'">🏠 ホーム</button>
+    <button class="ghostbtn" onclick="location.href='whoai_talk.html'">💬 会話</button>
+  </div>
+
 <script>
-/* ===== ローカル設定 ===== */
-const K={name:"whoai_name",color:"macaronColor",color2:"whoai_color",pts:"whoai_points"};
-const STATE_KEY="whoai_state_v1";
+/* ===== 共有キー ===== */
+const STATE_KEY = "whoai_state_v1";
+const KEY_LAST  = "lastChestOpen";
+
+/* ===== 初期ステータス ===== */
 const defaultState = { hunger:50, energy:50, mood:50, bond:10, hygiene:100 };
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,v));
-
-const getName =()=>localStorage.getItem(K.name)||"キャラ";
-const getColor=()=> (localStorage.getItem(K.color)||localStorage.getItem(K.color2)||"pink").toLowerCase();
-const getPts  =()=> parseInt(localStorage.getItem(K.pts)||"0",10);
-const setPts  =(n)=> localStorage.setItem(K.pts,String(n));
-
-function getState(){
-  try{ const raw=localStorage.getItem(STATE_KEY);
-       return raw? {...defaultState, ...JSON.parse(raw)} : {...defaultState}; }
-  catch{ return {...defaultState}; }
+function loadState(){
+  try{const raw=localStorage.getItem(STATE_KEY);return raw?{...defaultState,...JSON.parse(raw)}:{...defaultState};}
+  catch{return {...defaultState};}
 }
-function setState(st){ localStorage.setItem(STATE_KEY, JSON.stringify(st)); }
+function saveState(st){ localStorage.setItem(STATE_KEY, JSON.stringify(st)); }
 
-/* ===== 画像ロード ===== */
-function loadCharImage(imgEl,color){
-  const cand=[`${color}_closed.png`,`${color}_open.png`,`tane_${color}.png`,`tane.png`];
-  (function tryNext(i){ if(i>=cand.length){imgEl.alt="画像が見つかりません";return;}
-    const p=cand[i], t=new Image(); t.onload=()=>imgEl.src=p; t.onerror=()=>tryNext(i+1); t.src=p; })(0);
+function fmtTime(ms){
+  if(!ms) return "—";
+  const d=new Date(Number(ms));
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+  const hh=String(d.getHours()).padStart(2,"0"), mm=String(d.getMinutes()).padStart(2,"0");
+  return `${y}/${m}/${day} ${hh}:${mm}`;
 }
 
-/* ===== ランダム配置・動き ===== */
-const rand=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
-
-function targetPosition(){
-  const w=innerWidth, h=innerHeight, m=6;
-  const wrap=document.getElementById('charWrap');
-  const cw=wrap.offsetWidth||160, ch=wrap.offsetHeight||160;
-  const topPad=50, bottomPad=90;
-  return { x: rand(m, Math.max(m, w - cw - m)), y: rand(topPad, Math.max(topPad, h - ch - bottomPad)) };
+/* ===== 24hロック ===== */
+function canOpen(){
+  const last = localStorage.getItem(KEY_LAST);
+  if(!last) return true;
+  return Date.now() - Number(last) >= 24*60*60*1000;
 }
-function roamCharacter(){
-  const wrap=document.getElementById('charWrap');
-  wrap.style.setProperty('--dur',(rand(22,52)/10)+'s');
-  const p=targetPosition(); wrap.style.left=p.x+'px'; wrap.style.top=p.y+'px';
-}
-
-/* ===== 名前のポップ配置 ===== */
-function placeNameAway(){
-  const wrap=document.getElementById('nameWrap');
-  const rect=document.getElementById('charWrap').getBoundingClientRect();
-  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-  const w=innerWidth, h=innerHeight;
-  const x=(cx<w/2)? rand(w*0.60,w*0.90) : rand(w*0.10,w*0.40);
-  const y=(cy<h/2)? rand(h*0.60,h*0.85) : rand(h*0.12,h*0.40);
-  wrap.style.left=x+'px'; wrap.style.top=y+'px';
-}
-function cycleName(){
-  const wrap=document.getElementById('nameWrap');
-  wrap.classList.remove('show');
-  setTimeout(()=>{ placeNameAway(); wrap.classList.add('show'); setTimeout(()=>wrap.classList.remove('show'), rand(1800,3200)); }, rand(900,1500));
+function timeLeftText(){
+  const last = localStorage.getItem(KEY_LAST);
+  if(!last) return "";
+  const remain = Number(last) + 24*60*60*1000 - Date.now();
+  if(remain <= 0) return "開けられます！";
+  const h = Math.floor(remain / 3_600_000);
+  const m = Math.floor((remain % 3_600_000) / 60_000);
+  return `あと ${h}時間${String(m).padStart(2,"0")}分`;
 }
 
-/* ===== ひとことメッセージ ===== */
-const CHEERS=[
- 'だいじょうぶ、ゆっくりでいいよ','今日のがんばり、見てたよ','小さな一歩、えらい！',
- '深呼吸、いっかいね','きみのペースで進もう','ミスも進化のタネだよ',
- 'もう一歩だけ、いっしょに','休むのも強さだよ','きらっ☆'
-];
-function cycleCheer(){
-  const el=document.getElementById('cheer');
-  const x=rand(10, innerWidth-10), y=rand(10, innerHeight-10);
-  el.textContent=CHEERS[rand(0,CHEERS.length-1)];
-  el.style.left=x+'px'; el.style.top=y+'px';
-  el.classList.add('show');
-  const dx=(x<innerWidth/2)? 8 : -8, dy=-10;
-  el.style.transform=`translate(${dx}px,${dy}px)`;
-  setTimeout(()=>el.classList.remove('show'), rand(1600,2400));
+/* ===== 抽選 ===== */
+function weightedPick(table){
+  const total = table.reduce((s,t)=>s+t.w,0);
+  let r = Math.random() * total;
+  for(const t of table){ if((r -= t.w) < 0) return t.v; }
+  return table.at(-1).v;
 }
-
-/* ===== pts UI ===== */
-const THRESHOLD=20;
-function refreshPtsUI(){
-  const n=getPts(); document.getElementById('pts').textContent=String(n);
-  const btn=document.getElementById('btnMacaron');
-  if(btn){
-    if(n>=THRESHOLD){ btn.disabled=false; btn.classList.add('pop'); setTimeout(()=>btn.classList.remove('pop'),220); }
-    else{ btn.disabled=true; }
+function rollCategory(){ return weightedPick([{v:"food",w:70},{v:"med",w:20},{v:"decor",w:10}]); }
+function rollItem(cat){
+  if(cat==="food"){
+    return weightedPick([
+      {v:{id:"onigiri",label:"🍙 おにぎり",kind:"food"},w:50},
+      {v:{id:"candy",  label:"🍬 キャンディ",kind:"food"},w:20}
+    ]);
   }
+  if(cat==="med"){ return {id:"potion",label:"💊 薬",kind:"med"}; }
+  return weightedPick([
+    {v:{id:"ribbon",label:"🎀 リボン",kind:"decor"},w:50},
+    {v:{id:"hat",   label:"🎩 ぼうし",kind:"decor"},w:50}
+  ]);
 }
-function resetPts(){ setPts(0); refreshPtsUI(); }
 
-/* ===== 口パク or ゆらし ===== */
-let hasOpen=false, hasClosed=false;
-function probeMouth(color){
-  ['open','closed'].forEach(kind=>{
-    const url=`${color}_${kind}.png`;
-    const img=new Image();
-    img.onload=()=>{ if(kind==='open') hasOpen=true; else hasClosed=true; };
-    img.src=url;
+/* ===== 効果（即時適用） ===== */
+function applyEffect(state,item){
+  let say="";
+  switch(item.kind){
+    case "food":
+      if(item.id==="onigiri"){
+        state.hunger = clamp(state.hunger + 25);
+        state.mood   = clamp(state.mood + 5);
+        say="もぐもぐ…おなかいっぱい！ありがとう！";
+      }else{
+        state.mood   = clamp(state.mood + 18);
+        state.energy = clamp(state.energy + 6);
+        say="あま〜い！しあわせ…！";
+      }
+      state.bond = clamp(state.bond + 2);
+      break;
+    case "med":
+      state.energy = clamp(state.energy + 22);
+      state.mood   = clamp(state.mood + 10);
+      state.bond   = clamp(state.bond + 3);
+      say="元気でた！だいじにしてくれてありがとう。";
+      break;
+    case "decor":
+      state.mood   = clamp(state.mood + 8);
+      state.bond   = clamp(state.bond + 4);
+      say = (item.id==="ribbon") ? "どう？にあうかな？" : "おしゃれ！きょうは特別な気分！";
+      break;
+  }
+  return say;
+}
+
+/* ===== UI ===== */
+const $stats = document.getElementById("stats");
+const $msg = document.getElementById("msg");
+const $lastItem = document.getElementById("lastItem");
+const $lastOpenedAt = document.getElementById("lastOpenedAt");
+const $cooldownInfo = document.getElementById("cooldownInfo");
+const $nameBadge = document.getElementById("nameBadge");
+
+function renderStats(st){
+  $stats.innerHTML="";
+  [["満腹",st.hunger],["元気",st.energy],["ごきげん",st.mood],["愛着",st.bond],["きれい",st.hygiene]].forEach(([label,val])=>{
+    const div=document.createElement("div");
+    div.className="pill";
+    div.innerHTML=`<div>${label}</div><div style="font-size:20px;font-weight:800">${val}</div>`;
+    $stats.appendChild(div);
   });
 }
-function mouthOrSwayOnce(){
-  const img=document.getElementById('char');
-  if(hasOpen && hasClosed){
-    const color=getColor();
-    const closed=`${color}_closed.png`, open=`${color}_open.png`;
-    const seq=[open,closed,open,closed];
-    let i=0; const tick=()=>{ if(i>=seq.length) return; img.src=seq[i++]; setTimeout(tick,120); }; tick();
-  }else{
-    img.classList.remove('sway'); void img.offsetWidth; img.classList.add('sway');
-  }
-}
-function nudgeCharacter(){
-  const ch=document.getElementById('char');
-  const wrap=document.getElementById('charWrap');
-  ch.classList.remove('hop'); void ch.offsetWidth; ch.classList.add('hop');
-  mouthOrSwayOnce();
-  const r=wrap.getBoundingClientRect();
-  const dx=(Math.random()<.5?-1:1)*rand(12,28);
-  const dy=(Math.random()<.5?-1:1)*rand(12,28);
-  const nx=Math.min(innerWidth - r.width - 6, Math.max(6, r.left + dx));
-  const ny=Math.min(innerHeight- r.height- 6, Math.max(6, r.top  + dy));
-  const prev=getComputedStyle(wrap).getPropertyValue('--dur');
-  wrap.style.setProperty('--dur','0.35s'); wrap.style.left=nx+'px'; wrap.style.top=ny+'px';
-  setTimeout(()=>wrap.style.setProperty('--dur', prev || '3s'), 380);
-}
-
-/* ===== ステータスバッジ ===== */
-const b_hunger=document.getElementById('b_hunger');
-const b_energy=document.getElementById('b_energy');
-const b_mood=document.getElementById('b_mood');
-const b_bond=document.getElementById('b_bond');
-const b_hygiene=document.getElementById('b_hygiene');
-
-function renderCareBadges(){
-  const s=getState();
-  if(b_hunger){ b_hunger.textContent=s.hunger; }
-  if(b_energy){ b_energy.textContent=s.energy; }
-  if(b_mood){ b_mood.textContent=s.mood; }
-  if(b_bond){ b_bond.textContent=s.bond; }
-  if(b_hygiene){ b_hygiene.textContent=s.hygiene; }
-}
-
-/* ===== きれい度の経時劣化（1分 -2、低下時は気分-1） ===== */
-const HYGIENE_TICK_MS = 60_000;
-const HYGIENE_DROP = 2;
-setInterval(()=>{
-  const s=getState();
-  s.hygiene = clamp(s.hygiene - HYGIENE_DROP, 0, 100);
-  if(s.hygiene <= 20){ s.mood = clamp(s.mood - 1, 0, 100); }
-  setState(s); renderCareBadges();
-}, HYGIENE_TICK_MS);
-
-/* ===== トイレ掃除 ===== */
-document.getElementById('btnToilet').addEventListener('click', ()=>{
-  const s=getState();
-  if(s.hygiene >= 95){ alert('もうキレイだよ！'); return; }
-  s.hygiene = 100;
-  s.mood = clamp(s.mood + 6, 0, 100);
-  s.bond = clamp(s.bond + 2, 0, 100);
-  setState(s);
-  alert('お掃除完了！ピカピカ✨');
-  renderCareBadges();
-});
-
-/* ===== あそぶ（5秒タップ） ===== */
-const playModal=document.getElementById('playModal');
-const pmStart=document.getElementById('pmStart');
-const pmTap=document.getElementById('pmTap');
-const pmClose=document.getElementById('pmClose');
-const pmCount=document.getElementById('pmCount');
-const pmLeft=document.getElementById('pmLeft');
-
-let gameOn=false, count=0, t0=0, timerId=null;
-
-document.getElementById('btnPlay').addEventListener('click', ()=>{
-  pmCount.textContent='0'; pmLeft.textContent='5.0';
-  playModal.classList.add('open');
-});
-pmClose.addEventListener('click', ()=>{ playModal.classList.remove('open'); stopGame(); });
-
-pmStart.addEventListener('click', ()=>{
-  count=0; pmCount.textContent='0';
-  t0=performance.now(); gameOn=true;
-  const D=5000;
-  clearInterval(timerId);
-  timerId=setInterval(()=>{
-    const left=Math.max(0, D - (performance.now()-t0));
-    pmLeft.textContent=(left/1000).toFixed(1);
-    if(left<=0){ finishGame(); }
-  }, 50);
-});
-
-pmTap.addEventListener('click', ()=>{
-  if(!gameOn) return;
-  count++; pmCount.textContent=String(count);
-});
-
-function stopGame(){
-  gameOn=false;
-  clearInterval(timerId);
-  pmLeft.textContent='5.0';
-}
-function finishGame(){
-  stopGame();
-  const success = count >= 15;
-  const s=getState();
-  if(success){
-    s.energy = clamp(s.energy + 8, 0, 100);
-    s.mood   = clamp(s.mood + 10, 0, 100);
-    s.bond   = clamp(s.bond + 1, 0, 100);
-    alert(`成功！ ${count}回タップできたよ！\n元気+8 / ごきげん+10 / 愛着+1`);
-  }else{
-    s.mood = clamp(s.mood + 2, 0, 100);
-    alert(`もう少し！ ${count}回だったよ。\nごきげん+2`);
-  }
-  setState(s);
-  renderCareBadges();
+function renderMeta(){
+  $lastOpenedAt.textContent = fmtTime(localStorage.getItem(KEY_LAST));
+  $cooldownInfo.textContent = timeLeftText();
+  const nm = localStorage.getItem("whoai_character_name") || localStorage.getItem("whoai_name") || "";
+  if(nm){ $nameBadge.textContent = `👤 ${nm}`; $nameBadge.style.display="block"; }
 }
 
 /* ===== 起動 ===== */
-(function init(){
-  const color=getColor(); document.getElementById('chipColor').textContent=color;
-  probeMouth(color);
-  loadCharImage(document.getElementById('char'), color);
-
-  document.getElementById('nameText').textContent=getName();
-  document.getElementById('nameHit').onclick=()=>{ setPts(Math.min(getPts()+1,THRESHOLD)); refreshPtsUI(); nudgeCharacter(); };
-
-  refreshPtsUI();
-  renderCareBadges();
-
-  roamCharacter(); setInterval(roamCharacter, rand(2200,5200));
-  cycleName();     setInterval(cycleName,   3200);
-  setTimeout(cycleCheer, 800); setInterval(cycleCheer, 3600);
-  addEventListener('resize', roamCharacter);
+(function boot(){
+  renderStats(loadState());
+  renderMeta();
+  $lastItem.textContent = localStorage.getItem("whoai_last_item_label") || "—";
+  if(!$msg.textContent || $msg.textContent.includes("表示")){
+    $msg.textContent="観察中…（静かに見守っています）";
+  }
 })();
+
+/* ===== 開封 ===== */
+document.getElementById("openBtn").addEventListener("click", ()=>{
+  if(!canOpen()){
+    alert("まだ開けられないよ！");
+    renderMeta();
+    return;
+  }
+  const item = rollItem(rollCategory());
+  const st = loadState();
+  const line = applyEffect(st,item);
+  saveState(st);
+
+  localStorage.setItem(KEY_LAST,String(Date.now()));
+  localStorage.setItem("whoai_last_item_label",item.label);
+
+  renderStats(st);
+  renderMeta();
+  $lastItem.textContent = item.label;
+
+  alert(`宝箱を開けた！ → ${item.label}`);
+  $msg.textContent = line;
+});
 </script>
 </body>
 </html>
