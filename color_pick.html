@@ -1,0 +1,15 @@
+<script>
+const map = {
+  peach: 'pink',
+  leaf: 'green',
+  paint: 'blue',
+  grape: 'purple'
+};
+
+function choose(key) {
+  localStorage.setItem('macaronColor', map[key]);
+  localStorage.setItem('tanePoints', '0');
+  localStorage.setItem('EVOLVED', '0');
+  location.href = 'whoai_talk.html';
+}
+</script>
