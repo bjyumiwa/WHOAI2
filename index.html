@@ -1,4 +1,4 @@
-<!-- FILE: /index.html -->
+<!-- FILE: /WHOAI2/index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhoAI 2 | Welcome</title>
   <meta name="description" content="WHOAI2: 人工知能と人間の関係性を考える研究型アプリケーション" />
+  <!-- 404対策：簡易favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🌙%3C/text%3E%3C/svg%3E" />
   <style>
     :root{
       --bg-blur: blur(3px);
@@ -45,9 +48,7 @@
       line-height:1.9;
       text-shadow:0 1px 6px rgba(0,0,0,.55);
     }
-    .cta{
-      display:flex;gap:10px;justify-content:center;flex-wrap:wrap
-    }
+    .cta{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap }
     .primary,.ghost{
       padding:.9rem 1.3rem;border:0;border-radius:14px;cursor:pointer;
       font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .06s ease;
@@ -88,9 +89,9 @@
     <p id="t_desc" class="lead">まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！</p>
 
     <div class="cta">
-      <!-- Start: インデックスから seed_select.html へ -->
+      <!-- Start: seed_select.html へ -->
       <button id="t_start" class="primary" onclick="location.href='seed_select.html'">はじめる（タネを選ぶ）</button>
-      <!-- 続きから（名前がある場合のみ表示） -->
+      <!-- 続きから（保存があれば表示） -->
       <button id="t_continue" class="ghost" style="display:none" onclick="continueFlow()">つづきから</button>
     </div>
 
@@ -183,7 +184,6 @@
     function migrateLangKey(){
       const old = localStorage.getItem('whoai_lang');
       if(old && !localStorage.getItem('lang')){
-        // 旧 zh/tw を新 zh-CN/zh-TW に寄せる
         const map = { zh:'zh-CN', tw:'zh-TW' };
         localStorage.setItem('lang', map[old] || old);
       }
@@ -199,7 +199,6 @@
 
       // 保存（新旧どちらも保持して下流互換）
       localStorage.setItem('lang', code);
-      // whoai_lang は簡易互換：zh-CN→zh, zh-TW→tw, それ以外は同一
       const legacy = code === 'zh-CN' ? 'zh' : code === 'zh-TW' ? 'tw' : code;
       localStorage.setItem('whoai_lang', legacy);
 
@@ -210,12 +209,13 @@
 
     function setLang(code){ applyLang(code); }
 
-    // 「つづきから」ボタン：進行状況に応じて最適な画面へ
+    // 「つづきから」：進行状況に応じて遷移
     function continueFlow(){
       const seed  = localStorage.getItem('seedType');
-      const named = localStorage.getItem('yourName') || localStorage.getItem('PLAYER_NAME');
+      const named = localStorage.getItem('yourName') || localStorage.getItem('PLAYER_NAME') || localStorage.getItem('whoai_name');
       const xp    = Number(localStorage.getItem('whoai_xp') || localStorage.getItem('tanePoints') || 0);
-      const evolvedReady = xp >= Number(localStorage.getItem('TANE_POINTS_TO_EVOLVE') || 15);
+      const threshold = Number(localStorage.getItem('TANE_POINTS_TO_EVOLVE') || 15);
+      const evolvedReady = xp >= threshold;
 
       if(!seed){ location.href = 'seed_select.html'; return; }
       if(!named){ location.href = 'naming.html'; return; }
@@ -238,3 +238,15 @@
         else if(nav.startsWith('zh')) applyLang('zh-CN');
         else applyLang('en');
       }
+
+      // 続きがあるならボタン表示
+      const hasName = localStorage.getItem('yourName') || localStorage.getItem('PLAYER_NAME') || localStorage.getItem('whoai_name');
+      if(hasName) el.cont.style.display = '';
+
+      // スタートボタンのテキスト（言語反映済み）
+      el.start.textContent = (I18N[localStorage.getItem('lang') || 'ja'] || I18N.ja).start;
+      el.cont.textContent  = (I18N[localStorage.getItem('lang') || 'ja'] || I18N.ja).cont;
+    })();
+  </script>
+</body>
+</html>
