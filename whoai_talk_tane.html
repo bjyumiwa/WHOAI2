@@ -3,7 +3,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>WhoAI | タネ観察（お世話＋ポイント→マカロン）</title>
   <meta name="color-scheme" content="dark light" />
   <style>
@@ -13,6 +13,7 @@
       --ok: #86efac; --warn:#fde047; --bad:#fda4af;
       --accent:#7ac7ff;
     }
+    *{box-sizing:border-box}
     html,body{height:100%;margin:0;overflow:hidden}
     body{
       font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
@@ -21,32 +22,74 @@
     }
 
     /* 上部情報 */
-    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
-    .chip{background:var(--glass);backdrop-filter:blur(4px);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
+    .chips{
+      display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center
+    }
+    .chip{
+      background:var(--glass);backdrop-filter:blur(4px);
+      border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px
+    }
 
-    .title{font-size:26px;font-weight:800;letter-spacing:.06em;margin-top:2px}
+    .title{font-size:22px;font-weight:800;letter-spacing:.04em;margin-top:2px}
     .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
 
-    /* ステージ */
-    .stage{position:relative;width:min(92vw,520px);aspect-ratio:1/1;background:rgba(0,0,0,.25);border:1px solid var(--brd);border-radius:20px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .tane{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
-    .tane img{width:min(46vmin,220px);height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5));user-select:none;transition:transform .2s ease}
+    /* ステージ（クラゲのようにふわふわ） */
+    .stage{
+      position:relative;
+      width:min(92vw,520px);
+      aspect-ratio:1/1;
+      background:rgba(0,0,0,.25);
+      border:1px solid var(--brd);
+      border-radius:20px;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+      animation:jelly 9s ease-in-out infinite;
+      will-change:transform;
+    }
+    @keyframes jelly{
+      0%{transform:translate(0,0) rotate(0deg)}
+      25%{transform:translate(-4px,-6px) rotate(-0.6deg)}
+      50%{transform:translate(4px,2px) rotate(0.6deg)}
+      75%{transform:translate(-3px,4px) rotate(-0.4deg)}
+      100%{transform:translate(0,0) rotate(0deg)}
+    }
+
+    .tane{
+      position:relative;display:flex;flex-direction:column;align-items:center;gap:6px
+    }
+    .tane img{
+      width:min(46vmin,220px);
+      height:auto;
+      filter:drop-shadow(0 8px 22px rgba(0,0,0,.5));
+      user-select:none;transition:transform .2s ease
+    }
     .pop{animation:pop .25s ease}
     @keyframes pop{0%{transform:scale(1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
 
-    /* 旧：固定名バッジは非表示に（互換のため残す） */
+    /* モバイルでさらに小さく */
+    @media (max-width:480px){
+      .title{font-size:19px}
+      .stage{width:min(94vw,380px)}
+      .tane img{width:min(58vmin,160px)}
+    }
+
+    /* 旧：固定名バッジは非表示（互換用に残す） */
     #char-name{display:none}
 
-    /* 浮遊する“名前タッチ”バッジ */
+    /* 浮遊する“名前タッチ”バッジ（クリックでくるん回転） */
     .nameTag{
       position:absolute;left:50%;top:18%;transform:translate(-50%,-50%);
-      padding:6px 12px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);
+      padding:8px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);
       cursor:pointer;user-select:none;font-weight:800;z-index:6;box-shadow:0 6px 18px rgba(0,0,0,.35)
     }
-    .nameTag:active{transform:translate(-50%,-50%) scale(1.02)}
+    .spin{animation:spin 500ms ease both}
+    @keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 
     /* マカロン解放バッジ */
-    #unlock{position:absolute;right:10px;top:10px;display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;z-index:5}
+    #unlock{
+      position:absolute;right:10px;top:10px;display:none;align-items:center;gap:6px;
+      padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);
+      cursor:pointer;z-index:5
+    }
     #unlock:active{transform:translateY(1px)}
 
     /* ポイントバー */
@@ -55,23 +98,24 @@
     .barrow{display:flex;align-items:center;gap:8px}
     .pts{font-variant-numeric:tabular-nums;background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:10px}
 
-    /* お世話パネル */
-    .panel{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);width:min(920px,94vw);display:grid;grid-template-columns:1fr;gap:10px;z-index:7}
-    .care{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-    .btncare{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+    /* お世話パネル（モバイル小さめ） */
+    .panel{
+      position:fixed;left:50%;bottom:8px;transform:translateX(-50%);
+      width:min(920px,96vw);display:grid;grid-template-columns:1fr;gap:8px;z-index:7
+    }
+    .care{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+    .btncare{
+      background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;
+      padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px
+    }
     .btncare:disabled{opacity:.55;cursor:not-allowed}
-    .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .gbar{position:relative;height:14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
+    .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+    .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
     .gbar>span{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
     .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
 
-    /* 下部ナビ（既存） */
     .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
     .ghostbtn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;cursor:pointer}
-
-    @media (max-width:480px){
-      .tane img{width:min(52vmin,180px)}
-    }
 
     /* 進化トースト */
     .toast{
@@ -134,7 +178,7 @@
   // 設定・初期値（既存キー互換）
   const PLAYER_NAME = read('PLAYER_NAME', read('whoai_player_name', 'あなた'));
   const CHAR_NAME   = read('CHAR_NAME',   read('whoai_name', 'タネ'));
-  const COLOR       = (read('macaronColor','pink')||'pink').toLowerCase();
+  const COLOR       = (read('macaronColor','pink')||'pink').toLowerCase(); // pink/green/blue/purple
   const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15')); // 既存しきい値
   let pts           = Number(read('tanePoints','0'));             // 既存ポイントキー
 
@@ -143,17 +187,21 @@
   chipColor.textContent  = COLOR;
   document.getElementById('th').textContent = THRESHOLD;
 
-  // キャラ画像（色→tane_{color}.png、無ければpink）
+  // キャラ画像：tane_{color}.png（用意されている4色）
   (function setTaneSrc(){
-    const primary = `tane_${COLOR}.png`;
-    const fallback = 'tane_pink.png';
+    const file = `tane_${COLOR}.png`;  // tane_pink/green/blue/purple.png
+    const img = document.getElementById('taneImg');
     const t = new Image();
-    t.onload = ()=> (taneImg.src = primary);
-    t.onerror = ()=> (taneImg.src = fallback);
-    t.src = primary;
+    t.onload = ()=> (img.src = file);
+    t.onerror = ()=> (img.src = 'tane_pink.png'); // 念のため
+    t.src = file;
   })();
 
-  // ===== ポイントバー表示 =====
+  // ===== ポイント＆バー =====
+  const ptsEl   = document.getElementById('pts');
+  const barFill = document.getElementById('bar');
+  const unlock  = document.getElementById('unlock');
+
   function refreshPoints(){
     ptsEl.textContent = String(pts);
     const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
@@ -164,12 +212,12 @@
     unlock.style.display = (pts >= THRESHOLD) ? 'inline-flex' : 'none';
   }
 
-  // ===== 名前タッチ（浮遊バッジ） =====
+  // ===== 名前タッチ（くるん回転＋ポイント） =====
   const nameTag = document.getElementById('nameTag');
   nameTag.textContent = CHAR_NAME;
 
   function moveNameTagRandom(){
-    const pad = 40, avoidBottom = 190; // 端＆下パネル回避
+    const pad = 36, avoidBottom = 170; // 端＆下パネル回避（モバイル小さめ想定）
     const W = window.innerWidth, H = window.innerHeight;
     const x = Math.random() * (W - pad*2) + pad;
     const y = Math.random() * (H - pad*2 - avoidBottom) + pad;
@@ -185,28 +233,38 @@
     if(pts >= THRESHOLD){ evolveToast(); }
   }
   nameTag.addEventListener('click', ()=>{
+    // くるん回転
+    nameTag.classList.remove('spin'); // 連打対応
+    void nameTag.offsetWidth;         // reflow
+    nameTag.classList.add('spin');
+
     addPoints(1);
     moveNameTagRandom();
   });
 
-  // 旧#char-nameのEnter互換（残してもOK）
+  // Enterキーでも加点
   document.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ addPoints(1); } });
 
   function popChar(){
-    taneImg.classList.add('pop');
-    setTimeout(()=>taneImg.classList.remove('pop'), 250);
+    const img = document.getElementById('taneImg');
+    img.classList.add('pop');
+    setTimeout(()=>img.classList.remove('pop'), 250);
   }
 
-  // ===== お世話：ゲージ管理（localStorageは新規キー） =====
+  // ===== お世話：ゲージ管理 =====
   const SKEY = { clean:'taneClean', fun:'taneFun', relief:'taneRelief', last:'taneLastTick' };
   let clean  = Number(localStorage.getItem(SKEY.clean)  ?? 70);
   let fun    = Number(localStorage.getItem(SKEY.fun)    ?? 70);
   let relief = Number(localStorage.getItem(SKEY.relief) ?? 70);
   let lastTick = Number(localStorage.getItem(SKEY.last) ?? Date.now());
 
+  const gClean  = document.getElementById('gClean');
+  const gFun    = document.getElementById('gFun');
+  const gRelief = document.getElementById('gRelief');
+
   const DECAY_MS = 2500;  // 減衰間隔
   const DECAY    = 1;     // 減衰量/ tick
-  const COOLDOWN = 1500;  // お世話ボタンのクールダウン(ms)
+  const COOLDOWN = 1200;  // モバイル寄りに短縮
 
   function clamp(v){ return Math.max(0, Math.min(100, v)); }
   function setGauge(el, val){
@@ -243,6 +301,10 @@
   }
 
   // お世話ボタン
+  const btnToilet = document.getElementById('btnToilet');
+  const btnBath   = document.getElementById('btnBath');
+  const btnPlay   = document.getElementById('btnPlay');
+
   function cooldown(btn){ btn.disabled = true; setTimeout(()=>btn.disabled=false, COOLDOWN); }
   btnToilet.addEventListener('click', ()=>{
     cooldown(btnToilet);
@@ -265,42 +327,24 @@
   });
 
   // ===== 進化 =====
+  const toast = document.getElementById('toast');
   function evolveToast(){
     if(pts < THRESHOLD) return;
     toast.classList.add('show');
-    setTimeout(()=>{ location.href = 'macaron_select.html'; }, 1000);
+    setTimeout(()=>{ location.href = 'macaron_select.html'; }, 900);
   }
-  unlock.addEventListener('click', evolveToast);
+  document.getElementById('unlock').addEventListener('click', evolveToast);
 
   // ===== 起動 =====
   function init(){
-    // 旧UIの表示値適用
-    ptsEl.textContent = String(pts);
+    document.getElementById('chipPlayer').textContent = PLAYER_NAME;
+    document.getElementById('chipColor').textContent  = COLOR;
+
     refreshPoints();
-
-    // 名前タグ初期配置
     moveNameTagRandom();
-
-    // ゲージ
     renderGauges();
     requestAnimationFrame(tick);
   }
-  // 要素参照
-  const chipPlayer = document.getElementById('chipPlayer');
-  const chipColor  = document.getElementById('chipColor');
-  const taneImg    = document.getElementById('taneImg');
-  const ptsEl      = document.getElementById('pts');
-  const barFill    = document.getElementById('bar');
-  const unlock     = document.getElementById('unlock');
-  const gClean     = document.getElementById('gClean');
-  const gFun       = document.getElementById('gFun');
-  const gRelief    = document.getElementById('gRelief');
-  const btnToilet  = document.getElementById('btnToilet');
-  const btnBath    = document.getElementById('btnBath');
-  const btnPlay    = document.getElementById('btnPlay');
-  const toast      = document.getElementById('toast');
-
-  // go
   init();
 </script>
 </body>
