@@ -135,7 +135,7 @@
     content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35)
   }
   @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
-  /* 完成演出：ラスト3音は大きめに弾む */
+  /* 完成演出：ラスト3音は大きめに弾ませる */
   .slot.on.big{animation:slotPopBig .32s ease}
   @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 </style>
@@ -284,8 +284,7 @@ function addPoints(n=1){
   if(pts >= THRESHOLD && songCompleted && !isSongPlaying){
     showToastAndEvolve();
   }else if(pts >= THRESHOLD && isSongPlaying){
-    // 再生中は保留
-    pendingEvolutionAfterSong = true;
+    pendingEvolutionAfterSong = true; // 再生後に進化
   }
 }
 btnReset.addEventListener('click', ()=>{
@@ -322,10 +321,8 @@ setSpeed('slow');
 let last = performance.now();
 let pos  = {x: innerWidth/2, y: innerHeight/2};
 
-const fieldEl = document.getElementById('field');
-const fieldRect = ()=>fieldEl.getBoundingClientRect();
 function bounds(){
-  const rect = fieldRect();
+  const rect = field.getBoundingClientRect();
   const w = taneImg.clientWidth || 160, h = taneImg.clientHeight || 160;
   return {minX:10, minY:100, maxX:rect.width-10, maxY:rect.height-140, w, h};
 }
@@ -398,10 +395,10 @@ unlock.addEventListener('click', showToastAndEvolve);
 const scoreRow = document.getElementById('scoreRow');
 function renderScore(){
   scoreRow.innerHTML = '';
-  SONG.forEach((/* n */, i)=>{
+  SONG.forEach((n, i)=>{
     const d=document.createElement('div');
     d.className='slot'+(i<collected.length?' on':'');
-    d.textContent=''; // 音名は伏せる
+    d.textContent=''; // 音名は伏せる（♪はCSSの::afterで表示）
     scoreRow.appendChild(d);
   });
 }
@@ -410,10 +407,9 @@ function renderScore(){
 function bounceLastThree(){
   const nodes = scoreRow.querySelectorAll('.slot');
   const L = nodes.length;
-  for(let i=Math.max(0,L-3); i<L; i++){
-    nodes[i].classList.remove('big'); // リセット
-    // リフローしてアニメ再適用
-    void nodes[i].offsetWidth;
+  for(let i=Math.max(0, L-3); i<L; i++){
+    nodes[i].classList.remove('big'); // 再適用用に一度外す
+    void nodes[i].offsetWidth;        // リフローでアニメ再適用を保証
     nodes[i].classList.add('big');
   }
 }
@@ -421,8 +417,8 @@ function bounceLastThree(){
 /* 💩：3.5秒ごとに55%で最大3個スポーン。10回除去でド+1 */
 const POO_MAX=3;
 function spawnPoo(){
-  if(fieldEl.querySelectorAll('.poo').length>=POO_MAX) return;
-  const rect = fieldRect();
+  if(field.querySelectorAll('.poo').length>=POO_MAX) return;
+  const rect = field.getBoundingClientRect();
   const x = Math.random()*(rect.width-80)+22;
   const y = Math.random()*(rect.height-160)+ (rect.height*0.45);
   const el=document.createElement('div'); el.className='poo'; el.textContent='💩';
@@ -434,7 +430,7 @@ function spawnPoo(){
     if(pooCount%10===0){ gainNote("ド"); } // 10回でド1つ
     relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges(); addPoints(1);
   });
-  fieldEl.appendChild(el);
+  field.appendChild(el);
 }
 setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
 
@@ -442,7 +438,7 @@ setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
 function spawnNoteNearTane(){
   const next = SONG[collected.length];
   if(!next) return;
-  const rect = fieldRect();
+  const rect = field.getBoundingClientRect();
   const tx = pos.x + (Math.random()*120-60);
   const ty = pos.y + (Math.random()*80-40);
   const x = Math.max(20, Math.min(rect.width-40, tx));
@@ -454,7 +450,7 @@ function spawnNoteNearTane(){
     gainNote(next);
     fun=clamp(fun+6); renderGauges(); persistGauges(); addPoints(1);
   });
-  fieldEl.appendChild(el);
+  field.appendChild(el);
 }
 
 /* ふわっとエフェクト */
@@ -467,7 +463,11 @@ function floatNote(char, x, y){
 }
 
 /* 会話・名前タッチ・お世話などから次音を前進 */
-function grantNextNote(){ if(collected.length<SONG.length){ gainNote(SONG[collected.length]); } }
+function grantNextNote(){
+  if(collected.length<SONG.length){
+    gainNote(SONG[collected.length]);
+  }
+}
 
 function gainNote(n){
   const need = SONG[collected.length];
@@ -500,7 +500,7 @@ async function playSong(seq){
       osc.type='sine'; osc.frequency.value=NOTE_FREQ[n]||440;
       g.gain.setValueAtTime(.0001,t);
       g.gain.linearRampToValueAtTime(.16,t+.03);
-      g.gain.setTargetAtTime(.0001,t+DUR*.75,.06);
+      g.gain.setTargetAtTime(0.0001,t+DUR*.75,.06);
       osc.connect(g).connect(ctx.destination);
       osc.start(t); osc.stop(t+DUR);
       t+=DUR+GAP;
@@ -527,7 +527,6 @@ function refreshAll(){ refreshPoints(); renderGauges(); renderScore(); }
     });
   }
 })();
-
 </script>
 </body>
 </html>
