@@ -1,0 +1,196 @@
+<!-- FILE: /WHOAI2/whoai_care_evolved.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>WhoAI | 進化後お世話</title>
+<meta name="color-scheme" content="dark light" />
+<link rel="icon"
+  href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🍬%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{ --glass:rgba(0,0,0,.35); --brd:rgba(255,255,255,.18); --ok:#86efac; --warn:#fde047; --bad:#fda4af; --ink:#fff; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden}
+  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);background:#000 url("space_background.png") center/cover fixed no-repeat;}
+  .chips{position:fixed;left:50%;top:8px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;z-index:5}
+  .chip{background:var(--glass);backdrop-filter:blur(5px);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
+  .title{position:fixed;left:50%;top:44px;transform:translateX(-50%);font-weight:800;text-align:center;z-index:4}
+  .field{position:fixed;inset:0;overflow:hidden}
+  .tane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
+  .tane img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));user-select:none;pointer-events:none}
+  @media (max-width:480px){ .tane img{width:min(54vmin,160px)} }
+  .nameTag{margin-top:6px;padding:8px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);user-select:none;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+  /* 💩 */
+  .poop{position:absolute;font-size:24px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));cursor:pointer}
+  /* パネル */
+  .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(920px,96vw);display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
+  .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .btn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
+  .btncirc{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:50%;padding:6px 10px;cursor:pointer}
+  .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
+  .gbar>span{position:absolute;left:0;top:0;bottom:0;width:60%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
+  .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+</style>
+</head>
+<body>
+  <div class="chips">
+    <span class="chip">👤 <span id="chipPlayer">あなた</span></span>
+    <span class="chip">🎨 色: <span id="chipColor">pink</span></span>
+    <span class="chip">🍬 モード: 進化後お世話</span>
+    <span class="chip"><button class="btn" onclick="location.href='evolved_intro.html'">⤴ 戻る</button></span>
+    <span class="chip"><button class="btn" onclick="location.href='index.html'">🏠 ホーム</button></span>
+  </div>
+  <div class="title">お世話してあげよう（💩はタップで掃除）</div>
+
+  <div class="field" id="field">
+    <div class="tane" id="tane">
+      <img id="char" alt="evolved" />
+      <div class="nameTag" id="nameTag"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <button class="btn" id="btnToilet">🚽 トイレ</button>
+      <button class="btn" id="btnBath">🛁 おふろ</button>
+      <button class="btn" id="btnPlay">🎲 あそぶ</button>
+      <button class="btn" id="btnCleanPoop">💩 そうじ</button>
+      <button class="btn" id="btnReset">🔄 ポイント0にする</button>
+      <button class="btncirc" onclick="setSpeed('slow')">🐢</button>
+      <button class="btncirc" onclick="setSpeed('normal')">⚖</button>
+      <button class="btncirc" onclick="setSpeed('fast')">🐇</button>
+    </div>
+    <div class="gauges">
+      <div class="gbar" id="gClean"><span></span><div class="glbl">きれい</div></div>
+      <div class="gbar" id="gFun"><span></span><div class="glbl">たのしさ</div></div>
+      <div class="gbar" id="gRelief"><span></span><div class="glbl">スッキリ</div></div>
+    </div>
+  </div>
+
+<script>
+  /* ===== 基本情報 ===== */
+  const read = (k,d='') => { const v = localStorage.getItem(k); return (v===null||v==='undefined'||v==='null')? d : v; };
+  const PLAYER_NAME = read('PLAYER_NAME','あなた');
+  const CHAR_NAME   = read('CHAR_NAME',  read('whoai_name','ななし'));
+  const COLOR       = (read('macaronColor','pink')||'pink').trim().toLowerCase();
+  const chipPlayer  = document.getElementById('chipPlayer');
+  const chipColor   = document.getElementById('chipColor');
+  chipPlayer.textContent = PLAYER_NAME;
+  chipColor.textContent  = COLOR;
+
+  /* ===== 画像（*_closed.png） ===== */
+  (function(){
+    const file = `${COLOR}_closed.png`;
+    const img  = document.getElementById('char');
+    const t = new Image();
+    t.onload=()=> img.src=file;
+    t.onerror=()=> img.src='pink_closed.png';
+    t.src=file;
+  })();
+
+  document.getElementById('nameTag').textContent = CHAR_NAME;
+
+  /* ===== ゲーム値 ===== */
+  const THRESHOLD = Number(read('EVOLVED_POINTS_TO_NEXT','20'));
+  let pts = Number(read('evoPoints','0'));                 // 進化後ポイント
+  let clean  = Number(read('evoClean')  ?? 70);
+  let fun    = Number(read('evoFun')    ?? 70);
+  let relief = Number(read('evoRelief') ?? 70);
+  let lastTick = Number(read('evoLast') ?? Date.now());
+
+  /* ===== ゲージ表示 ===== */
+  const clamp = v=>Math.max(0,Math.min(100,v));
+  const gClean = document.getElementById('gClean');
+  const gFun   = document.getElementById('gFun');
+  const gRelief= document.getElementById('gRelief');
+  function setGauge(el,val){
+    const span=el.querySelector('span'); val=clamp(val);
+    span.style.width = `${val}%`;
+    span.style.background = val>=66 ? 'linear-gradient(90deg,#8EE6A2,#c9f9d6)'
+                          : val>=33 ? 'linear-gradient(90deg,#FFD36E,#ffe4a8)'
+                                    : 'linear-gradient(90deg,#FF8A8A,#ffc2c2)';
+  }
+  function render(){ setGauge(gClean,clean); setGauge(gFun,fun); setGauge(gRelief,relief); }
+  function persist(){ localStorage.setItem('evoClean',clean); localStorage.setItem('evoFun',fun); localStorage.setItem('evoRelief',relief); localStorage.setItem('evoLast',Date.now()); localStorage.setItem('evoPoints',pts); }
+
+  /* ===== ポイント ===== */
+  function addPts(n){ pts=Math.max(0,pts+n); localStorage.setItem('evoPoints',pts); }
+  document.getElementById('btnReset').addEventListener('click',()=>{ pts=0; localStorage.setItem('evoPoints','0'); });
+
+  /* ===== 💩 生成＆掃除 ===== */
+  const field = document.getElementById('field');
+  let poopCount = 0;
+  function spawnPoop(){
+    const p=document.createElement('div');
+    p.className='poop'; p.textContent='💩';
+    const r=field.getBoundingClientRect();
+    const x=Math.random()*(r.width-60)+30, y=Math.random()*(r.height-200)+150;
+    p.style.left=`${x}px`; p.style.top=`${y}px`;
+    p.addEventListener('click', ()=>{ p.remove(); poopCount=Math.max(0,poopCount-1); clean=clamp(clean+6); render(); persist(); addPts(1); });
+    field.appendChild(p); poopCount++;
+  }
+  // 時々出現＆汚れ影響
+  setInterval(()=>{ if(Math.random()<0.35){ spawnPoop(); clean=clamp(clean-5); render(); persist(); } }, 6000);
+  document.getElementById('btnCleanPoop').addEventListener('click', ()=>{
+    [...document.querySelectorAll('.poop')].forEach(e=>e.remove());
+    poopCount=0; clean=clamp(clean+12); render(); persist(); addPts(2);
+  });
+
+  /* ===== お世話ボタン ===== */
+  const btnToilet = document.getElementById('btnToilet');
+  const btnBath   = document.getElementById('btnBath');
+  const btnPlay   = document.getElementById('btnPlay');
+  function cd(btn){ btn.disabled=true; setTimeout(()=>btn.disabled=false, 900); }
+  btnToilet.addEventListener('click',()=>{ cd(btnToilet); relief=clamp(relief+20); clean=clamp(clean+4); render(); persist(); addPts(2); });
+  btnBath.addEventListener('click',  ()=>{ cd(btnBath);   clean =clamp(clean +24);                render(); persist(); addPts(2); });
+  btnPlay.addEventListener('click',  ()=>{ cd(btnPlay);   fun   =clamp(fun   +20);                render(); persist(); addPts(2); });
+
+  /* ===== 減衰 ===== */
+  const DECAY_MS=2600, DECAY=1;
+  function tick(){
+    const now=Date.now();
+    if(now-lastTick>=DECAY_MS){
+      const dirtyPenalty = poopCount>0 ? Math.min(4,poopCount) : 0; // 💩多いほど早く汚れる
+      clean  = clamp(clean  - (DECAY + dirtyPenalty*0.5));
+      fun    = clamp(fun    - DECAY);
+      relief = clamp(relief - DECAY);
+      lastTick=now; render(); persist();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ===== ふわふわ移動 & 速度切替 ===== */
+  const taneEl = document.getElementById('tane');
+  const SPEEDS = { slow:.022, normal:.036, fast:.055 };
+  let cur='slow', vx=0, vy=0, last=performance.now(), pos={x:innerWidth/2,y:innerHeight/2};
+  function rs(){ return Math.random()<0.5?-1:1; }
+  function setSpeed(m){ cur=m; const s=SPEEDS[m]; vx=s*(.9+Math.random()*.2)*rs(); vy=s*(.9+Math.random()*.2)*rs(); }
+  window.setSpeed = setSpeed; setSpeed('slow');
+  function bounds(){
+    const r=field.getBoundingClientRect();
+    const w=document.getElementById('char').clientWidth||160;
+    const h=document.getElementById('char').clientHeight||160;
+    return {minX:10,minY:100,maxX:r.width-10,maxY:r.height-140,w,h};
+  }
+  function step(now){
+    let dt=now-last; last=now; if(dt>40) dt=40;
+    const b=bounds();
+    pos.x+=vx*dt; pos.y+=vy*dt;
+    const hw=b.w/2, hh=b.h/2;
+    if(pos.x<b.minX+hw){pos.x=b.minX+hw;vx*=-1}
+    if(pos.x>b.maxX-hw){pos.x=b.maxX-hw;vx*=-1}
+    if(pos.y<b.minY+hh){pos.y=b.minY+hh;vy*=-1}
+    if(pos.y>b.maxY-hh){pos.y=b.maxY-hh;vy*=-1}
+    taneEl.style.left=`${pos.x}px`; taneEl.style.top=`${pos.y}px`;
+    requestAnimationFrame(step);
+  }
+  (function initPos(){ const b=bounds(); pos.x=(b.minX+b.maxX)/2; pos.y=(b.minY+b.maxY)/2; taneEl.style.left=`${pos.x}px`; taneEl.style.top=`${pos.y}px`; })();
+  requestAnimationFrame(step);
+
+  /* ===== 起動 ===== */
+  render(); requestAnimationFrame(tick);
+</script>
+</body>
+</html>
