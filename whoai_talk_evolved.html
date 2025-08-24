@@ -18,12 +18,8 @@
   }
 
   /* ヘッダー */
-  .topbar{
-    position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;
-    padding:8px;z-index:20
-  }
-  .btn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;
-    padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
+  .topbar{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;padding:8px;z-index:20}
+  .btn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
   .btn.small{padding:6px 10px;font-size:13px;border-radius:10px}
   .spacer{flex:1}
   .chip{background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
@@ -31,61 +27,46 @@
   .title{position:fixed;left:50%;top:48px;transform:translateX(-50%);font-weight:800;text-align:center;z-index:4}
   .subtitle{position:fixed;left:50%;top:76px;transform:translateX(-50%);font-size:12px;opacity:.9;text-align:center;z-index:4}
 
-  /* プレイフィールド */
+  /* フィールド */
   .field{position:fixed;inset:0;overflow:hidden}
 
   /* キャラ */
-  .tane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
-  .tane img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));
-    user-select:none;pointer-events:none;transition:transform .18s ease}
+  .tane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
+  .tane img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));user-select:none;pointer-events:none;transition:transform .18s ease}
   @media (max-width:480px){ .tane img{width:min(54vmin,160px)} }
   .pop{animation:pop .25s ease}@keyframes pop{0%{transform:scale(1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
-
-  .nameTag{margin-top:6px;padding:8px 14px;border-radius:12px;background:var(--glass);
-    border:1px solid var(--brd);cursor:pointer;user-select:none;font-weight:800;
-    box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .25s}
+  .nameTag{margin-top:6px;padding:8px 14px;border-radius:12px;background:var(--glass);border:1px solid var(--brd);cursor:pointer;user-select:none;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .25s}
   .nameTag.show{opacity:1}
   .spin{animation:spin 500ms ease both}@keyframes spin{to{transform:rotate(360deg)}}
 
   /* フキダシ */
-  .bubble{position:absolute;left:50%;top:-10px;transform:translate(-50%,-100%);background:#0f1220d0;
-    border:1px solid var(--brd);border-radius:14px;padding:8px 12px;font-size:13px;box-shadow:0 10px 26px rgba(0,0,0,.5);
-    opacity:0;transition:opacity .2s, transform .2s}
+  .bubble{position:absolute;left:50%;top:-10px;transform:translate(-50%,-100%);background:#0f1220d0;border:1px solid var(--brd);border-radius:14px;padding:8px 12px;font-size:13px;box-shadow:0 10px 26px rgba(0,0,0,.5);opacity:0;transition:opacity .2s, transform .2s}
   .bubble.show{opacity:1;transform:translate(-50%,-115%)}
 
   /* お世話パネル */
-  .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(920px,96vw);
-    display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
+  .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(920px,96vw);display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
   .care{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:10px;
-    padding:6px 10px;cursor:pointer;font-size:14px;min-width:40px;text-align:center}
+  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:10px;padding:6px 10px;cursor:pointer;font-size:14px;min-width:40px;text-align:center}
   .btnspeed.active{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.6)}
 
   .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-  .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);
-    border:1px solid var(--brd);overflow:hidden}
+  .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid var(--brd);overflow:hidden}
   .gbar>span{position:absolute;left:0;top:0;bottom:0;width:60%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
   .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
 
   /* 💩＆♪ */
-  .poo{position:absolute;z-index:40;cursor:pointer;user-select:none;font-size:clamp(28px,4vw,42px);
-    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
-  .noteItem{position:absolute;z-index:41;cursor:pointer;user-select:none;font-size:clamp(24px,3.2vw,36px);
-    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
-  .note-float{position:fixed;z-index:60;pointer-events:none;font-size:clamp(20px,3vw,30px);
-    animation:noteFloat 1.2s ease-out forwards}
+  .poo{position:absolute;z-index:40;cursor:pointer;user-select:none;font-size:clamp(28px,4vw,42px);filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+  .noteItem{position:absolute;z-index:41;cursor:pointer;user-select:none;font-size:clamp(24px,3.2vw,36px);filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+  .note-float{position:fixed;z-index:60;pointer-events:none;font-size:clamp(20px,3vw,30px);animation:noteFloat 1.2s ease-out forwards}
   @keyframes noteFloat{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
 
-  /* コレクション枠 */
-  .musicDock{position:fixed;right:10px;top:106px;z-index:7;background:var(--glass);border:1px solid var(--brd);
-    backdrop-filter:blur(6px);border-radius:14px;padding:10px 12px;min-width:216px}
-  .musicDock h4{margin:0 0 4px;font-size:12px;opacity:.9}
+  /* コレクション枠（見えやすく強化） */
+  .musicDock{position:fixed;right:10px;top:106px;z-index:999;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.55);backdrop-filter:blur(8px);border-radius:14px;padding:12px 14px;min-width:236px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .musicDock h4{margin:0 0 6px;font-size:13px;opacity:.95}
   .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
-  .slot{min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);position:relative;overflow:hidden}
-  .slot.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.45);animation:slotPop .24s ease}
-  .slot.on::after{content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35); font-weight:800}
+  .slot{min-width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.6);position:relative;overflow:hidden}
+  .slot.on{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.9);animation:slotPop .24s ease}
+  .slot.on::after{content:"♪"; color:#fff; opacity:.98; text-shadow:0 2px 10px rgba(0,0,0,.35); font-weight:800}
   @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
   .slot.on.big{animation:slotPopBig .32s ease}
   @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
@@ -103,7 +84,7 @@
   <div class="title">音符を集めよう</div>
   <div class="subtitle">お世話・名前タッチで音符が出現。完成したら自動再生→次の進化へ。</div>
 
-  <!-- コレクション枠 -->
+  <!-- コレクション枠（常時表示） -->
   <aside class="musicDock" id="musicDock" aria-live="polite">
     <h4>🎵 きらきら星（前半2フレーズ）</h4>
     <div class="scoreRow" id="scoreRow"></div>
@@ -259,7 +240,7 @@ btnToilet.onclick=()=>{cooldown(btnToilet);relief=clamp(relief+18);clean=clamp(c
 btnBath.onclick=()=>{cooldown(btnBath);clean=clamp(clean+22);renderGauges();persistGauges();spawnNoteNearTane();}
 btnPlay.onclick=()=>{cooldown(btnPlay);fun=clamp(fun+18);renderGauges();persistGauges();spawnNoteNearTane();}
 
-/* ====== コレクション表示 ====== */
+/* ====== コレクション表示（必ず見える） ====== */
 function renderScore(){ scoreRow.innerHTML=''; for(let i=0;i<SONG.length;i++){ const d=document.createElement('div'); d.className='slot'+(i<collected.length?' on':''); scoreRow.appendChild(d); } }
 function bounceLastThree(){ const nodes=scoreRow.querySelectorAll('.slot'); const L=nodes.length; for(let i=Math.max(0,L-3);i<L;i++){nodes[i].classList.remove('big');void nodes[i].offsetWidth;nodes[i].classList.add('big');}}
 
@@ -327,15 +308,12 @@ async function playSong(seq){
 function prepareNextStageRandomSong(){
   const packs = {
     silent_night: {name:"きよしこの夜", seq:[
-      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2},
-      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2}
+      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ミ4",len:3},
+      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ミ4",len:3}
     ]},
-    alps_ichiman: {name:"アルプス一万尺", seq:[
-      {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ソ4",len:2},
-      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ド5",len:2}
-    ]},
+  
     london_bridge: {name:"ロンドン橋", seq:[
-      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"ソ4",len:1},{n:"ファ4",len:1},{n:"ミ4",len:1},{n:"ファ4",len:1},{n:"ソ4",len:2}
+      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ファ4",len:2},{n:"ミ4",len:2},{n:"ファ4",len:2},{n:"ソ4",len:4}
     ]}
   };
   const keys = Object.keys(packs);
@@ -346,21 +324,31 @@ function prepareNextStageRandomSong(){
 
 /* ====== 完了後フロー：マカロン→命名→モード選択に戻す ====== */
 function goEvolveFlow(){
-  // 復路ヒント（任意のページで見られるようにキュー）
   localStorage.setItem('FLOW_AFTER_MACARON', 'naming.html');
-  localStorage.setItem('FLOW_AFTER_NAMING',  'whoai_select_mode.html'); // 無ければ index.html にフォールバック
-  // フォールバックURLも保存
+  localStorage.setItem('FLOW_AFTER_NAMING',  'whoai_select_mode.html');
   localStorage.setItem('FLOW_FALLBACK', 'index.html');
-  // まずはマカロン選択へ
   location.href = 'macaron_select.html';
 }
 
-/* ====== 起動 ====== */
+/* ====== 起動：必ず見える＆♪が出る ====== */
 function renderAll(){ renderGauges(); renderScore(); }
 (function init(){
   renderAll(); requestAnimationFrame(tick);
   nameTag.classList.add('show');
-  // 既に完成状態なら即フロー
+
+  // 起動時に最初の♪を必ず出す
+  setTimeout(()=>{ if(collected.length<SONG.length) spawnNoteNearTane(); }, 800);
+  // 7秒ごとに保険スポーン（既に♪が無ければ）
+  setInterval(()=>{
+    if(collected.length<SONG.length && !document.querySelector('.noteItem')) spawnNoteNearTane();
+  }, 7000);
+  // どこかをクリックしたら♪を出す（静かな時の救済）
+  field.addEventListener('click', (e)=>{
+    if(e.target.closest('.noteItem,.poo,.btn,.btnspeed,.nameTag')) return;
+    if(collected.length<SONG.length) spawnNoteNearTane();
+  });
+
+  // 完成済みなら演奏→次フロー
   if(localStorage.getItem(LS.done)==='1'){ playSong(SONG).then(()=>{ prepareNextStageRandomSong(); goEvolveFlow(); }); }
 })();
 </script>
