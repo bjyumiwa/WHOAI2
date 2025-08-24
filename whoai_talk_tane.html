@@ -118,11 +118,26 @@
     background:var(--glass);border:1px solid var(--brd);backdrop-filter:blur(6px);
     border-radius:14px;padding:10px 12px;min-width:200px
   }
-  .musicDock h4{margin:0 0 6px;font-size:13px;opacity:.95}
+  /* 曲名は伏せる */
+  .musicDock h4{display:none}
   .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
-  .slot{min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-weight:800;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);font-size:13px}
-  .slot.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35)}
+  /* スロットは音名を出さず、埋まったら♪だけ表示 */
+  .slot{
+    min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);font-size:13px;
+    color:transparent;position:relative;overflow:hidden
+  }
+  .slot.on{
+    background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.45);
+    animation:slotPop .24s ease
+  }
+  .slot.on::after{
+    content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35)
+  }
+  @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
+  /* 完成演出：ラスト3音は大きめに弾む */
+  .slot.on.big{animation:slotPopBig .32s ease}
+  @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -232,6 +247,22 @@ thEl.textContent       = THRESHOLD;
   trySet(primary, [fallback1]);
 })();
 
+/* ====== 曲・音管理（フル） ====== */
+const SONG = [
+  "ソ","ソ","ラ","ソ","ド","シ",
+  "ソ","ソ","ラ","ソ","レ","ド",
+  "ソ","ソ","ソ","ミ","ド","シ","ラ",
+  "ファ","ファ","ミ","ド","レ","ド"
+];
+const NOTE_FREQ = {"ド":261.63,"レ":293.66,"ミ":329.63,"ファ":349.23,"ソ":392.00,"ラ":440.00,"シ":493.88};
+const LS_NOTE = { list:'whoai_notes_birthday_full', poo:'whoai_poo_count', done:'whoai_song_complete_full' };
+let collected = JSON.parse(localStorage.getItem(LS_NOTE.list) || '[]');
+let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
+
+/* 再生と進化の順序制御 */
+let isSongPlaying = false;
+let pendingEvolutionAfterSong = false;
+
 /* ====== ポイント ====== */
 function refreshPoints(){
   ptsEl.textContent = String(pts);
@@ -240,16 +271,26 @@ function refreshPoints(){
   barFill.style.background = ratio>0.66? 'linear-gradient(90deg,var(--ok),#a7f3d0)'
                             : ratio>0.33? 'linear-gradient(90deg,var(--warn),#fde68a)'
                             : 'linear-gradient(90deg,var(--bad),#fecaca)';
-  unlock.style.display = (pts >= THRESHOLD) ? 'inline-flex' : 'none';
+  const songCompleted = (collected.length === SONG.length) || (localStorage.getItem(LS_NOTE.done) === '1');
+  unlock.style.display = (pts >= THRESHOLD && songCompleted && !isSongPlaying) ? 'inline-flex' : 'none';
 }
 function addPoints(n=1){
   pts = Math.max(0, pts + n);
   localStorage.setItem('tanePoints', String(pts));
   refreshPoints();
   taneImg.classList.add('pop'); setTimeout(()=>taneImg.classList.remove('pop'), 250);
-  if(pts >= THRESHOLD){ showToastAndEvolve(); }
+
+  const songCompleted = (collected.length === SONG.length) || (localStorage.getItem(LS_NOTE.done) === '1');
+  if(pts >= THRESHOLD && songCompleted && !isSongPlaying){
+    showToastAndEvolve();
+  }else if(pts >= THRESHOLD && isSongPlaying){
+    // 再生中は保留
+    pendingEvolutionAfterSong = true;
+  }
 }
-btnReset.addEventListener('click', ()=>{ pts=0; localStorage.setItem('tanePoints','0'); refreshPoints(); });
+btnReset.addEventListener('click', ()=>{
+  pts=0; localStorage.setItem('tanePoints','0'); refreshPoints();
+});
 
 /* ====== 名前タッチ ====== */
 nameTag.textContent = CHAR_NAME;
@@ -281,7 +322,8 @@ setSpeed('slow');
 let last = performance.now();
 let pos  = {x: innerWidth/2, y: innerHeight/2};
 
-const fieldRect = ()=>field.getBoundingClientRect();
+const fieldEl = document.getElementById('field');
+const fieldRect = ()=>fieldEl.getBoundingClientRect();
 function bounds(){
   const rect = fieldRect();
   const w = taneImg.clientWidth || 160, h = taneImg.clientHeight || 160;
@@ -346,47 +388,40 @@ btnPlay.addEventListener('click',   ()=>{ cooldown(btnPlay);   fun   =clamp(fun 
 
 /* ====== 進化 ====== */
 function showToastAndEvolve(){
+  if(isSongPlaying){ pendingEvolutionAfterSong = true; return; }
   toast.classList.add('show');
   setTimeout(()=>{ localStorage.setItem('EVOLVED','1'); location.href='macaron_select.html'; }, 900);
 }
 unlock.addEventListener('click', showToastAndEvolve);
 
-/* =================================================================
-   ♪ ハッピーバースデー（フル）＝4フレーズ（Cメジャー）
-   ソソラソドシ | ソソラソレド | ソソソミドシラ | ファファミドレド
-   ================================================================= */
-const SONG = [
-  "ソ","ソ","ラ","ソ","ド","シ",
-  "ソ","ソ","ラ","ソ","レ","ド",
-  "ソ","ソ","ソ","ミ","ド","シ","ラ",
-  "ファ","ファ","ミ","ド","レ","ド"
-];
-const NOTE_FREQ = {"ド":261.63,"レ":293.66,"ミ":329.63,"ファ":349.23,"ソ":392.00,"ラ":440.00,"シ":493.88};
-
-const LS_NOTE = {
-  list:'whoai_notes_birthday_full',
-  poo:'whoai_poo_count',
-  done:'whoai_song_complete_full'
-};
-let collected = JSON.parse(localStorage.getItem(LS_NOTE.list) || '[]');
-let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
-
-/* 所定のコレクションUI */
+/* ====== コレクションUI ====== */
 const scoreRow = document.getElementById('scoreRow');
 function renderScore(){
   scoreRow.innerHTML = '';
-  SONG.forEach((n, i)=>{
+  SONG.forEach((/* n */, i)=>{
     const d=document.createElement('div');
     d.className='slot'+(i<collected.length?' on':'');
-    d.textContent=n;
+    d.textContent=''; // 音名は伏せる
     scoreRow.appendChild(d);
   });
+}
+
+/* 完成時の演出：ラスト3音を大きめに弾ませる */
+function bounceLastThree(){
+  const nodes = scoreRow.querySelectorAll('.slot');
+  const L = nodes.length;
+  for(let i=Math.max(0,L-3); i<L; i++){
+    nodes[i].classList.remove('big'); // リセット
+    // リフローしてアニメ再適用
+    void nodes[i].offsetWidth;
+    nodes[i].classList.add('big');
+  }
 }
 
 /* 💩：3.5秒ごとに55%で最大3個スポーン。10回除去でド+1 */
 const POO_MAX=3;
 function spawnPoo(){
-  if(field.querySelectorAll('.poo').length>=POO_MAX) return;
+  if(fieldEl.querySelectorAll('.poo').length>=POO_MAX) return;
   const rect = fieldRect();
   const x = Math.random()*(rect.width-80)+22;
   const y = Math.random()*(rect.height-160)+ (rect.height*0.45);
@@ -399,11 +434,11 @@ function spawnPoo(){
     if(pooCount%10===0){ gainNote("ド"); } // 10回でド1つ
     relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges(); addPoints(1);
   });
-  field.appendChild(el);
+  fieldEl.appendChild(el);
 }
 setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
 
-/* ♪：次に必要な音を1つ出現→クリックで収集 */
+/* ♪：次に必要な音を1つ出現→クリックで収集（表示は♪のみ） */
 function spawnNoteNearTane(){
   const next = SONG[collected.length];
   if(!next) return;
@@ -412,21 +447,17 @@ function spawnNoteNearTane(){
   const ty = pos.y + (Math.random()*80-40);
   const x = Math.max(20, Math.min(rect.width-40, tx));
   const y = Math.max(120, Math.min(rect.height-160, ty));
-  const el=document.createElement('div'); el.className='noteItem'; el.textContent=noteEmoji(next);
+  const el=document.createElement('div'); el.className='noteItem'; el.textContent="♪";
   el.style.left=`${x}px`; el.style.top=`${y}px`;
   el.addEventListener('click', ()=>{
     el.remove();
     gainNote(next);
     fun=clamp(fun+6); renderGauges(); persistGauges(); addPoints(1);
   });
-  field.appendChild(el);
-}
-function noteEmoji(n){ // シンプルな表示
-  const map={"ド":"♪","レ":"♫","ミ":"♪","ファ":"♫","ソ":"♪","ラ":"♫","シ":"♪"};
-  return map[n]||"♪";
+  fieldEl.appendChild(el);
 }
 
-/* その場でふわっと */
+/* ふわっとエフェクト */
 function floatNote(char, x, y){
   const el=document.createElement('div');
   el.className='note-float'; el.textContent=char;
@@ -435,19 +466,27 @@ function floatNote(char, x, y){
   setTimeout(()=>el.remove(), 1200);
 }
 
-/* 会話・名前タッチ・お世話からも次音を前進 */
+/* 会話・名前タッチ・お世話などから次音を前進 */
 function grantNextNote(){ if(collected.length<SONG.length){ gainNote(SONG[collected.length]); } }
 
 function gainNote(n){
   const need = SONG[collected.length];
-  if(n!==need) return; // 次に必要な音以外は進めない（順番制）
+  if(n!==need) return; // 順番制
   collected.push(n);
   localStorage.setItem(LS_NOTE.list, JSON.stringify(collected));
   renderScore();
-  // そろったら演奏→進化
+
+  // 完成したら、まず完成演出→演奏→その後に進化判定
   if(collected.length===SONG.length){
     localStorage.setItem(LS_NOTE.done,'1');
-    playSong(SONG).then(()=> showToastAndEvolve());
+    bounceLastThree();     // ★ラスト3つ大きめに弾む
+    isSongPlaying = true;  // 再生中フラグON
+    playSong(SONG).then(()=>{
+      isSongPlaying = false;
+      if(pendingEvolutionAfterSong){ pendingEvolutionAfterSong=false; showToastAndEvolve(); return; }
+      if(pts >= THRESHOLD){ showToastAndEvolve(); }
+      else{ refreshPoints(); } // 条件未達なら続行
+    });
   }
 }
 
@@ -477,11 +516,18 @@ function refreshAll(){ refreshPoints(); renderGauges(); renderScore(); }
   refreshAll();
   requestAnimationFrame(tick);
   nameTag.classList.add('show');
-  // 既に曲完成なら即演奏→進化
+
+  // 既に曲完成なら、まず演奏→その後に進化判定
   if(localStorage.getItem(LS_NOTE.done)==='1'){
-    playSong(SONG).then(()=> showToastAndEvolve());
+    isSongPlaying = true;
+    playSong(SONG).then(()=>{
+      isSongPlaying = false;
+      if(pts >= THRESHOLD){ showToastAndEvolve(); }
+      else{ refreshPoints(); }
+    });
   }
 })();
+
 </script>
 </body>
 </html>
