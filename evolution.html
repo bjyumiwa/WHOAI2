@@ -1,37 +1,100 @@
-<!DOCTYPE html><html lang="ja"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>進化！</title>
+<!-- FILE: /WHOAI2/evolved_intro.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>進化しました！ | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<link rel="icon"
+  href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🍬%3C/text%3E%3C/svg%3E" />
 <style>
+  :root{ --glass:rgba(0,0,0,.35); --brd:rgba(255,255,255,.18); --ink:#fff; }
+  *{box-sizing:border-box}
   html,body{height:100%;margin:0}
-  body{font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-       background:#000 url("space_background.png") center/cover fixed no-repeat;
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
-  img{width:min(60vw,340px);height:auto}
-  .btn{padding:10px 16px;border-radius:12px;border:0;background:#f7b0bf;color:#222;font-weight:800;cursor:pointer}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;align-items:center;justify-content:center;padding:16px
+  }
+  .card{
+    width:min(92vw,820px);
+    background:var(--glass);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+    border:1px solid var(--brd);border-radius:20px;padding:18px;text-align:center;
+    box-shadow:0 12px 32px rgba(0,0,0,.4)
+  }
+  h1{margin:0 0 8px}
+  .sub{opacity:.9;margin:0 0 12px}
+  .hero{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;margin:8px 0 4px}
+  .hero img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55))}
+  .col{display:flex;flex-direction:column;gap:10px;align-items:center}
+  input{padding:12px 14px;border-radius:12px;border:0;min-width:240px;font-size:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn{padding:12px 16px;border-radius:12px;border:1px solid var(--brd);background:#fff;color:#111;font-weight:800;cursor:pointer}
+  .ghost{padding:12px 16px;border-radius:12px;border:1px solid var(--brd);background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer}
+  .chips{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+  .chip{background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
 </style>
-</head><body>
-  <h1>キャラが進化した！</h1>
-  <img id="evolvedImg" alt="進化キャラ">
-  <button class="btn" onclick="location.href='whoai_talk.html'">進化キャラと会話する</button>
+</head>
+<body>
+  <main class="card">
+    <h1 id="title">ピンクに進化したよ！</h1>
+    <p class="sub">新しい姿になりました。名前をつけてから「お世話」か「会話」を選んでね。</p>
+
+    <div class="hero">
+      <img id="char" alt="evolved" />
+      <div class="col">
+        <div class="chips">
+          <span class="chip">🎨 色: <b id="chipColor">pink</b></span>
+          <span class="chip">🍬 モード: 進化後</span>
+        </div>
+        <input id="nameInput" placeholder="なまえ（例：まかろん）" maxlength="16" />
+        <div class="row">
+          <button class="btn"   id="btnCare">お世話をする</button>
+          <button class="ghost" id="btnTalk">会話をする</button>
+          <button class="ghost" id="btnHome" onclick="location.href='index.html'">🏠 ホーム</button>
+        </div>
+      </div>
+    </div>
+  </main>
 
 <script>
-(function(){
-  const stage = localStorage.getItem("whoai_stage") || "tane";
-  const color = localStorage.getItem("whoai_color") || "pink";
-  if(stage !== "evolved"){ location.replace("whoai_talk.html"); return; }
+  // 色の決定（macaronColor を使う）
+  const color = (localStorage.getItem('macaronColor') || 'pink').trim().toLowerCase();
+  document.getElementById('chipColor').textContent = color;
 
-  const candidates = [`${color}_open.png`, `${color}_closed.png`, `pink_open.png`];
-  const img = document.getElementById("evolvedImg");
+  const jp = {pink:'ピンク', green:'グリーン', blue:'ブルー', purple:'パープル'};
+  document.getElementById('title').textContent = `${jp[color]||color} に進化したよ！`;
 
-  function tryNext(i){
-    if(i>=candidates.length){ img.alt="画像が見つかりません"; return; }
-    const p = candidates[i];
+  // 画像（*_closed.png；なければ pink_closed.png）
+  (function(){
+    const file = `${color}_closed.png`;
+    const img  = document.getElementById('char');
     const t = new Image();
-    t.onload  = ()=>{ img.src = p; };
-    t.onerror = ()=>{ tryNext(i+1); };
-    t.src = p;
+    t.onload = ()=> img.src = file;
+    t.onerror= ()=> img.src = 'pink_closed.png';
+    t.src = file;
+  })();
+
+  // EVOLVED フラグを立てる
+  localStorage.setItem('EVOLVED','1');
+
+  // ボタン共通：名前を保存してから遷移
+  function saveName(){
+    const name=(document.getElementById('nameInput').value||localStorage.getItem('whoai_name')||'ななし').trim();
+    localStorage.setItem('CHAR_NAME',name);
+    localStorage.setItem('whoai_name',name);
   }
-  tryNext(0);
-})();
+
+  document.getElementById('btnCare').addEventListener('click', ()=>{
+    saveName();
+    location.href='whoai_care_evolved.html';
+  });
+
+  document.getElementById('btnTalk').addEventListener('click', ()=>{
+    saveName();
+    location.href='whoai_talk.html';
+  });
 </script>
-</body></html>
+</body>
+</html>
