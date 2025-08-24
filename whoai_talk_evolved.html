@@ -60,16 +60,24 @@
   .note-float{position:fixed;z-index:60;pointer-events:none;font-size:clamp(20px,3vw,30px);animation:noteFloat 1.2s ease-out forwards}
   @keyframes noteFloat{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
 
-  /* コレクション枠（見えやすく強化） */
-  .musicDock{position:fixed;right:10px;top:106px;z-index:999;background:rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.55);backdrop-filter:blur(8px);border-radius:14px;padding:12px 14px;min-width:236px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
-  .musicDock h4{margin:0 0 6px;font-size:13px;opacity:.95}
+  /* コレクション枠（強調＆最前面） */
+  .musicDock{
+    position:fixed;right:10px;top:106px;z-index:10000;
+    background:rgba(0,0,0,.55);border:3px solid rgba(255,255,255,.85);
+    backdrop-filter:blur(9px);border-radius:14px;padding:12px 16px;min-width:248px;
+    box-shadow:0 12px 36px rgba(0,0,0,.55)
+  }
+  .musicDock h4{margin:0 0 6px;font-size:13px}
   .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
-  .slot{min-width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.6);position:relative;overflow:hidden}
-  .slot.on{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.9);animation:slotPop .24s ease}
+  .slot{min-width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.9)}
+  .slot.on{background:rgba(255,255,255,.32);animation:slotPop .24s ease}
   .slot.on::after{content:"♪"; color:#fff; opacity:.98; text-shadow:0 2px 10px rgba(0,0,0,.35); font-weight:800}
   @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
   .slot.on.big{animation:slotPopBig .32s ease}
   @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+  /* 右上にバージョン表示（読み替え確認用） */
+  .ver{position:fixed;right:12px;top:76px;z-index:10001;font-size:12px;opacity:.9;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.5);padding:2px 8px;border-radius:10px}
 </style>
 </head>
 <body>
@@ -80,11 +88,12 @@
     <div class="spacer"></div>
     <button class="btn small" id="btnResetSong" title="集めた♪をリセット">♪ リセット</button>
   </div>
+  <div class="ver">twinkle-2101</div>
 
   <div class="title">音符を集めよう</div>
   <div class="subtitle">お世話・名前タッチで音符が出現。完成したら自動再生→次の進化へ。</div>
 
-  <!-- コレクション枠（常時表示） -->
+  <!-- コレクション枠 -->
   <aside class="musicDock" id="musicDock" aria-live="polite">
     <h4>🎵 きらきら星（前半2フレーズ）</h4>
     <div class="scoreRow" id="scoreRow"></div>
@@ -142,7 +151,7 @@ const btnBack  = document.getElementById('btnBack');
 const btnResetSong = document.getElementById('btnResetSong');
 const scoreRow = document.getElementById('scoreRow');
 
-/* ====== 画像ローダ（多段フォールバック） ====== */
+/* ====== 画像ローダ ====== */
 (function setTaneSrc(){
   const color = (window.COLOR || COLOR || 'pink').toLowerCase();
   const candidates = [
@@ -164,10 +173,7 @@ const scoreRow = document.getElementById('scoreRow');
   })(0);
 })();
 
-/* ====== 曲：きらきら星（Cメジャー・前半） ======
-   C4 C4 G4 G4 A4 A4 G4 | F4 F4 E4 E4 D4 D4 C4
-   len: 1=四分, 2=二分
-*/
+/* ====== 曲：きらきら星（前半） ====== */
 const SONG = [
   {n:"ド4",len:1},{n:"ド4",len:1},{n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:1},{n:"ラ4",len:1},{n:"ソ4",len:2},
   {n:"ファ4",len:1},{n:"ファ4",len:1},{n:"ミ4",len:1},{n:"ミ4",len:1},{n:"レ4",len:1},{n:"レ4",len:1},{n:"ド4",len:2}
@@ -179,7 +185,7 @@ let collected = JSON.parse(localStorage.getItem(LS.list) || '[]');
 let pooCount  = Number(localStorage.getItem(LS.poo) || 0);
 
 /* ====== UI：戻る・リセット ====== */
-btnBack.onclick = ()=>{ location.href = 'naming.html'; }; // 404回避：命名シーンへ
+btnBack.onclick = ()=>{ location.href = 'naming.html'; };
 btnResetSong.onclick = ()=>{
   document.querySelectorAll('.noteItem').forEach(n=>n.remove());
   collected = [];
@@ -240,7 +246,7 @@ btnToilet.onclick=()=>{cooldown(btnToilet);relief=clamp(relief+18);clean=clamp(c
 btnBath.onclick=()=>{cooldown(btnBath);clean=clamp(clean+22);renderGauges();persistGauges();spawnNoteNearTane();}
 btnPlay.onclick=()=>{cooldown(btnPlay);fun=clamp(fun+18);renderGauges();persistGauges();spawnNoteNearTane();}
 
-/* ====== コレクション表示（必ず見える） ====== */
+/* ====== コレクション表示 ====== */
 function renderScore(){ scoreRow.innerHTML=''; for(let i=0;i<SONG.length;i++){ const d=document.createElement('div'); d.className='slot'+(i<collected.length?' on':''); scoreRow.appendChild(d); } }
 function bounceLastThree(){ const nodes=scoreRow.querySelectorAll('.slot'); const L=nodes.length; for(let i=Math.max(0,L-3);i<L;i++){nodes[i].classList.remove('big');void nodes[i].offsetWidth;nodes[i].classList.add('big');}}
 
@@ -308,12 +314,15 @@ async function playSong(seq){
 function prepareNextStageRandomSong(){
   const packs = {
     silent_night: {name:"きよしこの夜", seq:[
-      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ミ4",len:3},
-      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ミ4",len:3}
+      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2},
+      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2}
     ]},
-  
+    alps_ichiman: {name:"アルプス一万尺", seq:[
+      {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ソ4",len:2},
+      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ド5",len:2}
+    ]},
     london_bridge: {name:"ロンドン橋", seq:[
-      {n:"ソ4",len:2},{n:"ラ4",len:1},{n:"ソ4",len:2},{n:"ファ4",len:2},{n:"ミ4",len:2},{n:"ファ4",len:2},{n:"ソ4",len:4}
+      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"ソ4",len:1},{n:"ファ4",len:1},{n:"ミ4",len:1},{n:"ファ4",len:1},{n:"ソ4",len:2}
     ]}
   };
   const keys = Object.keys(packs);
@@ -322,7 +331,7 @@ function prepareNextStageRandomSong(){
   localStorage.setItem('EVOLVE_NEXT_SONG_SEQ', JSON.stringify(pick.seq));
 }
 
-/* ====== 完了後フロー：マカロン→命名→モード選択に戻す ====== */
+/* ====== 完了後フロー ====== */
 function goEvolveFlow(){
   localStorage.setItem('FLOW_AFTER_MACARON', 'naming.html');
   localStorage.setItem('FLOW_AFTER_NAMING',  'whoai_select_mode.html');
@@ -330,25 +339,23 @@ function goEvolveFlow(){
   location.href = 'macaron_select.html';
 }
 
-/* ====== 起動：必ず見える＆♪が出る ====== */
+/* ====== 起動：必ず♪と表が見える ====== */
 function renderAll(){ renderGauges(); renderScore(); }
 (function init(){
   renderAll(); requestAnimationFrame(tick);
   nameTag.classList.add('show');
 
-  // 起動時に最初の♪を必ず出す
-  setTimeout(()=>{ if(collected.length<SONG.length) spawnNoteNearTane(); }, 800);
-  // 7秒ごとに保険スポーン（既に♪が無ければ）
-  setInterval(()=>{
-    if(collected.length<SONG.length && !document.querySelector('.noteItem')) spawnNoteNearTane();
-  }, 7000);
-  // どこかをクリックしたら♪を出す（静かな時の救済）
+  // 起動直後：必ず♪を1つ
+  setTimeout(()=>{ if(collected.length<SONG.length) spawnNoteNearTane(); }, 600);
+  // 7秒ごとに保険スポーン（♪が場内に無ければ）
+  setInterval(()=>{ if(collected.length<SONG.length && !document.querySelector('.noteItem')) spawnNoteNearTane(); }, 7000);
+  // どこかクリックで救済スポーン
   field.addEventListener('click', (e)=>{
     if(e.target.closest('.noteItem,.poo,.btn,.btnspeed,.nameTag')) return;
     if(collected.length<SONG.length) spawnNoteNearTane();
   });
 
-  // 完成済みなら演奏→次フロー
+  // 完成済みなら演奏→次へ
   if(localStorage.getItem(LS.done)==='1'){ playSong(SONG).then(()=>{ prepareNextStageRandomSong(); goEvolveFlow(); }); }
 })();
 </script>
