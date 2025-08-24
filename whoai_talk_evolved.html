@@ -1,432 +1,368 @@
+<!-- FILE: /WHOAI2/whoai_care_evolved.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>会話 | WhoAI（進化後・ケア機能）</title>
-  <meta name="color-scheme" content="dark light" />
-  <style>
-    :root{
-      --glass-bg: rgba(0,0,0,.35);
-      --glass-brd: rgba(255,255,255,.2);
-      --accent: #8ad5ff;
-      --ok: #6ee7b7;
-      --warn: #fbbf24;
-      --bad: #fb7185;
-    }
-    html,body{height:100%;margin:0;overflow:hidden}
-    body{
-      position:relative;
-      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
-      background:#000 url("space_background.png") center/cover fixed no-repeat;
-      user-select:none;
-    }
-    /* Top chips */
-    .chips{position:fixed;left:50%;top:10px;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;z-index:30}
-    .chip{background:var(--glass-bg);backdrop-filter:blur(3px);border:1px solid var(--glass-brd);padding:6px 10px;border-radius:999px;font-size:12px}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>WhoAI | 進化後のお世話（きらきら星）</title>
+<meta name="color-scheme" content="dark light" />
+<link rel="icon"
+  href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🌟%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{ --glass: rgba(0,0,0,.35); --brd: rgba(255,255,255,.18); --ink:#fff; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;overflow:hidden}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:var(--ink);
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+  }
 
-    /* Floating character */
-    .stage{position:absolute;inset:0}
-    .char{position:absolute;width:min(22vmin,200px);aspect-ratio:1/1.05;z-index:5;filter:drop-shadow(0 8px 24px rgba(0,0,0,.45));transition:transform .12s ease}
-    .char img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-    .name-tag{position:absolute;left:50%;top:-22px;transform:translateX(-50%);padding:4px 10px;border-radius:999px;border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(3px);font-size:12px;white-space:nowrap}
+  /* ヘッダー */
+  .topbar{
+    position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:8px;
+    padding:8px;z-index:20
+  }
+  .btn{background:var(--glass);border:1px solid var(--brd);color:#fff;border-radius:12px;
+    padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
+  .btn.small{padding:6px 10px;font-size:13px;border-radius:10px}
+  .spacer{flex:1}
+  .chip{background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:999px;font-size:12px}
 
-    /* Speech bubble */
-    .bubble{position:absolute;left:50%;top:-72px;transform:translateX(-50%);max-width:min(70vw,380px);padding:10px 12px;border-radius:14px;border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(4px);font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
-    .bubble.show{opacity:1}
+  .title{position:fixed;left:50%;top:48px;transform:translateX(-50%);font-weight:800;text-align:center;z-index:4}
+  .subtitle{position:fixed;left:50%;top:76px;transform:translateX(-50%);font-size:12px;opacity:.9;text-align:center;z-index:4}
 
-    /* Poop */
-    .poop{position:absolute;font-size:clamp(20px,4vmin,34px);filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+  /* プレイフィールド */
+  .field{position:fixed;inset:0;overflow:hidden}
 
-    /* Bottom panel */
-    .panel{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:40;width:min(960px,94vw)}
-    .status{display:grid;grid-template-columns:120px 1fr 52px;gap:8px;align-items:center;width:100%;}
-    .status .label{font-size:12px;opacity:.9}
-    .bar{height:12px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;overflow:hidden;border:1px solid var(--glass-brd)}
-    .bar > i{position:absolute;left:0;top:0;bottom:0;width:50%;border-radius:999px}
-    .val{font-variant-numeric:tabular-nums;font-size:12px;opacity:.9;text-align:right}
+  /* キャラ */
+  .tane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
+  .tane img{width:min(40vmin,220px);height:auto;filter:drop-shadow(0 10px 28px rgba(0,0,0,.55));
+    user-select:none;pointer-events:none;transition:transform .18s ease}
+  @media (max-width:480px){ .tane img{width:min(54vmin,160px)} }
+  .pop{animation:pop .25s ease}@keyframes pop{0%{transform:scale(1)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
 
-    .buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-    .btn{border:1px solid var(--glass-brd);background:var(--glass-bg);backdrop-filter:blur(3px);padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
-    .btn:active{transform:translateY(1px)}
+  .nameTag{margin-top:6px;padding:8px 14px;border-radius:12px;background:var(--glass);
+    border:1px solid var(--brd);cursor:pointer;user-select:none;font-weight:800;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .25s}
+  .nameTag.show{opacity:1}
+  .spin{animation:spin 500ms ease both}@keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Chat */
-    .chat{display:grid;grid-template-columns:1fr auto;gap:8px;width:100%}
-    .chat input{width:100%;padding:12px 12px;border-radius:12px;border:1px solid var(--glass-brd);background:rgba(0,0,0,.25);color:#fff}
-    .chat button{padding:12px 16px;border-radius:12px;border:1px solid var(--glass-brd);background:var(--glass-bg);color:#fff;font-weight:700;cursor:pointer}
+  /* フキダシ */
+  .bubble{position:absolute;left:50%;top:-10px;transform:translate(-50%,-100%);background:#0f1220d0;
+    border:1px solid var(--brd);border-radius:14px;padding:8px 12px;font-size:13px;box-shadow:0 10px 26px rgba(0,0,0,.5);
+    opacity:0;transition:opacity .2s, transform .2s}
+  .bubble.show{opacity:1;transform:translate(-50%,-115%)}
 
-    /* Hint */
-    .hint{position:fixed;left:12px;top:12px;font-size:12px;background:var(--glass-bg);border:1px solid var(--glass-brd);padding:6px 10px;border-radius:10px;z-index:50}
+  /* お世話パネル */
+  .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);width:min(920px,96vw);
+    display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
+  .care{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:10px;
+    padding:6px 10px;cursor:pointer;font-size:14px;min-width:40px;text-align:center}
+  .btnspeed.active{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.6)}
 
-    /* Safe area */
-    @media (max-width:480px){
-      .char{width:min(28vmin,160px)}
-      .status{grid-template-columns:88px 1fr 46px}
-    }
-  </style>
+  .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);
+    border:1px solid var(--brd);overflow:hidden}
+  .gbar>span{position:absolute;left:0;top:0;bottom:0;width:60%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
+  .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+  /* 💩＆♪ */
+  .poo{position:absolute;z-index:40;cursor:pointer;user-select:none;font-size:clamp(28px,4vw,42px);
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+  .noteItem{position:absolute;z-index:41;cursor:pointer;user-select:none;font-size:clamp(24px,3.2vw,36px);
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+  .note-float{position:fixed;z-index:60;pointer-events:none;font-size:clamp(20px,3vw,30px);
+    animation:noteFloat 1.2s ease-out forwards}
+  @keyframes noteFloat{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
+
+  /* コレクション枠 */
+  .musicDock{position:fixed;right:10px;top:106px;z-index:7;background:var(--glass);border:1px solid var(--brd);
+    backdrop-filter:blur(6px);border-radius:14px;padding:10px 12px;min-width:216px}
+  .musicDock h4{margin:0 0 4px;font-size:12px;opacity:.9}
+  .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
+  .slot{min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);position:relative;overflow:hidden}
+  .slot.on{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.45);animation:slotPop .24s ease}
+  .slot.on::after{content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35); font-weight:800}
+  @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
+  .slot.on.big{animation:slotPopBig .32s ease}
+  @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+</style>
 </head>
 <body>
-  <div class="hint">キャラをクリック：なでる / 🚽トイレ / 🎮あそぶ</div>
-  <div class="chips" id="chips"></div>
+  <!-- 上部：戻る／曲リセット -->
+  <div class="topbar">
+    <button class="btn small" id="btnBack">← もどる</button>
+    <span class="chip">進化ステージ：きらきら星</span>
+    <div class="spacer"></div>
+    <button class="btn small" id="btnResetSong" title="集めた♪をリセット">♪ リセット</button>
+  </div>
 
-  <div class="stage" id="stage"></div>
+  <div class="title">音符を集めよう</div>
+  <div class="subtitle">お世話・名前タッチで音符が出現。完成したら自動再生→次の進化へ。</div>
 
-  <div class="panel">
-    <div class="status">
-      <div class="label">きれいさ</div>
-      <div class="bar"><i id="bar-clean"></i></div>
-      <div class="val" id="val-clean">--%</div>
+  <!-- コレクション枠 -->
+  <aside class="musicDock" id="musicDock" aria-live="polite">
+    <h4>🎵 きらきら星（前半2フレーズ）</h4>
+    <div class="scoreRow" id="scoreRow"></div>
+  </aside>
 
-      <div class="label">たのしさ</div>
-      <div class="bar"><i id="bar-fun"></i></div>
-      <div class="val" id="val-fun">--%</div>
-
-      <div class="label">げんき</div>
-      <div class="bar"><i id="bar-energy"></i></div>
-      <div class="val" id="val-energy">--%</div>
-    </div>
-
-    <div class="buttons">
-      <button class="btn" id="btn-toilet">🚽 トイレ</button>
-      <button class="btn" id="btn-play">🎮 あそぶ</button>
-      <button class="btn" id="btn-rest">💤 ねる</button>
-      <button class="btn" id="btn-snack">🍪 おやつ</button>
-      <button class="btn" id="btn-bath">🛁 おふろ</button>
-    </div>
-
-    <div class="chat">
-      <input id="chat-input" placeholder="話しかける… (Enterで送信)" />
-      <button id="chat-send">送信</button>
+  <!-- フィールド -->
+  <div class="field" id="field">
+    <div class="tane" id="tane">
+      <div class="bubble" id="bubble"></div>
+      <img id="taneImg" alt="tane">
+      <div class="nameTag" id="nameTag"></div>
     </div>
   </div>
 
-  <script>
-    // ====== 基本設定・状態管理 ======
-    const LS_COLOR_KEYS = ["macaronColor","MACARON_COLOR","color"];
-    const LS_PLAYER_KEYS = ["playerName","PLAYER_NAME","あなたの名前"];
-    const LS_CHAR_KEYS = ["characterName","CHAR_NAME","キャラの名前","キャラクターの名前"];
-    const TALK_ENDPOINT = localStorage.getItem("TALK_ENDPOINT") || ""; // 既存APIあれば利用
+  <!-- お世話＋速度 -->
+  <div class="panel">
+    <div class="care">
+      <button class="btn" id="btnToilet">🚽 トイレ</button>
+      <button class="btn" id="btnBath">🛁 おふろ</button>
+      <button class="btn" id="btnPlay">🎲 あそぶ</button>
+      <button class="btnspeed" data-speed="slow"   onclick="setSpeed('slow')">🐢</button>
+      <button class="btnspeed" data-speed="normal" onclick="setSpeed('normal')">1×</button>
+      <button class="btnspeed" data-speed="fast"   onclick="setSpeed('fast')">🐇</button>
+    </div>
+    <div class="gauges">
+      <div class="gbar" id="gClean"><span></span><div class="glbl">きれい</div></div>
+      <div class="gbar" id="gFun"><span></span><div class="glbl">たのしさ</div></div>
+      <div class="gbar" id="gRelief"><span></span><div class="glbl">スッキリ</div></div>
+    </div>
+  </div>
 
-    function readFirst(keys, fallback=""){
-      for(const k of keys){
-        const v = localStorage.getItem(k);
-        if(v && v !== "undefined" && v !== "null") return v;
-      }
-      return fallback;
+<script>
+/* ====== 小道具 ====== */
+const clamp = v => Math.max(0, Math.min(100, v));
+const read = (k,d='') => { const v = localStorage.getItem(k); return (v===null||v==='undefined'||v==='null')? d : v; };
+
+/* ====== 基本 ====== */
+const PLAYER_NAME = read('PLAYER_NAME','あなた');
+const CHAR_NAME   = read('CHAR_NAME','タネ');
+const COLOR       = (read('macaronColor','pink')||'pink').trim().toLowerCase();
+
+/* ====== DOM ====== */
+const taneImg  = document.getElementById('taneImg');
+const nameTag  = document.getElementById('nameTag');
+const bubble   = document.getElementById('bubble');
+const field    = document.getElementById('field');
+const taneEl   = document.getElementById('tane');
+const gClean   = document.getElementById('gClean');
+const gFun     = document.getElementById('gFun');
+const gRelief  = document.getElementById('gRelief');
+const btnToilet= document.getElementById('btnToilet');
+const btnBath  = document.getElementById('btnBath');
+const btnPlay  = document.getElementById('btnPlay');
+const btnBack  = document.getElementById('btnBack');
+const btnResetSong = document.getElementById('btnResetSong');
+const scoreRow = document.getElementById('scoreRow');
+
+/* ====== 画像ローダ（多段フォールバック） ====== */
+(function setTaneSrc(){
+  const color = (window.COLOR || COLOR || 'pink').toLowerCase();
+  const candidates = [
+    `tane_${color}.png`,`images/tane_${color}.png`,`img/tane_${color}.png`,`assets/tane_${color}.png`,
+    'tane_pink.png','images/tane_pink.png','img/tane_pink.png','assets/tane_pink.png',
+    'ako.png','images/ako.png','img/ako.png','assets/ako.png'
+  ];
+  const bust=`?v=${Date.now()}`;
+  function fallback(){
+    const img=taneImg, host=taneEl; if(img) img.remove();
+    const ph=document.createElement('div');
+    ph.style.cssText='width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:54px;backdrop-filter:blur(4px)';
+    ph.textContent='♪'; host.insertBefore(ph, host.querySelector('.nameTag'));
+  }
+  (function tryNext(i){
+    if(i>=candidates.length) return fallback();
+    const url=candidates[i]+bust; const t=new Image();
+    t.onload=()=>{ taneImg.src=candidates[i]; }; t.onerror=()=>tryNext(i+1); t.src=url;
+  })(0);
+})();
+
+/* ====== 曲：きらきら星（Cメジャー・前半） ======
+   C4 C4 G4 G4 A4 A4 G4 | F4 F4 E4 E4 D4 D4 C4
+   len: 1=四分, 2=二分
+*/
+const SONG = [
+  {n:"ド4",len:1},{n:"ド4",len:1},{n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:1},{n:"ラ4",len:1},{n:"ソ4",len:2},
+  {n:"ファ4",len:1},{n:"ファ4",len:1},{n:"ミ4",len:1},{n:"ミ4",len:1},{n:"レ4",len:1},{n:"レ4",len:1},{n:"ド4",len:2}
+];
+
+/* 保存キー（このページ専用） */
+const LS = { list:'whoai_notes_twinkle', poo:'whoai_poo_count2', done:'whoai_song_twinkle_done' };
+let collected = JSON.parse(localStorage.getItem(LS.list) || '[]');
+let pooCount  = Number(localStorage.getItem(LS.poo) || 0);
+
+/* ====== UI：戻る・リセット ====== */
+btnBack.onclick = ()=>{ location.href = 'naming.html'; }; // 404回避：命名シーンへ
+btnResetSong.onclick = ()=>{
+  document.querySelectorAll('.noteItem').forEach(n=>n.remove());
+  collected = [];
+  localStorage.removeItem(LS.list);
+  localStorage.removeItem(LS.done);
+  renderScore();
+};
+
+/* ====== 名前タッチで1音前進 ====== */
+nameTag.textContent = CHAR_NAME;
+nameTag.addEventListener('click', ()=>{
+  nameTag.classList.remove('spin'); void nameTag.offsetWidth; nameTag.classList.add('spin');
+  taneImg.classList.add('pop'); setTimeout(()=>taneImg.classList.remove('pop'), 250);
+  grantNextNote();
+});
+setInterval(()=> nameTag.classList.toggle('show', Math.random()<0.55), 3000);
+
+/* ====== 励まし ====== */
+const LINES = ['いいペース！','がんばってるね','その調子✨','ありがとう！','休憩も大事だよ','あと少し！','一緒にいこう'];
+function showBubble(){ bubble.textContent = LINES[(Math.random()*LINES.length)|0];
+  bubble.classList.add('show'); setTimeout(()=>bubble.classList.remove('show'),2000); }
+setInterval(()=>{ if(Math.random()<0.45) showBubble(); }, 5000);
+
+/* ====== キャラ移動 ====== */
+const SPEEDS={slow:0.022,normal:0.036,fast:0.055}; let curSpeed='slow',vx=0,vy=0;
+function rs(){return Math.random()<0.5?-1:1}
+function setSpeed(mode=curSpeed){
+  curSpeed=mode; const base=(innerWidth<520)?(mode==='fast'?0.045:mode==='normal'?0.030:0.018):SPEEDS[mode];
+  vx=base*(0.9+Math.random()*0.2)*rs(); vy=base*(0.9+Math.random()*0.2)*rs();
+  document.querySelectorAll('.btnspeed').forEach(b=>{const on=b.dataset.speed===mode;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false');});
+}
+setSpeed('slow');
+let last=performance.now(); let pos={x:innerWidth/2,y:innerHeight/2};
+function bounds(){ const r=field.getBoundingClientRect(); const w=taneImg.clientWidth||160,h=taneImg.clientHeight||160; return {minX:10,minY:100,maxX:r.width-10,maxY:r.height-140,w,h}; }
+function step(now){
+  let dt=Math.min(now-last,40); last=now; const b=bounds();
+  pos.x+=vx*dt; pos.y+=vy*dt; const hw=b.w/2,hh=b.h/2;
+  if(pos.x<b.minX+hw){pos.x=b.minX+hw;vx*=-1} if(pos.x>b.maxX-hw){pos.x=b.maxX-hw;vx*=-1}
+  if(pos.y<b.minY+hh){pos.y=b.minY+hh;vy*=-1} if(pos.y>b.maxY-hh){pos.y=b.maxY-hh;vy*=-1}
+  taneEl.style.left=`${pos.x}px`; taneEl.style.top=`${pos.y}px`;
+  requestAnimationFrame(step);
+}
+(function initPos(){const b=bounds();pos.x=(b.minX+b.maxX)/2;pos.y=(b.minY+b.maxY)/2;taneEl.style.left=`${pos.x}px`;taneEl.style.top=`${pos.y}px`;})();requestAnimationFrame(step);
+
+/* ====== ゲージ ====== */
+const SKEY={clean:'e_clean',fun:'e_fun',relief:'e_relief',last:'e_last'};
+let clean=Number(localStorage.getItem(SKEY.clean)??70);
+let fun=Number(localStorage.getItem(SKEY.fun)??70);
+let relief=Number(localStorage.getItem(SKEY.relief)??70);
+let lastTick=Number(localStorage.getItem(SKEY.last)??Date.now());
+const DECAY_MS=2600,DECAY=1,COOLDOWN=1200;
+function setGauge(el,v){v=clamp(v);const s=el.querySelector('span');s.style.width=`${v}%`;s.style.background=v>=66?'linear-gradient(90deg,#8EE6A2,#c9f9d6)':v>=33?'linear-gradient(90deg,#FFD36E,#ffe4a8)':'linear-gradient(90deg,#FF8A8A,#ffc2c2)';}
+function renderGauges(){setGauge(gClean,clean);setGauge(gFun,fun);setGauge(gRelief,relief);}
+function persistGauges(){localStorage.setItem(SKEY.clean,clean);localStorage.setItem(SKEY.fun,fun);localStorage.setItem(SKEY.relief,relief);localStorage.setItem(SKEY.last,Date.now());}
+function tick(){const now=Date.now(); if(now-lastTick>=DECAY_MS){clean=clamp(clean-DECAY);fun=clamp(fun-DECAY);relief=clamp(relief-DECAY);lastTick=now;renderGauges();persistGauges()} requestAnimationFrame(tick);}
+function cooldown(b){b.disabled=true;setTimeout(()=>b.disabled=false,COOLDOWN);}
+btnToilet.onclick=()=>{cooldown(btnToilet);relief=clamp(relief+18);clean=clamp(clean+4);renderGauges();persistGauges();spawnNoteNearTane();}
+btnBath.onclick=()=>{cooldown(btnBath);clean=clamp(clean+22);renderGauges();persistGauges();spawnNoteNearTane();}
+btnPlay.onclick=()=>{cooldown(btnPlay);fun=clamp(fun+18);renderGauges();persistGauges();spawnNoteNearTane();}
+
+/* ====== コレクション表示 ====== */
+function renderScore(){ scoreRow.innerHTML=''; for(let i=0;i<SONG.length;i++){ const d=document.createElement('div'); d.className='slot'+(i<collected.length?' on':''); scoreRow.appendChild(d); } }
+function bounceLastThree(){ const nodes=scoreRow.querySelectorAll('.slot'); const L=nodes.length; for(let i=Math.max(0,L-3);i<L;i++){nodes[i].classList.remove('big');void nodes[i].offsetWidth;nodes[i].classList.add('big');}}
+
+/* ====== 💩：55%/3.5s・10回で次がド系なら自動前進 ====== */
+const POO_MAX=3;
+function spawnPoo(){
+  if(field.querySelectorAll('.poo').length>=POO_MAX) return;
+  const r=field.getBoundingClientRect(); const x=Math.random()*(r.width-80)+22; const y=Math.random()*(r.height-160)+(r.height*0.45);
+  const el=document.createElement('div'); el.className='poo'; el.textContent='💩'; el.style.left=`${x}px`; el.style.top=`${y}px`;
+  el.onclick=()=>{el.remove(); pooCount++; localStorage.setItem(LS.poo,String(pooCount)); floatNote('💧', r.left+x, r.top+y);
+    const need=SONG[collected.length]; if(pooCount%10===0 && need && /^ド/.test(need.n)) gainNote(need.n);
+    relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges();
+  };
+  field.appendChild(el);
+}
+setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
+
+/* ====== ♪：次の必要音をスポーン（表示は♪のみ） ====== */
+function spawnNoteNearTane(){
+  const next=SONG[collected.length]; if(!next) return;
+  const r=field.getBoundingClientRect(); const tx=pos.x+(Math.random()*120-60); const ty=pos.y+(Math.random()*80-40);
+  const x=Math.max(20,Math.min(r.width-40,tx)); const y=Math.max(120,Math.min(r.height-160,ty));
+  const el=document.createElement('div'); el.className='noteItem'; el.textContent='♪'; el.style.left=`${x}px`; el.style.top=`${y}px`;
+  el.onclick=()=>{el.remove(); gainNote(next.n); fun=clamp(fun+6); renderGauges(); persistGauges();};
+  field.appendChild(el);
+}
+
+/* ふわっと */
+function floatNote(char,x,y){ const el=document.createElement('div'); el.className='note-float'; el.textContent=char; el.style.left=`${x}px`; el.style.top=`${y}px`; document.body.appendChild(el); setTimeout(()=>el.remove(),1200); }
+
+/* ====== 収集ロジック ====== */
+function grantNextNote(){ if(collected.length<SONG.length) gainNote(SONG[collected.length].n); }
+function gainNote(nStr){
+  const need=SONG[collected.length]; if(!need || nStr!==need.n) return;
+  collected.push(nStr); localStorage.setItem(LS.list, JSON.stringify(collected)); renderScore();
+  if(collected.length===SONG.length){
+    localStorage.setItem(LS.done,'1'); bounceLastThree();
+    playSong(SONG).then(()=>{ prepareNextStageRandomSong(); goEvolveFlow(); });
+  }
+}
+
+/* ====== 再生（WebAudio） ====== */
+function solfegeToFreq(s){
+  const m=s.match(/(ド|レ|ミ|ファ|ソ|ラ|シ)(\d)/); if(!m) return 440;
+  const base={"ド":0,"レ":2,"ミ":4,"ファ":5,"ソ":7,"ラ":9,"シ":11}[m[1]]; const oct=parseInt(m[2],10);
+  const midi=12*(oct+1)+base; return 440*Math.pow(2,(midi-69)/12);
+}
+async function playSong(seq){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const UNIT=.34, GAP=.06; let t=ctx.currentTime;
+    for(const obj of seq){
+      const dur=UNIT*(obj.len||1);
+      const osc=ctx.createOscillator(), g=ctx.createGain();
+      osc.type='sine'; osc.frequency.value=solfegeToFreq(obj.n);
+      g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.18,t+.03); g.gain.setTargetAtTime(.0001,t+dur*.8,.06);
+      osc.connect(g).connect(ctx.destination); osc.start(t); osc.stop(t+dur); t+=dur+GAP;
     }
+    await new Promise(r=>setTimeout(r,(t-ctx.currentTime)*1000+80));
+    ctx.close();
+  }catch(e){ console.warn(e); }
+}
 
-    const color = (readFirst(LS_COLOR_KEYS, "pink")||"pink").toLowerCase();
-    const playerName = readFirst(LS_PLAYER_KEYS, "あなた");
-    const charName = readFirst(LS_CHAR_KEYS, "マカロン");
+/* ====== 次ステージの曲をランダム決定（1フレーズ） ====== */
+function prepareNextStageRandomSong(){
+  const packs = {
+    silent_night: {name:"きよしこの夜", seq:[
+      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2},
+      {n:"ソ4",len:2},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ミ4",len:2}
+    ]},
+    alps_ichiman: {name:"アルプス一万尺", seq:[
+      {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ソ4",len:2},
+      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"シ4",len:1},{n:"ド5",len:2}
+    ]},
+    london_bridge: {name:"ロンドン橋", seq:[
+      {n:"ソ4",len:1},{n:"ラ4",len:1},{n:"ソ4",len:1},{n:"ファ4",len:1},{n:"ミ4",len:1},{n:"ファ4",len:1},{n:"ソ4",len:2}
+    ]}
+  };
+  const keys = Object.keys(packs);
+  const pick = packs[keys[(Math.random()*keys.length)|0]];
+  localStorage.setItem('EVOLVE_NEXT_SONG_KEY', pick.name);
+  localStorage.setItem('EVOLVE_NEXT_SONG_SEQ', JSON.stringify(pick.seq));
+}
 
-    // 状態（保存）
-    const STATE_KEY = "whoai_state_evolved";
-    const now = () => Date.now();
-    function loadState(){
-      try{
-        const obj = JSON.parse(localStorage.getItem(STATE_KEY) || "null");
-        if(!obj) return null;
-        return obj;
-      }catch{ return null }
-    }
-    function saveState(){
-      state.updatedAt = now();
-      localStorage.setItem(STATE_KEY, JSON.stringify(state));
-    }
+/* ====== 完了後フロー：マカロン→命名→モード選択に戻す ====== */
+function goEvolveFlow(){
+  // 復路ヒント（任意のページで見られるようにキュー）
+  localStorage.setItem('FLOW_AFTER_MACARON', 'naming.html');
+  localStorage.setItem('FLOW_AFTER_NAMING',  'whoai_select_mode.html'); // 無ければ index.html にフォールバック
+  // フォールバックURLも保存
+  localStorage.setItem('FLOW_FALLBACK', 'index.html');
+  // まずはマカロン選択へ
+  location.href = 'macaron_select.html';
+}
 
-    let state = loadState() || {
-      clean: 80,   // 0-100
-      fun: 70,
-      energy: 75,
-      waste: 0,   // 0-100（💩発生量）
-      poops: [],  // {x,y} 配置
-      updatedAt: now()
-    };
-
-    // 経過時間で自然劣化（1分あたり）
-    function applyDecayByElapsed(){
-      const minutes = Math.max(0, (now() - state.updatedAt) / 60000);
-      if(minutes > 0){
-        state.clean = clamp(state.clean - 2*minutes, 0, 100);
-        state.fun   = clamp(state.fun   - 1.2*minutes, 0, 100);
-        state.energy= clamp(state.energy- 1.0*minutes, 0, 100);
-        state.waste = clamp(state.waste + 1.5*minutes, 0, 100);
-        // 💩しきい値
-        maybeSpawnPoop();
-      }
-    }
-
-    function clamp(v,min,max){return Math.max(min, Math.min(max, v));}
-
-    // ====== UI生成：キャラ ======
-    const stage = document.getElementById('stage');
-    const chips = document.getElementById('chips');
-
-    // chips
-    chips.innerHTML = `
-      <div class="chip">👤 ${playerName}</div>
-      <div class="chip">✨ 進化後：${charName}</div>
-      <div class="chip">🍬 色：${color}</div>
-      ${TALK_ENDPOINT?'<div class="chip">API接続: ON</div>':'<div class="chip">API接続: OFF</div>'}
-    `;
-
-    // キャラDOM
-    const char = document.createElement('div');
-    char.className = 'char';
-    char.style.left = '50%';
-    char.style.top = '52%';
-    char.style.transform = 'translate(-50%,-50%)';
-
-    const imgClosed = document.createElement('img');
-    const imgOpen = document.createElement('img');
-    imgClosed.alt = 'character';
-    imgOpen.alt = 'character';
-    imgClosed.src = `${color}_closed.png`;
-    imgOpen.src = `${color}_open.png`;
-    imgOpen.style.opacity = 0;
-
-    // フォールバック（tane_*）
-    imgClosed.onerror = () => { imgClosed.onerror=null; imgClosed.src = `tane_${color}.png`; };
-    imgOpen.onerror   = () => { imgOpen.onerror=null; imgOpen.src   = `tane_${color}.png`; };
-
-    const nameTag = document.createElement('div');
-    nameTag.className = 'name-tag';
-    nameTag.textContent = charName;
-
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-
-    char.appendChild(imgClosed);
-    char.appendChild(imgOpen);
-    char.appendChild(nameTag);
-    char.appendChild(bubble);
-    stage.appendChild(char);
-
-    // クリックでなでる
-    char.addEventListener('click', () => {
-      speak(randomPick([
-        'なでなで…♪','うれしい！','もっと～','ふにゃ…','ごきげん！'
-      ]));
-      gain({fun:+6, energy:+2});
-      mouthOpen(260);
-    });
-
-    // ゆる移動（画面内ランダム）
-    let vx = 0.08, vy = -0.06; // vmin/フレーム相当
-    function loop(){
-      const rect = stage.getBoundingClientRect();
-      const cw = char.offsetWidth, ch = char.offsetHeight;
-      let x = char.offsetLeft, y = char.offsetTop;
-      x += vx; y += vy;
-      if(x < 10){x=10; vx*=-1} if(y < 10){y=10; vy*=-1}
-      if(x > rect.width - cw - 10){x=rect.width - cw - 10; vx*=-1}
-      if(y > rect.height - ch - 10){y=rect.height - ch - 10; vy*=-1}
-      char.style.left = x + 'px';
-      char.style.top = y + 'px';
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
-
-    // ====== ステータスUI ======
-    const barClean = document.getElementById('bar-clean');
-    const barFun = document.getElementById('bar-fun');
-    const barEnergy = document.getElementById('bar-energy');
-    const valClean = document.getElementById('val-clean');
-    const valFun = document.getElementById('val-fun');
-    const valEnergy = document.getElementById('val-energy');
-
-    function setBar(el, v){
-      el.style.width = `${v}%`;
-      el.style.background = gradientFor(v);
-    }
-    function gradientFor(v){
-      // good->warn->bad の簡易グラデ
-      if(v>66) return `linear-gradient(90deg, var(--ok), #a7f3d0)`;
-      if(v>33) return `linear-gradient(90deg, var(--warn), #fde68a)`;
-      return `linear-gradient(90deg, var(--bad), #fecaca)`;
-    }
-    function refreshBars(){
-      setBar(barClean, state.clean);
-      setBar(barFun, state.fun);
-      setBar(barEnergy, state.energy);
-      valClean.textContent = `${Math.round(state.clean)}%`;
-      valFun.textContent = `${Math.round(state.fun)}%`;
-      valEnergy.textContent = `${Math.round(state.energy)}%`;
-    }
-
-    // 💩描画
-    function renderPoops(){
-      // 既存削除
-      stage.querySelectorAll('.poop').forEach(n=>n.remove());
-      state.poops.forEach(p=>{
-        const d = document.createElement('div');
-        d.className = 'poop';
-        d.textContent = '💩';
-        d.style.left = p.x + 'px';
-        d.style.top = p.y + 'px';
-        stage.appendChild(d);
-      });
-    }
-
-    // 💩出現ロジック
-    function maybeSpawnPoop(){
-      if(state.waste >= 30){
-        // 足元に💩生成
-        const rect = stage.getBoundingClientRect();
-        const x = clamp(char.offsetLeft + char.offsetWidth/2 + (Math.random()*40-20), 10, rect.width-30);
-        const y = clamp(char.offsetTop + char.offsetHeight - 10, 10, rect.height-30);
-        state.poops.push({x,y});
-        state.waste = 0; // 一度出たらリセット
-        speak('うう…出ちゃった…');
-      }
-    }
-
-    // ====== 行動ボタン ======
-    document.getElementById('btn-toilet').addEventListener('click', ()=>{
-      // 💩掃除＆きれいさ回復
-      const cleaned = state.poops.length;
-      state.poops = [];
-      state.clean = clamp(state.clean + 10 + cleaned*5, 0, 100);
-      state.waste = 0;
-      speak(cleaned>0?`おトイレ完了！${cleaned}こ片付けたよ！`:'スッキリ！');
-      mouthOpen(420);
-      saveAndRender();
-    });
-
-    document.getElementById('btn-play').addEventListener('click', ()=>{
-      // 遊ぶ：楽しい↑ 元気↓ たまに💩増
-      state.fun = clamp(state.fun + 12, 0, 100);
-      state.energy = clamp(state.energy - 6, 0, 100);
-      state.waste = clamp(state.waste + (Math.random()<0.5?10:4), 0, 100);
-      speak('あそぼあそぼ！');
-      mouthOpen(500);
-      maybeSpawnPoop();
-      saveAndRender();
-    });
-
-    document.getElementById('btn-rest').addEventListener('click', ()=>{
-      state.energy = clamp(state.energy + 16, 0, 100);
-      state.fun = clamp(state.fun - 4, 0, 100);
-      speak('すやぁ… (回復中)');
-      mouthOpen(300);
-      saveAndRender();
-    });
-
-    document.getElementById('btn-snack').addEventListener('click', ()=>{
-      state.fun = clamp(state.fun + 8, 0, 100);
-      state.energy = clamp(state.energy + 4, 0, 100);
-      state.waste = clamp(state.waste + 8, 0, 100);
-      speak('もぐもぐ♪');
-      mouthOpen(300);
-      maybeSpawnPoop();
-      saveAndRender();
-    });
-
-    document.getElementById('btn-bath').addEventListener('click', ()=>{
-      state.clean = clamp(state.clean + 18, 0, 100);
-      speak('さっぱり～！');
-      mouthOpen(360);
-      saveAndRender();
-    });
-
-    // ====== 口パク ======
-    let mouthTimer=null;
-    function mouthOpen(ms=300){
-      if(mouthTimer) clearTimeout(mouthTimer);
-      imgOpen.style.opacity = 1;
-      imgClosed.style.opacity = 0;
-      mouthTimer = setTimeout(()=>{
-        imgOpen.style.opacity = 0;
-        imgClosed.style.opacity = 1;
-      }, ms);
-    }
-
-    // ====== セリフ ======
-    let bubbleTimer=null;
-    function speak(text){
-      bubble.textContent = text;
-      bubble.classList.add('show');
-      if(bubbleTimer) clearTimeout(bubbleTimer);
-      bubbleTimer = setTimeout(()=> bubble.classList.remove('show'), 2400);
-    }
-    function statusSpeak(){
-      const msgs=[];
-      if(state.clean<35) msgs.push('おそうじしたい…');
-      if(state.fun<35) msgs.push('たいくつだよ…');
-      if(state.energy<35) msgs.push('ちょっと休みたい…');
-      if(state.poops.length>0) msgs.push('足元に何かある…💩');
-      if(!msgs.length) msgs.push('今日はいい感じ！');
-      speak(randomPick(msgs));
-    }
-
-    function randomPick(arr){return arr[Math.floor(Math.random()*arr.length)];}
-
-    // ====== 自然劣化タイマー ======
-    function tick(){
-      state.clean = clamp(state.clean - 1, 0, 100);
-      state.fun   = clamp(state.fun   - 0.6, 0, 100);
-      state.energy= clamp(state.energy- 0.5, 0, 100);
-      state.waste = clamp(state.waste + 0.8, 0, 100);
-      maybeSpawnPoop();
-      if(Math.random()<0.25) statusSpeak();
-      saveAndRender();
-    }
-
-    function saveAndRender(){
-      saveState();
-      refreshBars();
-      renderPoops();
-    }
-
-    // ====== チャット送信 ======
-    const chatInput = document.getElementById('chat-input');
-    const chatSend = document.getElementById('chat-send');
-
-    chatSend.addEventListener('click', sendChat);
-    chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
-
-    async function sendChat(){
-      const text = chatInput.value.trim();
-      if(!text) return;
-      chatInput.value = '';
-      mouthOpen(300);
-      speak(`${playerName}：${text}`);
-
-      try{
-        if(TALK_ENDPOINT){
-          const res = await fetch(TALK_ENDPOINT, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role:'user', name: playerName, content: text, charName, color})});
-          const data = await res.json().catch(()=>({reply:'…'}));
-          const reply = data.reply || data.content || JSON.stringify(data).slice(0,180);
-          setTimeout(()=>{ speak(`${charName}：${reply}`); mouthOpen(500); }, 450);
-        }else{
-          // 簡易エコー
-          setTimeout(()=>{ speak(`${charName}：${text.replace(/\?$/,'！')}`); mouthOpen(400); }, 420);
-        }
-        // 会話でちょい回復
-        gain({fun:+4});
-      }catch(err){
-        speak('通信できなかったみたい…');
-      }finally{
-        saveAndRender();
-      }
-    }
-
-    function gain({clean=0,fun=0,energy=0}){
-      state.clean = clamp(state.clean + clean, 0, 100);
-      state.fun = clamp(state.fun + fun, 0, 100);
-      state.energy = clamp(state.energy + energy, 0, 100);
-    }
-
-    // ====== 初期化 ======
-    applyDecayByElapsed();
-    saveAndRender();
-    statusSpeak();
-
-    // 30秒ごとに自然劣化
-    setInterval(tick, 30000);
-
-    // 初回描画後、💩も表示
-    renderPoops();
-  </script>
+/* ====== 起動 ====== */
+function renderAll(){ renderGauges(); renderScore(); }
+(function init(){
+  renderAll(); requestAnimationFrame(tick);
+  nameTag.classList.add('show');
+  // 既に完成状態なら即フロー
+  if(localStorage.getItem(LS.done)==='1'){ playSong(SONG).then(()=>{ prepareNextStageRandomSong(); goEvolveFlow(); }); }
+})();
+</script>
 </body>
 </html>
