@@ -12,7 +12,6 @@
   :root{
     --glass: rgba(0,0,0,.35);
     --brd: rgba(255,255,255,.18);
-    --ok:#86efac; --warn:#fde047; --bad:#fda4af;
     --ink:#fff;
   }
   *{box-sizing:border-box}
@@ -31,7 +30,7 @@
   .title{position:fixed;left:50%;top:44px;transform:translateX(-50%);font-weight:800;text-align:center;z-index:4}
   .subtitle{position:fixed;left:50%;top:72px;transform:translateX(-50%);font-size:12px;opacity:.9;text-align:center;z-index:4}
 
-  /* プレイフィールド（枠なし／全画面） */
+  /* プレイフィールド */
   .field{position:fixed;inset:0;overflow:hidden}
 
   /* タネ本体 */
@@ -67,14 +66,6 @@
   }
   .bubble.show{opacity:1;transform:translate(-50%,-115%)}
 
-  /* マカロン解放 */
-  #unlock{position:fixed;right:10px;top:10px;display:none;align-items:center;gap:6px;
-    padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);
-    cursor:pointer;z-index:6}
-
-  /* ポイントUI（内部ロジックは残すが表示は消す） */
-  .barwrap{display:none !important}
-
   /* お世話パネル */
   .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);
     width:min(920px,96vw);display:grid;grid-template-columns:1fr;gap:8px;z-index:6}
@@ -83,22 +74,17 @@
     padding:8px 12px;font-weight:800;cursor:pointer;font-size:14px}
   .btnreset{background:rgba(255,255,255,.14);border:1px solid var(--brd);color:#fff;border-radius:12px;
     padding:8px 12px;font-weight:800;cursor:pointer}
-  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:50%;
-    padding:6px 10px;cursor:pointer;font-size:16px}
+  .btnspeed{background:rgba(255,255,255,.14);border:1px solid var(--brd);border-radius:10px;
+    padding:6px 10px;cursor:pointer;font-size:14px;min-width:40px;text-align:center}
 
   .gauges{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
   .gbar{position:relative;height:12px;border-radius:999px;background:rgba(255,255,255,.14);
     border:1px solid var(--brd);overflow:hidden}
   .gbar>span{position:absolute;left:0;top:0;bottom:0;width:60%;background:linear-gradient(90deg,#7ac7ff,#bfe6ff);transition:width .3s}
   .glbl{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .btnspeed.active{ background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.6) }
 
-  /* トースト */
-  .toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-    background:#0f1220;border:1px solid var(--brd);border-radius:16px;padding:14px 16px;
-    z-index:10;display:none;box-shadow:0 18px 50px rgba(0,0,0,.5);text-align:center}
-  .toast.show{display:block;animation:pop .25s ease}
-
-  /* ====== 追加：💩＆♪ ====== */
+  /* 💩＆♪ */
   .poo{position:absolute;z-index:40;cursor:pointer;user-select:none;
     font-size:clamp(28px,4vw,42px);filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
   .noteItem{position:absolute;z-index:41;cursor:pointer;user-select:none;
@@ -107,7 +93,7 @@
     animation:noteFloat 1.2s ease-out forwards}
   @keyframes noteFloat{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
 
-  /* ====== 所定のコレクション枠（右上） ====== */
+  /* コレクション枠（右上） */
   .musicDock{
     position:fixed;right:10px;top:102px;z-index:7;
     background:var(--glass);border:1px solid var(--brd);backdrop-filter:blur(6px);
@@ -117,22 +103,18 @@
   .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
   .slot{
     min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-weight:800;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);font-size:13px;
-    color:transparent;position:relative;overflow:hidden
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);position:relative;overflow:hidden
   }
   .slot.on{
     background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.45);
     animation:slotPop .24s ease
   }
   .slot.on::after{
-    content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35)
+    content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35); font-weight:800
   }
   @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
   .slot.on.big{animation:slotPopBig .32s ease}
   @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
-
-  /* 速度ボタンの選択強調（お好みで） */
-  .btnspeed.active{ background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.6) }
 </style>
 </head>
 <body>
@@ -144,8 +126,6 @@
   </div>
   <div class="title">タネを観察して育てよう</div>
   <div class="subtitle">“名前タッチ”やお世話で音符を集めて、曲が完成したら進化！</div>
-
-  <div id="unlock">🍬 マカロン解放！</div>
 
   <!-- コレクション枠 -->
   <aside class="musicDock" id="musicDock" aria-live="polite">
@@ -162,23 +142,16 @@
     </div>
   </div>
 
-  <!-- （非表示だが残す）ポイントUI -->
-  <div class="barwrap">
-    <div class="bar"><i id="bar"></i></div>
-    <div class="pts">ポイント: <span id="pts">0</span> / <span id="th">15</span></div>
-  </div>
-
-  <!-- お世話＋速度＋音符リセット -->
+  <!-- お世話＋速度＋♪リセット -->
   <div class="panel">
     <div class="care">
       <button class="btncare" id="btnToilet">🚽 トイレ</button>
       <button class="btncare" id="btnBath">🛁 おふろ</button>
       <button class="btncare" id="btnPlay">🎲 あそぶ</button>
-      <!-- ここを「音符表示リセット」に変更 -->
       <button class="btnreset" id="btnNoteReset" title="集めた♪の表示をクリア">♪ リセット</button>
-      <!-- 速度 -->
+      <!-- 速度（真ん中は1×に） -->
       <button class="btnspeed" data-speed="slow"   onclick="setSpeed('slow')"   title="ゆっくり" aria-label="ゆっくり">🐢</button>
-      <button class="btnspeed" data-speed="normal" onclick="setSpeed('normal')" title="ふつう (1×)" aria-label="ふつう (1×)">🚶</button>
+      <button class="btnspeed" data-speed="normal" onclick="setSpeed('normal')" title="ふつう (1×)" aria-label="ふつう (1×)">1×</button>
       <button class="btnspeed" data-speed="fast"   onclick="setSpeed('fast')"   title="はやい"  aria-label="はやい">🐇</button>
     </div>
     <div class="gauges">
@@ -187,8 +160,6 @@
       <div class="gbar" id="gRelief"><span></span><div class="glbl">スッキリ</div></div>
     </div>
   </div>
-
-  <div class="toast" id="toast">ポイントがたまりました！<br/>マカロン選択へ進みます…</div>
 
 <script>
 /* ====== 便利関数 ====== */
@@ -202,8 +173,6 @@ const clamp = v => Math.max(0, Math.min(100, v));
 const PLAYER_NAME = read('PLAYER_NAME','あなた');
 const CHAR_NAME   = read('CHAR_NAME','タネ');
 const COLOR       = (read('macaronColor','pink')||'pink').trim().toLowerCase();
-const THRESHOLD   = Number(read('TANE_POINTS_TO_EVOLVE','15'));
-let pts           = Number(read('tanePoints','0'));
 
 /* ====== DOM ====== */
 const chipPlayer = document.getElementById('chipPlayer');
@@ -211,10 +180,6 @@ const chipColor  = document.getElementById('chipColor');
 const taneImg    = document.getElementById('taneImg');
 const nameTag    = document.getElementById('nameTag');
 const bubble     = document.getElementById('bubble');
-const barFill    = document.getElementById('bar');
-const ptsEl      = document.getElementById('pts');
-const thEl       = document.getElementById('th');
-const unlock     = document.getElementById('unlock');
 const field      = document.getElementById('field');
 const taneEl     = document.getElementById('tane');
 const gClean     = document.getElementById('gClean');
@@ -224,72 +189,71 @@ const btnToilet  = document.getElementById('btnToilet');
 const btnBath    = document.getElementById('btnBath');
 const btnPlay    = document.getElementById('btnPlay');
 const btnNoteReset = document.getElementById('btnNoteReset');
-const toast      = document.getElementById('toast');
 
-/* ====== HUD ====== */
 chipPlayer.textContent = PLAYER_NAME;
 chipColor.textContent  = COLOR;
-thEl.textContent       = THRESHOLD;
 
-/* ====== 画像 ====== */
+/* ====== 画像ローダ（多段フォールバック＋最終♪プレースホルダー） ====== */
 (function setTaneSrc(){
-  const primary   = `tane_${COLOR}.png`;
-  const fallback1 = `tane_pink.png`;
-  function trySet(src, next){
-    const t = new Image();
-    t.onload  = () => (taneImg.src = src);
-    t.onerror = () => { if(next && next.length) trySet(next.shift(), next); };
-    t.src = src;
+  const color = (window.COLOR || COLOR || 'pink').toLowerCase();
+  const candidates = [
+    `tane_${color}.png`,
+    `images/tane_${color}.png`,
+    `img/tane_${color}.png`,
+    `assets/tane_${color}.png`,
+    'tane_pink.png','images/tane_pink.png','img/tane_pink.png','assets/tane_pink.png',
+    'ako.png','images/ako.png','img/ako.png','assets/ako.png'
+  ];
+  const bust = `?v=${Date.now()}`;
+
+  function usePlaceholder(){
+    const img = document.getElementById('taneImg');
+    const host = document.getElementById('tane');
+    if(img) img.remove();
+    const ph = document.createElement('div');
+    ph.style.cssText = `
+      width:140px;height:140px;border-radius:50%;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+      display:flex;align-items:center;justify-content:center;
+      font-size:54px;backdrop-filter:blur(4px);
+    `;
+    ph.textContent = '♪';
+    host.insertBefore(ph, host.querySelector('.nameTag'));
+    console.warn('[tane] 画像が見つかりません。候補:', candidates);
   }
-  trySet(primary, [fallback1]);
+
+  (function tryNext(i){
+    if(i >= candidates.length) return usePlaceholder();
+    const url = candidates[i] + bust;
+    const test = new Image();
+    test.onload = () => { taneImg.src = candidates[i]; };
+    test.onerror = () => tryNext(i+1);
+    test.src = url;
+  })(0);
 })();
 
-/* ====== 曲（正しいオクターブ＋長さ） ====== */
+/* ====== 曲（正しいオクターブ＋長さ） ======
+   G4 G4 A4 G4 C5 B4 | G4 G4 A4 G4 D5 C5 |
+   G4 G4 G5 E5 C5 B4 A4 | F5 F5 E5 C5 D5 C5
+   len: 短=1, 中=2, 長=3 相対長
+*/
 const SONG = [
   {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ド5",len:2},{n:"シ4",len:4},
   {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"レ5",len:2},{n:"ド5",len:4},
   {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ソ5",len:2},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"シ4",len:2},{n:"ラ4",len:5},
-  {n:"ファ5",len:1},{n:"ファ5",len:1},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"レ5",len:2},{n:"ド5",len:４}
+  {n:"ファ5",len:1},{n:"ファ5",len:1},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"レ5",len:2},{n:"ド5",len:4}
 ];
+
+/* 保存キー */
 const LS_NOTE = { list:'whoai_notes_birthday_full', poo:'whoai_poo_count', done:'whoai_song_complete_full' };
 let collected = JSON.parse(localStorage.getItem(LS_NOTE.list) || '[]');
 let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
 
-/* 再生と進化の順序制御 */
-let isSongPlaying = false;
-let pendingEvolutionAfterSong = false;
-
-/* ====== ポイント（内部） ====== */
-function refreshPoints(){
-  // UIは非表示だがロジックは維持（進化条件の判定に使用）
-  ptsEl.textContent = String(pts);
-  const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
-  barFill.style.width = `${ratio*100}%`;
-  barFill.style.background = ratio>0.66? 'linear-gradient(90deg,var(--ok),#a7f3d0)'
-                            : ratio>0.33? 'linear-gradient(90deg,var(--warn),#fde68a)'
-                            : 'linear-gradient(90deg,var(--bad),#fecaca)';
-  const songCompleted = (collected.length === SONG.length) || (localStorage.getItem(LS_NOTE.done) === '1');
-  unlock.style.display = (pts >= THRESHOLD && songCompleted && !isSongPlaying) ? 'inline-flex' : 'none';
-}
-function addPoints(n=1){
-  pts = Math.max(0, pts + n);
-  localStorage.setItem('tanePoints', String(pts));
-  refreshPoints();
-  taneImg.classList.add('pop'); setTimeout(()=>taneImg.classList.remove('pop'), 250);
-
-  const songCompleted = (collected.length === SONG.length) || (localStorage.getItem(LS_NOTE.done) === '1');
-  if(pts >= THRESHOLD && songCompleted && !isSongPlaying){
-    showToastAndEvolve();
-  }else if(pts >= THRESHOLD && isSongPlaying){
-    pendingEvolutionAfterSong = true;
-  }
-}
-
-/* ====== 名前タッチ ====== */
+/* ====== 名前タッチで1音前進 ====== */
 nameTag.textContent = CHAR_NAME;
 nameTag.addEventListener('click', ()=>{
   nameTag.classList.remove('spin'); void nameTag.offsetWidth; nameTag.classList.add('spin');
-  addPoints(1);
+  taneImg.classList.add('pop'); setTimeout(()=>taneImg.classList.remove('pop'), 250);
   grantNextNote();
 });
 setInterval(()=> nameTag.classList.toggle('show', Math.random()<0.55), 3000);
@@ -309,7 +273,6 @@ function setSpeed(mode=curSpeed){
   const base = (innerWidth<520)?(mode==='fast'?0.045:mode==='normal'?0.030:0.018):SPEEDS[mode];
   vx=base*(0.9+Math.random()*0.2)*rs();
   vy=base*(0.9+Math.random()*0.2)*rs();
-
   document.querySelectorAll('.btnspeed').forEach(btn=>{
     const active = btn.dataset.speed === mode;
     btn.classList.toggle('active', active);
@@ -320,10 +283,9 @@ setSpeed('slow');
 
 let last = performance.now();
 let pos  = {x: innerWidth/2, y: innerHeight/2};
-
 function bounds(){
   const rect = field.getBoundingClientRect();
-  const w = taneImg.clientWidth || 160, h = taneImg.clientHeight || 160;
+  const w = (taneImg.clientWidth||160), h = (taneImg.clientHeight||160);
   return {minX:10, minY:100, maxX:rect.width-10, maxY:rect.height-140, w, h};
 }
 function step(now){
@@ -342,13 +304,12 @@ function step(now){
   taneEl.style.left=`${pos.x}px`; taneEl.style.top=`${pos.y}px`; })();
 requestAnimationFrame(step);
 
-/* ====== お世話（ゲージ） ====== */
+/* ====== ゲージ ====== */
 const SKEY = { clean:'taneClean', fun:'taneFun', relief:'taneRelief', last:'taneLastTick' };
 let clean  = Number(localStorage.getItem(SKEY.clean)  ?? 70);
 let fun    = Number(localStorage.getItem(SKEY.fun)    ?? 70);
 let relief = Number(localStorage.getItem(SKEY.relief) ?? 70);
 let lastTick = Number(localStorage.getItem(SKEY.last) ?? Date.now());
-
 const DECAY_MS = 2600, DECAY = 1, COOLDOWN = 1200;
 
 function setGauge(el, val){
@@ -379,33 +340,19 @@ function tick(){
   requestAnimationFrame(tick);
 }
 function cooldown(btn){ btn.disabled=true; setTimeout(()=>btn.disabled=false, COOLDOWN); }
-btnToilet.addEventListener('click', ()=>{ cooldown(btnToilet); relief=clamp(relief+18); clean=clamp(clean+4);  renderGauges(); persistGauges(); addPoints(2); spawnNoteNearTane(); });
-btnBath.addEventListener('click',   ()=>{ cooldown(btnBath);   clean =clamp(clean +22);                    renderGauges(); persistGauges(); addPoints(2); spawnNoteNearTane(); });
-btnPlay.addEventListener('click',   ()=>{ cooldown(btnPlay);   fun   =clamp(fun   +18);                    renderGauges(); persistGauges(); addPoints(2); spawnNoteNearTane(); });
+btnToilet.addEventListener('click', ()=>{ cooldown(btnToilet); relief=clamp(relief+18); clean=clamp(clean+4);  renderGauges(); persistGauges(); spawnNoteNearTane(); });
+btnBath.addEventListener('click',   ()=>{ cooldown(btnBath);   clean =clamp(clean +22);                    renderGauges(); persistGauges(); spawnNoteNearTane(); });
+btnPlay.addEventListener('click',   ()=>{ cooldown(btnPlay);   fun   =clamp(fun   +18);                    renderGauges(); persistGauges(); spawnNoteNearTane(); });
 
-/* ====== 「♪ リセット」：音符表示だけクリア ====== */
+/* ====== 「♪ リセット」：音符コレクションだけ初期化 ====== */
 btnNoteReset.addEventListener('click', ()=>{
-  // 画面上の湧いている♪を消す
   document.querySelectorAll('.noteItem').forEach(n=>n.remove());
-  // 収集状態をクリア（保存も消す）
   collected = [];
   localStorage.removeItem(LS_NOTE.list);
   localStorage.removeItem(LS_NOTE.done);
-  // 完了表示・進化系の待ちを戻す
   isSongPlaying = false;
-  pendingEvolutionAfterSong = false;
-  // UI更新（枠・アンロックなど）
   renderScore();
-  refreshPoints();
 });
-
-/* ====== 進化 ====== */
-function showToastAndEvolve(){
-  if(isSongPlaying){ pendingEvolutionAfterSong = true; return; }
-  toast.classList.add('show');
-  setTimeout(()=>{ localStorage.setItem('EVOLVED','1'); location.href='macaron_select.html'; }, 900);
-}
-unlock.addEventListener('click', showToastAndEvolve);
 
 /* ====== コレクションUI ====== */
 const scoreRow = document.getElementById('scoreRow');
@@ -414,7 +361,6 @@ function renderScore(){
   for(let i=0;i<SONG.length;i++){
     const d=document.createElement('div');
     d.className='slot'+(i<collected.length?' on':'');
-    d.textContent='';
     scoreRow.appendChild(d);
   }
 }
@@ -426,7 +372,7 @@ function bounceLastThree(){
   }
 }
 
-/* 💩：3.5秒ごとに55%で最大3個スポーン（10回で“次に必要な音”がド系なら自動付与） */
+/* ====== 💩：3.5秒ごとに55%で最大3個。10回で「次がド系なら」自動付与 ====== */
 const POO_MAX=3;
 function spawnPoo(){
   if(field.querySelectorAll('.poo').length>=POO_MAX) return;
@@ -439,18 +385,17 @@ function spawnPoo(){
     el.remove();
     pooCount++; localStorage.setItem(LS_NOTE.poo, String(pooCount));
     floatNote('💧', rect.left+x, rect.top+y);
-
     if(pooCount%10===0){
       const needObj = SONG[collected.length];
       if(needObj && needObj.n.startsWith("ド")){ gainNote(needObj.n); }
     }
-    relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges(); addPoints(1);
+    relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges();
   });
   field.appendChild(el);
 }
 setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
 
-/* ♪：次に必要な音を1つ出現→クリックで収集（表示は♪のみ） */
+/* ====== ♪：次に必要な音をスポーン→クリックで収集（表示は♪のみ） ====== */
 function spawnNoteNearTane(){
   const nextObj = SONG[collected.length];
   if(!nextObj) return;
@@ -464,12 +409,12 @@ function spawnNoteNearTane(){
   el.addEventListener('click', ()=>{
     el.remove();
     gainNote(nextObj.n);
-    fun=clamp(fun+6); renderGauges(); persistGauges(); addPoints(1);
+    fun=clamp(fun+6); renderGauges(); persistGauges();
   });
   field.appendChild(el);
 }
 
-/* ふわっとエフェクト */
+/* ふわっと */
 function floatNote(char, x, y){
   const el=document.createElement('div');
   el.className='note-float'; el.textContent=char;
@@ -478,14 +423,12 @@ function floatNote(char, x, y){
   setTimeout(()=>el.remove(), 1200);
 }
 
-/* 会話・名前タッチ・お世話などから次音を前進 */
+/* ====== 収集ロジック ====== */
 function grantNextNote(){
   if(collected.length<SONG.length){
     gainNote(SONG[collected.length].n);
   }
 }
-
-/* 1音獲得 */
 function gainNote(nStr){
   const needObj = SONG[collected.length];
   if(!needObj || nStr!==needObj.n) return; // 順番制
@@ -499,14 +442,13 @@ function gainNote(nStr){
     isSongPlaying = true;
     playSong(SONG).then(()=>{
       isSongPlaying = false;
-      if(pendingEvolutionAfterSong){ pendingEvolutionAfterSong=false; showToastAndEvolve(); return; }
-      if(pts >= THRESHOLD){ showToastAndEvolve(); }
-      else{ refreshPoints(); }
+      // ★演奏が終わってから進化（マカロン選択）へ
+      location.href='macaron_select.html';
     });
   }
 }
 
-/* 再生（オクターブ＋長さ対応） */
+/* ====== 再生（WebAudio：オクターブ＋長さ対応） ====== */
 function solfegeToFreq(s){
   const m = s.match(/(ド|レ|ミ|ファ|ソ|ラ|シ)(\d)/);
   if(!m) return 440;
@@ -515,6 +457,7 @@ function solfegeToFreq(s){
   const midi = 12*(oct+1)+base; // C4=60
   return 440*Math.pow(2,(midi-69)/12);
 }
+let isSongPlaying = false;
 async function playSong(seq){
   try{
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
@@ -538,19 +481,20 @@ async function playSong(seq){
 }
 
 /* ====== 起動 ====== */
-function refreshAll(){ refreshPoints(); renderGauges(); renderScore(); }
+function refreshAll(){ renderGauges(); renderScore(); }
 (function init(){
+  chipPlayer.textContent = PLAYER_NAME;
+  chipColor.textContent  = COLOR;
   refreshAll();
   requestAnimationFrame(tick);
   nameTag.classList.add('show');
 
-  // 既に曲完成なら、まず演奏→その後に進化判定
+  // 既に曲完成なら、ページ入場で演奏→その後に進化
   if(localStorage.getItem(LS_NOTE.done)==='1'){
     isSongPlaying = true;
     playSong(SONG).then(()=>{
       isSongPlaying = false;
-      if(pts >= THRESHOLD){ showToastAndEvolve(); }
-      else{ refreshPoints(); }
+      location.href='macaron_select.html';
     });
   }
 })();
