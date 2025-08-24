@@ -35,9 +35,12 @@
       background:linear-gradient(transparent,rgba(0,0,0,.25));
       border-radius:20px;
     }
-    .hero img{
-      width:200px; /* キャラの大きさ調整 */
-      margin-bottom:20px;
+    .hero img#hero-ako{
+      display:block;
+      margin:0 auto 22px;
+      width:min(42vw,260px);
+      height:auto;
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
     }
     h1{
       margin:0 0 14px;
@@ -60,6 +63,7 @@
     .primary{ background:var(--accent); color:var(--accent-ink); }
     .ghost{ background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.22) }
     .primary:active,.ghost:active{ transform:translateY(1px) }
+
     .lang{ margin-top:14px; font-size:14px; opacity:.95; user-select:none; }
     .lang button{ background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer;padding:2px 4px;margin:0 2px }
     .note{font-size:12px;opacity:.8;margin-top:10px}
@@ -69,7 +73,7 @@
 
   <div class="hero" role="banner" aria-label="WhoAI 2 hero">
     <!-- ★ キャラ画像追加 -->
-    <img src="ako.png" alt="アコーディオンを弾くキャラクター" />
+    <img id="hero-ako" src="ako.png?v=2" alt="アコーディオンを弾くキャラクター" />
 
     <h1 id="t_title">WhoAIへようこそ</h1>
     <p id="t_desc" class="lead">まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！</p>
@@ -89,6 +93,8 @@
     </div>
   </div>
 
-  <!-- 以降の script 部分はそのまま -->
+  <script>
+    /* ここから下は既存のJSそのまま（省略可） */
+  </script>
 </body>
 </html>
