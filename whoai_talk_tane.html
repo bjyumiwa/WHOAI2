@@ -247,14 +247,22 @@ thEl.textContent       = THRESHOLD;
   trySet(primary, [fallback1]);
 })();
 
-/* ====== 曲・音管理（フル） ====== */
+/* ====== 曲・音管理（フル＆正しいオクターブ＋長さ） ======
+   Key=C, 3/4 feel（おおよそ）
+   G4 G4 A4 G4 C5 B4 |
+   G4 G4 A4 G4 D5 C5 |
+   G4 G4 G5 E5 C5 B4 A4 |
+   F5 F5 E5 C5 D5 C5
+   len: 相対長（UNITの倍数）。短=1, 中=2, 長=3 くらいの感覚。
+*/
 const SONG = [
-  "ソ","ソ","ラ","ソ","ド","シ",
-  "ソ","ソ","ラ","ソ","レ","ド",
-  "ソ","ソ","ソ","ミ","ド","シ","ラ",
-  "ファ","ファ","ミ","ド","レ","ド"
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ド5",len:2},{n:"シ4",len:3},
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"レ5",len:2},{n:"ド5",len:3},
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ソ5",len:2},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"シ4",len:2},{n:"ラ4",len:3},
+  {n:"ファ5",len:1},{n:"ファ5",len:1},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"レ5",len:2},{n:"ド5",len:3}
 ];
-const NOTE_FREQ = {"ド":261.63,"レ":293.66,"ミ":329.63,"ファ":349.23,"ソ":392.00,"ラ":440.00,"シ":493.88};
+
+// 進捗保存：収集済みは「音名（オクターブ込み）」の配列
 const LS_NOTE = { list:'whoai_notes_birthday_full', poo:'whoai_poo_count', done:'whoai_song_complete_full' };
 let collected = JSON.parse(localStorage.getItem(LS_NOTE.list) || '[]');
 let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
@@ -395,12 +403,12 @@ unlock.addEventListener('click', showToastAndEvolve);
 const scoreRow = document.getElementById('scoreRow');
 function renderScore(){
   scoreRow.innerHTML = '';
-  SONG.forEach((n, i)=>{
+  for(let i=0;i<SONG.length;i++){
     const d=document.createElement('div');
     d.className='slot'+(i<collected.length?' on':'');
     d.textContent=''; // 音名は伏せる（♪はCSSの::afterで表示）
     scoreRow.appendChild(d);
-  });
+  }
 }
 
 /* 完成時の演出：ラスト3音を大きめに弾ませる */
@@ -409,12 +417,12 @@ function bounceLastThree(){
   const L = nodes.length;
   for(let i=Math.max(0, L-3); i<L; i++){
     nodes[i].classList.remove('big'); // 再適用用に一度外す
-    void nodes[i].offsetWidth;        // リフローでアニメ再適用を保証
+    void nodes[i].offsetWidth;        // リフローでアニメ再適用
     nodes[i].classList.add('big');
   }
 }
 
-/* 💩：3.5秒ごとに55%で最大3個スポーン。10回除去でド+1 */
+/* 💩：3.5秒ごとに55%で最大3個スポーン。10回除去で「次に必要な音がド系なら自動獲得」 */
 const POO_MAX=3;
 function spawnPoo(){
   if(field.querySelectorAll('.poo').length>=POO_MAX) return;
@@ -427,7 +435,12 @@ function spawnPoo(){
     el.remove();
     pooCount++; localStorage.setItem(LS_NOTE.poo, String(pooCount));
     floatNote('💧', rect.left+x, rect.top+y);
-    if(pooCount%10===0){ gainNote("ド"); } // 10回でド1つ
+
+    // 10回ごと：次に必要な音が「ド*」のときだけ自動付与（オクターブ対応）
+    if(pooCount%10===0){
+      const needObj = SONG[collected.length];
+      if(needObj && needObj.n.startsWith("ド")){ gainNote(needObj.n); }
+    }
     relief=clamp(relief+6); clean=clamp(clean+2); renderGauges(); persistGauges(); addPoints(1);
   });
   field.appendChild(el);
@@ -436,8 +449,8 @@ setInterval(()=>{ if(Math.random()<0.55) spawnPoo(); }, 3500);
 
 /* ♪：次に必要な音を1つ出現→クリックで収集（表示は♪のみ） */
 function spawnNoteNearTane(){
-  const next = SONG[collected.length];
-  if(!next) return;
+  const nextObj = SONG[collected.length];
+  if(!nextObj) return;
   const rect = field.getBoundingClientRect();
   const tx = pos.x + (Math.random()*120-60);
   const ty = pos.y + (Math.random()*80-40);
@@ -447,7 +460,7 @@ function spawnNoteNearTane(){
   el.style.left=`${x}px`; el.style.top=`${y}px`;
   el.addEventListener('click', ()=>{
     el.remove();
-    gainNote(next);
+    gainNote(nextObj.n);
     fun=clamp(fun+6); renderGauges(); persistGauges(); addPoints(1);
   });
   field.appendChild(el);
@@ -465,14 +478,15 @@ function floatNote(char, x, y){
 /* 会話・名前タッチ・お世話などから次音を前進 */
 function grantNextNote(){
   if(collected.length<SONG.length){
-    gainNote(SONG[collected.length]);
+    gainNote(SONG[collected.length].n);
   }
 }
 
-function gainNote(n){
-  const need = SONG[collected.length];
-  if(n!==need) return; // 順番制
-  collected.push(n);
+/* 1音獲得 */
+function gainNote(nStr){
+  const needObj = SONG[collected.length];
+  if(!needObj || nStr!==needObj.n) return; // 順番制
+  collected.push(nStr);
   localStorage.setItem(LS_NOTE.list, JSON.stringify(collected));
   renderScore();
 
@@ -490,22 +504,38 @@ function gainNote(n){
   }
 }
 
-/* 簡易再生（WebAudio） */
+/* ====== 再生（WebAudio）：オクターブ＆長さ対応 ====== */
+function solfegeToFreq(s){
+  // 例: "ド4","レ5","ソ5"
+  const m = s.match(/(ド|レ|ミ|ファ|ソ|ラ|シ)(\d)/);
+  if(!m) return 440;
+  const base = {"ド":0,"レ":2,"ミ":4,"ファ":5,"ソ":7,"ラ":9,"シ":11}[m[1]];
+  const oct  = parseInt(m[2],10);           // 4=中央Cのオクターブ
+  const midi = 12*(oct+1)+base;             // C4=60
+  return 440*Math.pow(2,(midi-69)/12);      // 等分平均律
+}
+
 async function playSong(seq){
   try{
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    let t=ctx.currentTime, DUR=.34, GAP=.08;
-    seq.forEach(n=>{
+    const UNIT=.33, GAP=.06; // テンポ
+    let t=ctx.currentTime;
+
+    for(const obj of seq){
+      const dur = UNIT*(obj.len||1);
       const osc=ctx.createOscillator(), g=ctx.createGain();
-      osc.type='sine'; osc.frequency.value=NOTE_FREQ[n]||440;
+      osc.type='sine';
+      osc.frequency.value=solfegeToFreq(obj.n);
       g.gain.setValueAtTime(.0001,t);
-      g.gain.linearRampToValueAtTime(.16,t+.03);
-      g.gain.setTargetAtTime(0.0001,t+DUR*.75,.06);
+      g.gain.linearRampToValueAtTime(.18,t+.03);
+      g.gain.setTargetAtTime(.0001,t+dur*.8,.06);
       osc.connect(g).connect(ctx.destination);
-      osc.start(t); osc.stop(t+DUR);
-      t+=DUR+GAP;
-    });
-    await new Promise(r=>setTimeout(r,(DUR+GAP)*seq.length*1000+120));
+      osc.start(t); osc.stop(t+dur);
+      t+=dur+GAP;
+    }
+
+    const total = t-ctx.currentTime;
+    await new Promise(r=>setTimeout(r, total*1000+80));
     ctx.close();
   }catch(e){ console.warn(e); }
 }
