@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>WhoAI | タネ観察（お世話＋ポイント→マカロン）</title>
+<title>WhoAI | タネ観察（音符コレクション）</title>
 <meta name="color-scheme" content="dark light" />
 <link rel="icon"
   href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🌱%3C/text%3E%3C/svg%3E" />
@@ -72,13 +72,8 @@
     padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--brd);
     cursor:pointer;z-index:6}
 
-  /* ポイントバー */
-  .barwrap{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);
-    width:min(92vw,720px);display:flex;gap:8px;align-items:center;z-index:5}
-  .bar{position:relative;flex:1;height:12px;border-radius:999px;background:rgba(255,255,255,.14);
-    border:1px solid var(--brd);overflow:hidden}
-  .bar>i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--ok),#a7f3d0)}
-  .pts{font-variant-numeric:tabular-nums;background:var(--glass);border:1px solid var(--brd);padding:6px 10px;border-radius:10px}
+  /* ポイントUI（内部ロジックは残すが表示は消す） */
+  .barwrap{display:none !important}
 
   /* お世話パネル */
   .panel{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);
@@ -112,16 +107,14 @@
     animation:noteFloat 1.2s ease-out forwards}
   @keyframes noteFloat{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}100%{transform:translateY(-120px) scale(1.2);opacity:0}}
 
-  /* ====== 追加：所定のコレクション枠（右上） ====== */
+  /* ====== 所定のコレクション枠（右上） ====== */
   .musicDock{
     position:fixed;right:10px;top:102px;z-index:7;
     background:var(--glass);border:1px solid var(--brd);backdrop-filter:blur(6px);
     border-radius:14px;padding:10px 12px;min-width:200px
   }
-  /* 曲名は伏せる */
   .musicDock h4{display:none}
   .scoreRow{display:flex;gap:6px;flex-wrap:wrap}
-  /* スロットは音名を出さず、埋まったら♪だけ表示 */
   .slot{
     min-width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
     font-weight:800;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.22);font-size:13px;
@@ -135,9 +128,11 @@
     content:"♪"; color:#fff; opacity:.95; text-shadow:0 2px 10px rgba(0,0,0,.35)
   }
   @keyframes slotPop{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1);opacity:1}}
-  /* 完成演出：ラスト3音は大きめに弾ませる */
   .slot.on.big{animation:slotPopBig .32s ease}
   @keyframes slotPopBig{0%{transform:scale(.8);opacity:.6}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+  /* 速度ボタンの選択強調（お好みで） */
+  .btnspeed.active{ background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.6) }
 </style>
 </head>
 <body>
@@ -148,11 +143,11 @@
     <span class="chip">🍀 モード: タネ観察</span>
   </div>
   <div class="title">タネを観察して育てよう</div>
-  <div class="subtitle">“名前タッチ”やお世話でポイントをためると、マカロンが解放されて進化できます</div>
+  <div class="subtitle">“名前タッチ”やお世話で音符を集めて、曲が完成したら進化！</div>
 
   <div id="unlock">🍬 マカロン解放！</div>
 
-  <!-- 所定のコレクション枠 -->
+  <!-- コレクション枠 -->
   <aside class="musicDock" id="musicDock" aria-live="polite">
     <h4>🎂 ハッピーバースデー（フル）</h4>
     <div class="scoreRow" id="scoreRow"></div>
@@ -167,22 +162,24 @@
     </div>
   </div>
 
-  <!-- ポイント -->
+  <!-- （非表示だが残す）ポイントUI -->
   <div class="barwrap">
     <div class="bar"><i id="bar"></i></div>
     <div class="pts">ポイント: <span id="pts">0</span> / <span id="th">15</span></div>
   </div>
 
-  <!-- お世話＋速度＋リセット -->
+  <!-- お世話＋速度＋音符リセット -->
   <div class="panel">
     <div class="care">
       <button class="btncare" id="btnToilet">🚽 トイレ</button>
       <button class="btncare" id="btnBath">🛁 おふろ</button>
       <button class="btncare" id="btnPlay">🎲 あそぶ</button>
-      <button class="btnreset" id="btnReset">🔄 リセット</button>
-      <button class="btnspeed" onclick="setSpeed('slow')">🐢</button>
-      <button class="btnspeed" onclick="setSpeed('normal')">🚶</button>
-      <button class="btnspeed" onclick="setSpeed('fast')">🐇</button>
+      <!-- ここを「音符表示リセット」に変更 -->
+      <button class="btnreset" id="btnNoteReset" title="集めた♪の表示をクリア">♪ リセット</button>
+      <!-- 速度 -->
+      <button class="btnspeed" data-speed="slow"   onclick="setSpeed('slow')"   title="ゆっくり" aria-label="ゆっくり">🐢</button>
+      <button class="btnspeed" data-speed="normal" onclick="setSpeed('normal')" title="ふつう (1×)" aria-label="ふつう (1×)">🚶</button>
+      <button class="btnspeed" data-speed="fast"   onclick="setSpeed('fast')"   title="はやい"  aria-label="はやい">🐇</button>
     </div>
     <div class="gauges">
       <div class="gbar" id="gClean"><span></span><div class="glbl">きれい</div></div>
@@ -226,7 +223,7 @@ const gRelief    = document.getElementById('gRelief');
 const btnToilet  = document.getElementById('btnToilet');
 const btnBath    = document.getElementById('btnBath');
 const btnPlay    = document.getElementById('btnPlay');
-const btnReset   = document.getElementById('btnReset');
+const btnNoteReset = document.getElementById('btnNoteReset');
 const toast      = document.getElementById('toast');
 
 /* ====== HUD ====== */
@@ -234,7 +231,7 @@ chipPlayer.textContent = PLAYER_NAME;
 chipColor.textContent  = COLOR;
 thEl.textContent       = THRESHOLD;
 
-/* ====== 画像（直下から） ====== */
+/* ====== 画像 ====== */
 (function setTaneSrc(){
   const primary   = `tane_${COLOR}.png`;
   const fallback1 = `tane_pink.png`;
@@ -247,22 +244,13 @@ thEl.textContent       = THRESHOLD;
   trySet(primary, [fallback1]);
 })();
 
-/* ====== 曲・音管理（フル＆正しいオクターブ＋長さ） ======
-   Key=C, 3/4 feel（おおよそ）
-   G4 G4 A4 G4 C5 B4 |
-   G4 G4 A4 G4 D5 C5 |
-   G4 G4 G5 E5 C5 B4 A4 |
-   F5 F5 E5 C5 D5 C5
-   len: 相対長（UNITの倍数）。短=1, 中=2, 長=3 くらいの感覚。
-*/
+/* ====== 曲（正しいオクターブ＋長さ） ====== */
 const SONG = [
-  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ド5",len:2},{n:"シ4",len:3},
-  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"レ5",len:2},{n:"ド5",len:3},
-  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ソ5",len:2},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"シ4",len:2},{n:"ラ4",len:3},
-  {n:"ファ5",len:1},{n:"ファ5",len:1},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"レ5",len:2},{n:"ド5",len:3}
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"ド5",len:2},{n:"シ4",len:4},
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ラ4",len:2},{n:"ソ4",len:2},{n:"レ5",len:2},{n:"ド5",len:4},
+  {n:"ソ4",len:1},{n:"ソ4",len:1},{n:"ソ5",len:2},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"シ4",len:2},{n:"ラ4",len:5},
+  {n:"ファ5",len:1},{n:"ファ5",len:1},{n:"ミ5",len:2},{n:"ド5",len:2},{n:"レ5",len:2},{n:"ド5",len:４}
 ];
-
-// 進捗保存：収集済みは「音名（オクターブ込み）」の配列
 const LS_NOTE = { list:'whoai_notes_birthday_full', poo:'whoai_poo_count', done:'whoai_song_complete_full' };
 let collected = JSON.parse(localStorage.getItem(LS_NOTE.list) || '[]');
 let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
@@ -271,8 +259,9 @@ let pooCount  = Number(localStorage.getItem(LS_NOTE.poo) || 0);
 let isSongPlaying = false;
 let pendingEvolutionAfterSong = false;
 
-/* ====== ポイント ====== */
+/* ====== ポイント（内部） ====== */
 function refreshPoints(){
+  // UIは非表示だがロジックは維持（進化条件の判定に使用）
   ptsEl.textContent = String(pts);
   const ratio = Math.max(0, Math.min(1, pts / THRESHOLD));
   barFill.style.width = `${ratio*100}%`;
@@ -292,19 +281,16 @@ function addPoints(n=1){
   if(pts >= THRESHOLD && songCompleted && !isSongPlaying){
     showToastAndEvolve();
   }else if(pts >= THRESHOLD && isSongPlaying){
-    pendingEvolutionAfterSong = true; // 再生後に進化
+    pendingEvolutionAfterSong = true;
   }
 }
-btnReset.addEventListener('click', ()=>{
-  pts=0; localStorage.setItem('tanePoints','0'); refreshPoints();
-});
 
 /* ====== 名前タッチ ====== */
 nameTag.textContent = CHAR_NAME;
 nameTag.addEventListener('click', ()=>{
   nameTag.classList.remove('spin'); void nameTag.offsetWidth; nameTag.classList.add('spin');
   addPoints(1);
-  grantNextNote(); // 名前タッチでも1音前進
+  grantNextNote();
 });
 setInterval(()=> nameTag.classList.toggle('show', Math.random()<0.55), 3000);
 
@@ -323,6 +309,12 @@ function setSpeed(mode=curSpeed){
   const base = (innerWidth<520)?(mode==='fast'?0.045:mode==='normal'?0.030:0.018):SPEEDS[mode];
   vx=base*(0.9+Math.random()*0.2)*rs();
   vy=base*(0.9+Math.random()*0.2)*rs();
+
+  document.querySelectorAll('.btnspeed').forEach(btn=>{
+    const active = btn.dataset.speed === mode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
 }
 setSpeed('slow');
 
@@ -391,6 +383,22 @@ btnToilet.addEventListener('click', ()=>{ cooldown(btnToilet); relief=clamp(reli
 btnBath.addEventListener('click',   ()=>{ cooldown(btnBath);   clean =clamp(clean +22);                    renderGauges(); persistGauges(); addPoints(2); spawnNoteNearTane(); });
 btnPlay.addEventListener('click',   ()=>{ cooldown(btnPlay);   fun   =clamp(fun   +18);                    renderGauges(); persistGauges(); addPoints(2); spawnNoteNearTane(); });
 
+/* ====== 「♪ リセット」：音符表示だけクリア ====== */
+btnNoteReset.addEventListener('click', ()=>{
+  // 画面上の湧いている♪を消す
+  document.querySelectorAll('.noteItem').forEach(n=>n.remove());
+  // 収集状態をクリア（保存も消す）
+  collected = [];
+  localStorage.removeItem(LS_NOTE.list);
+  localStorage.removeItem(LS_NOTE.done);
+  // 完了表示・進化系の待ちを戻す
+  isSongPlaying = false;
+  pendingEvolutionAfterSong = false;
+  // UI更新（枠・アンロックなど）
+  renderScore();
+  refreshPoints();
+});
+
 /* ====== 進化 ====== */
 function showToastAndEvolve(){
   if(isSongPlaying){ pendingEvolutionAfterSong = true; return; }
@@ -406,23 +414,19 @@ function renderScore(){
   for(let i=0;i<SONG.length;i++){
     const d=document.createElement('div');
     d.className='slot'+(i<collected.length?' on':'');
-    d.textContent=''; // 音名は伏せる（♪はCSSの::afterで表示）
+    d.textContent='';
     scoreRow.appendChild(d);
   }
 }
-
-/* 完成時の演出：ラスト3音を大きめに弾ませる */
 function bounceLastThree(){
   const nodes = scoreRow.querySelectorAll('.slot');
   const L = nodes.length;
   for(let i=Math.max(0, L-3); i<L; i++){
-    nodes[i].classList.remove('big'); // 再適用用に一度外す
-    void nodes[i].offsetWidth;        // リフローでアニメ再適用
-    nodes[i].classList.add('big');
+    nodes[i].classList.remove('big'); void nodes[i].offsetWidth; nodes[i].classList.add('big');
   }
 }
 
-/* 💩：3.5秒ごとに55%で最大3個スポーン。10回除去で「次に必要な音がド系なら自動獲得」 */
+/* 💩：3.5秒ごとに55%で最大3個スポーン（10回で“次に必要な音”がド系なら自動付与） */
 const POO_MAX=3;
 function spawnPoo(){
   if(field.querySelectorAll('.poo').length>=POO_MAX) return;
@@ -436,7 +440,6 @@ function spawnPoo(){
     pooCount++; localStorage.setItem(LS_NOTE.poo, String(pooCount));
     floatNote('💧', rect.left+x, rect.top+y);
 
-    // 10回ごと：次に必要な音が「ド*」のときだけ自動付与（オクターブ対応）
     if(pooCount%10===0){
       const needObj = SONG[collected.length];
       if(needObj && needObj.n.startsWith("ド")){ gainNote(needObj.n); }
@@ -490,37 +493,33 @@ function gainNote(nStr){
   localStorage.setItem(LS_NOTE.list, JSON.stringify(collected));
   renderScore();
 
-  // 完成したら、まず完成演出→演奏→その後に進化判定
   if(collected.length===SONG.length){
     localStorage.setItem(LS_NOTE.done,'1');
-    bounceLastThree();     // ★ラスト3つ大きめに弾む
-    isSongPlaying = true;  // 再生中フラグON
+    bounceLastThree();
+    isSongPlaying = true;
     playSong(SONG).then(()=>{
       isSongPlaying = false;
       if(pendingEvolutionAfterSong){ pendingEvolutionAfterSong=false; showToastAndEvolve(); return; }
       if(pts >= THRESHOLD){ showToastAndEvolve(); }
-      else{ refreshPoints(); } // 条件未達なら続行
+      else{ refreshPoints(); }
     });
   }
 }
 
-/* ====== 再生（WebAudio）：オクターブ＆長さ対応 ====== */
+/* 再生（オクターブ＋長さ対応） */
 function solfegeToFreq(s){
-  // 例: "ド4","レ5","ソ5"
   const m = s.match(/(ド|レ|ミ|ファ|ソ|ラ|シ)(\d)/);
   if(!m) return 440;
   const base = {"ド":0,"レ":2,"ミ":4,"ファ":5,"ソ":7,"ラ":9,"シ":11}[m[1]];
-  const oct  = parseInt(m[2],10);           // 4=中央Cのオクターブ
-  const midi = 12*(oct+1)+base;             // C4=60
-  return 440*Math.pow(2,(midi-69)/12);      // 等分平均律
+  const oct  = parseInt(m[2],10);
+  const midi = 12*(oct+1)+base; // C4=60
+  return 440*Math.pow(2,(midi-69)/12);
 }
-
 async function playSong(seq){
   try{
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const UNIT=.33, GAP=.06; // テンポ
+    const UNIT=.33, GAP=.06;
     let t=ctx.currentTime;
-
     for(const obj of seq){
       const dur = UNIT*(obj.len||1);
       const osc=ctx.createOscillator(), g=ctx.createGain();
@@ -533,9 +532,7 @@ async function playSong(seq){
       osc.start(t); osc.stop(t+dur);
       t+=dur+GAP;
     }
-
-    const total = t-ctx.currentTime;
-    await new Promise(r=>setTimeout(r, total*1000+80));
+    await new Promise(r=>setTimeout(r,(t-ctx.currentTime)*1000+80));
     ctx.close();
   }catch(e){ console.warn(e); }
 }
