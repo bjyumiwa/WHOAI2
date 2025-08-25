@@ -72,15 +72,19 @@
 <body>
 
   <div class="hero" role="banner" aria-label="WhoAI 2 hero">
-    <!-- ★ キャラ画像追加 -->
+    <!-- ★ キャラ画像（既存） -->
     <img id="hero-ako" src="ako.png?v=2" alt="アコーディオンを弾くキャラクター" />
 
     <h1 id="t_title">WhoAIへようこそ</h1>
     <p id="t_desc" class="lead">まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！</p>
 
     <div class="cta">
+      <!-- ★ はじめる：seed_select.html（リンゴ/葉っぱ） -->
       <button id="t_start" class="primary" onclick="location.href='seed_select.html'">はじめる（タネを選ぶ）</button>
+      <!-- 続きから（進行状況があれば表示） -->
       <button id="t_continue" class="ghost" style="display:none" onclick="continueFlow()">つづきから</button>
+      <!-- ★ 研究について（about.htmlへ） -->
+      <button id="t_about" class="ghost" onclick="location.href='about.html'">この研究について</button>
     </div>
 
     <div class="lang" aria-label="language switch">
@@ -94,7 +98,92 @@
   </div>
 
   <script>
-    /* ここから下は既存のJSそのまま（省略可） */
+    /* ===== 多言語テキスト ===== */
+    const I18N = {
+      "ja": {
+        title: "WhoAIへようこそ",
+        desc: "まずは“りんご or はっぱ”を選んで、タネに育てよう。音符を集めて曲ができたら進化！",
+        start: "はじめる（タネを選ぶ）",
+        cont:  "つづきから",
+        about: "この研究について",
+        note:  "言語設定は次回アクセス時も保持されます。"
+      },
+      "en": {
+        title: "Welcome to WhoAI",
+        desc: "First choose Apple or Leaf to sprout a seed. Collect notes to complete a song and evolve!",
+        start: "Start (Choose a seed)",
+        cont:  "Continue",
+        about: "About this research",
+        note:  "Your language preference is saved for your next visit."
+      },
+      "zh-CN": {
+        title: "欢迎来到 WhoAI",
+        desc: "先选择“苹果或树叶”来培育种子。收集音符完成乐曲后即可进化！",
+        start: "开始（选择种子）",
+        cont:  "继续",
+        about: "关于本研究",
+        note:  "语言设置会在下次访问时保留。"
+      },
+      "zh-TW": {
+        title: "歡迎來到 WhoAI",
+        desc: "先選「蘋果或樹葉」來培育種子。收集音符完成樂曲後即可進化！",
+        start: "開始（選擇種子）",
+        cont:  "從上次繼續",
+        about: "關於本研究",
+        note:  "語言設定會在下次造訪時保留。"
+      },
+      "ko": {
+        title: "WhoAI에 오신 것을 환영합니다",
+        desc: "먼저 사과 또는 잎을 선택해 씨앗을 키워 보세요. 음표를 모아 곡을 완성하면 진화해요!",
+        start: "시작하기 (씨앗 선택)",
+        cont:  "이어하기",
+        about: "연구 소개",
+        note:  "언어 설정은 다음 방문 시에도 유지됩니다."
+      }
+    };
+
+    function applyLang(lang){
+      const t = I18N[lang] || I18N.ja;
+      document.documentElement.lang = lang.startsWith('zh') ? 'zh' : lang;
+      document.getElementById('t_title').textContent = t.title;
+      document.getElementById('t_desc').textContent  = t.desc;
+      document.getElementById('t_start').textContent = t.start;
+      document.getElementById('t_about').textContent = t.about;
+      document.getElementById('t_note').textContent  = t.note;
+
+      const contBtn = document.getElementById('t_continue');
+      if (contBtn.style.display !== 'none') contBtn.textContent = t.cont;
+    }
+
+    /* グローバル公開（既存HTMLのonclickに対応） */
+    function setLang(lang){
+      localStorage.setItem('whoai_lang', lang);
+      applyLang(lang);
+    }
+
+    /* 進行状況によって「つづきから」を表示 */
+    function continueFlow(){
+      const step = localStorage.getItem('whoai_progress'); // 例: 'care', 'talk', 'evolved', ...
+      // 適宜ルーティング（無ければ seed_select へ）
+      switch(step){
+        case 'care':     location.href = 'whoai_care.html'; break;
+        case 'talk':     location.href = 'whoai_talk.html'; break;
+        case 'evolved':  location.href = 'whoai_talk_evolved.html'; break;
+        default:         location.href = 'seed_select.html'; break;
+      }
+    }
+
+    /* 初期化：言語と続きボタン */
+    (function init(){
+      const savedLang = localStorage.getItem('whoai_lang');
+      const browser   = (navigator.language || 'ja').toLowerCase();
+      const fallback  = ['ja','en','zh-cn','zh-tw','ko'].find(k=>browser.startsWith(k)) || 'ja';
+      applyLang(savedLang || fallback);
+
+      // 進行状況がある場合のみ「つづきから」を表示
+      const hasProgress = !!localStorage.getItem('whoai_progress');
+      if (hasProgress) document.getElementById('t_continue').style.display = '';
+    })();
   </script>
 </body>
 </html>
