@@ -1,4 +1,4 @@
-<!-- FILE: /WHOAI2/about.html -->
+<!-- FILE: /WHOAI2/about.html (fixed) -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -39,7 +39,7 @@
   </style>
 </head>
 <body>
-  <!-- 言語スイッチ（indexと同じwhoai_langを使用） -->
+  <!-- 言語スイッチ -->
   <div class="langbar" aria-label="language switch">
     <button type="button" onclick="setLang('ja')">日本語</button>|
     <button type="button" onclick="setLang('en')">English</button>|
@@ -49,25 +49,24 @@
   </div>
 
   <div class="card">
-    <h1 id="h">この研究について</h1>
-    <p id="p1">
+    <h1 id="titleH">この研究について</h1>
+    <p id="bodyP">
       WhoAI は、キャラクターを大切にお世話する過程を通じて生まれる「愛着」の力を探究する、研究・試作的なインタラクティブアプリです。  
       キャラクターはユーザーに寄り添い、励ましや心のよりどころとなる存在へと成長していきます。  
       また、キャラクターに「名前を付ける／付けない」といった選択が愛着形成にどのような影響を与えるのかも研究対象としています。  
       育成と対話を重ねるなかで芽生える感情の動きを可視化し、人とAIの新しいつながりを問い直すことを目指しています。
     </p>
     <div class="nav">
-      <a class="btn" href="index.html" id="back">トップへ戻る</a>
-      <a class="btn" href="seed_select.html" id="try">体験をはじめる</a>
+      <a class="btn" href="index.html" id="backBtn">トップへ戻る</a>
+      <a class="btn" href="seed_select.html" id="tryBtn">体験をはじめる</a>
     </div>
   </div>
 
   <script>
-    // 多言語辞書
     const I18N = {
       "ja": {
         h:"この研究について",
-        p1:`WhoAI は、キャラクターを大切にお世話する過程を通じて生まれる「愛着」の力を探究する、研究・試作的なインタラクティブアプリです。  
+        p:`WhoAI は、キャラクターを大切にお世話する過程を通じて生まれる「愛着」の力を探究する、研究・試作的なインタラクティブアプリです。  
 キャラクターはユーザーに寄り添い、励ましや心のよりどころとなる存在へと成長していきます。  
 また、キャラクターに「名前を付ける／付けない」といった選択が愛着形成にどのような影響を与えるのかも研究対象としています。  
 育成と対話を重ねるなかで芽生える感情の動きを可視化し、人とAIの新しいつながりを問い直すことを目指しています。`,
@@ -75,7 +74,7 @@
       },
       "en": {
         h:"About this research",
-        p1:`WhoAI is a research‑prototype interactive app that explores the power of emotional attachment formed through caring for a character.  
+        p:`WhoAI is a research‑prototype interactive app that explores the power of emotional attachment formed through caring for a character.  
 The character grows into a companion that offers encouragement and emotional support to the user.  
 The study also examines how the choice of naming—or not naming—a character influences the depth of attachment.  
 By tracing subtle emotional shifts through cycles of care and dialogue, WhoAI re‑examines how humans and AI can form meaningful bonds.`,
@@ -83,7 +82,7 @@ By tracing subtle emotional shifts through cycles of care and dialogue, WhoAI re
       },
       "zh-CN": {
         h:"关于本研究",
-        p1:`WhoAI 是一款研究/原型交互应用，探究在细心照料角色的过程中形成的“情感依恋”之力。  
+        p:`WhoAI 是一款研究/原型交互应用，探究在细心照料角色的过程中形成的“情感依恋”之力。  
 角色会逐渐成长为鼓励并陪伴用户的心灵支撑。  
 研究也关注“是否为角色命名”对依恋深度的影响。  
 通过养成与对话所产生的细微情感变化，WhoAI 重新思考人与 AI 的有意义连接。`,
@@ -91,7 +90,7 @@ By tracing subtle emotional shifts through cycles of care and dialogue, WhoAI re
       },
       "zh-TW": {
         h:"關於本研究",
-        p1:`WhoAI 是一款研究/原型互動應用，探討在細心照顧角色的過程中形成的「情感依戀」力量。  
+        p:`WhoAI 是一款研究/原型互動應用，探討在細心照顧角色的過程中形成的「情感依戀」力量。  
 角色會逐漸成長為鼓勵並陪伴使用者的心靈依靠。  
 研究也關注「是否為角色命名」對依戀深度的影響。  
 透過養成與對話中細微的情感變化，WhoAI 重新思考人與 AI 的有意義連結。`,
@@ -99,7 +98,7 @@ By tracing subtle emotional shifts through cycles of care and dialogue, WhoAI re
       },
       "ko": {
         h:"연구 소개",
-        p1:`WhoAI는 캐릭터를 정성껏 돌보는 과정에서 형성되는 ‘애착’의 힘을 탐구하는 연구/프로토타입 인터랙티브 앱입니다.  
+        p:`WhoAI는 캐릭터를 정성껏 돌보는 과정에서 형성되는 ‘애착’의 힘을 탐구하는 연구/프로토타입 인터랙티브 앱입니다.  
 캐릭터는 사용자를 격려하고 마음의 버팀목이 되는 동반자로 성장합니다.  
 또한 캐릭터에 이름을 붙이거나 붙이지 않는 선택이 애착의 깊이에 어떤 영향을 미치는지도 살핍니다.  
 돌봄과 대화를 통해 드러나는 미묘한 감정 변화를 추적하며, 인간과 AI의 의미 있는 연결을 새롭게 모색합니다.`,
@@ -107,23 +106,27 @@ By tracing subtle emotional shifts through cycles of care and dialogue, WhoAI re
       }
     };
 
-    // 言語適用
     function applyLang(lang){
       const t = I18N[lang] || I18N.ja;
       document.documentElement.lang = lang.startsWith('zh') ? 'zh' : lang;
-      h.textContent = t.h;
-      p1.innerHTML = t.p1.replace(/\n/g, "<br>");
-      back.textContent = t.back;
-      try.textContent  = t.try;
+
+      const titleH = document.getElementById('titleH');
+      const bodyP  = document.getElementById('bodyP');
+      const backBtn= document.getElementById('backBtn');
+      const tryBtn = document.getElementById('tryBtn');
+
+      titleH.textContent = t.h;
+      bodyP.innerHTML = t.p.replace(/\n/g, "<br>");
+      backBtn.textContent = t.back;
+      tryBtn.textContent  = t.try;
     }
 
-    // 共有キーで保存（indexと同じ）
-    function setLang(lang){
+    // グローバルに公開（onclickから呼べるように）
+    window.setLang = function(lang){
       localStorage.setItem('whoai_lang', lang);
       applyLang(lang);
-    }
+    };
 
-    // 初期化：保存言語 or ブラウザ言語
     (function init(){
       const saved = localStorage.getItem('whoai_lang');
       const browser = (navigator.language || 'ja').toLowerCase();
