@@ -1,0 +1,256 @@
+<!-- FILE: /WHOAI2/whoai_care_music.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>お世話 / 曲づくり | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:grid;grid-template-rows:auto 1fr auto;gap:10px;padding:16px
+  }
+  header,footer{display:flex;align-items:center;justify-content:space-between}
+  header .left{display:flex;gap:8px;align-items:center}
+  .chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25)}
+  .wrap{
+    display:grid;gap:14px;grid-template-columns: 200px 1fr;align-items:start
+  }
+  .avatar{
+    width:180px;height:180px;object-fit:contain;image-rendering:auto;
+    animation:float 4s ease-in-out infinite
+  }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .panel{
+    background:rgba(0,0,0,.35);backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:14px
+  }
+  .h{font-weight:700}
+  .btns{display:flex;flex-wrap:wrap;gap:8px}
+  button,.linkbtn{
+    cursor:pointer;border-radius:12px;border:1px solid rgba(255,255,255,.2);
+    background:rgba(0,0,0,.25);color:#fff;padding:10px 12px
+  }
+  button:hover,.linkbtn:hover{background:rgba(255,255,255,.08)}
+  .notes{
+    display:grid;grid-template-columns:repeat(10, 1fr);gap:6px;margin-top:8px
+  }
+  .note{
+    aspect-ratio:1/1;border-radius:8px;display:grid;place-items:center;
+    border:1px dashed rgba(255,255,255,.18);font-size:12px;opacity:.7
+  }
+  .note.filled{
+    border-style:solid;background:rgba(255,255,255,.12);opacity:1;font-weight:700
+  }
+  .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .small{font-size:12px;opacity:.85}
+</style>
+</head>
+<body>
+<header>
+  <div class="left">
+    <span class="chip" id="charName">キャラ名</span>
+    <span class="chip" id="colorChip">color: -</span>
+    <span class="chip">お世話すると音符が増えるよ 🎵</span>
+  </div>
+  <a class="linkbtn" href="after10_menu.html">← メニューに戻る</a>
+</header>
+
+<main class="wrap">
+  <div class="panel" style="display:grid;place-items:center">
+    <img id="avatar" class="avatar" alt="character" />
+    <div class="small" id="mood">状態：ふつう</div>
+  </div>
+
+  <section class="twoCol">
+    <div class="panel">
+      <div class="h">お世話</div>
+      <p class="small">各アクションで音符 +1。一定数たまると「1フレーズ演奏」ができます。</p>
+      <div class="btns">
+        <button data-act="meal">🍚 食事</button>
+        <button data-act="toilet">🚽 排泄</button>
+        <button data-act="shower">🚿 シャワー</button>
+        <button data-act="pet">🤲 なでなで</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="h">音符</div>
+        <div class="small">合計：<b id="noteCount">0</b></div>
+      </div>
+      <div id="noteGrid" class="notes"></div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button id="btnPlay" disabled>▶ ランダムで1フレーズ演奏</button>
+        <button id="btnReset">↺ 音符リセット</button>
+      </div>
+      <p class="small">必要音符：<span id="needSpan">8</span>（曲によってランダム）</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="small">WhoAI</div>
+  <a class="linkbtn" href="whoai_talk_evolved.html">🗨️ 会話に行く</a>
+</footer>
+
+<script>
+  // ====== 既存仕様のキー ======
+  const TALK_ENDPOINT = localStorage.getItem("TALK_ENDPOINT") || ""; // 触らない方針
+
+  // ====== 名前と色の反映 ======
+  const charName = localStorage.getItem("characterName") || "キャラ";
+  const color = (localStorage.getItem("macaronColor") || "pink").toLowerCase();
+  document.getElementById('charName').textContent = charName;
+  document.getElementById('colorChip').textContent = `color: ${color}`;
+
+  // ====== キャラ画像（進化後 closed を優先、無ければタネ） ======
+  const avatarEl = document.getElementById('avatar');
+  const candidates = [`${color}_closed.png`, `tane_${color}.png`];
+  (async ()=>{
+    for (const src of candidates){
+      const ok = await fetch(src,{method:'HEAD'}).then(r=>r.ok).catch(()=>false);
+      if(ok){ avatarEl.src = src; return; }
+    }
+  })();
+
+  // ====== お世話 → 音符管理 ======
+  const LS_KEY_NOTES = "whoai_notes_total";
+  const LS_KEY_MOOD  = "whoai_last_mood";
+  const moodEl = document.getElementById('mood');
+
+  let notes = parseInt(localStorage.getItem(LS_KEY_NOTES) || "0", 10);
+  let need  = 8; // 必要音符の初期値（曲により上書き）
+
+  // 曲ごとに必要音符と譜列（周波数と長さ）
+  // 1フレーズだけ/テンポは簡易固定
+  const SONGS = [
+    { name: "きらきら星", need: 8,  seq: "C C G G A A G2 F F E E D D C2" },
+    { name: "ハッピーバースデー", need: 10, seq: "C C D C F E2 C C D C G F2" },
+    { name: "ロンドン橋", need: 8,  seq: "G A G F E F G D E F E F G2" }
+  ];
+
+  // 音名→周波数（C4=261.63）簡易
+  const NOTE_FREQ = {
+    'C':261.63,'D':293.66,'E':329.63,'F':349.23,'G':392.00,'A':440.00,'B':493.88
+  };
+
+  // UI
+  const noteCountEl = document.getElementById('noteCount');
+  const needSpan = document.getElementById('needSpan');
+  const noteGrid = document.getElementById('noteGrid');
+  const btnPlay = document.getElementById('btnPlay');
+  const btnReset = document.getElementById('btnReset');
+
+  function renderNotes(){
+    noteCountEl.textContent = notes;
+    noteGrid.innerHTML = "";
+    const cells = Math.max(10, need); // 最低10マス表示
+    for (let i=0;i<cells;i++){
+      const d = document.createElement('div');
+      d.className = 'note' + (i < notes ? ' filled':'' );
+      d.textContent = i < notes ? '♪' : '';
+      noteGrid.appendChild(d);
+    }
+    btnPlay.disabled = notes < need;
+  }
+
+  function pickSong(){
+    const song = SONGS[Math.floor(Math.random()*SONGS.length)];
+    need = song.need;
+    needSpan.textContent = need;
+    return song;
+  }
+
+  // 初期：曲抽選（ページごとに変わる楽しさ）
+  let currentSong = pickSong();
+  renderNotes();
+
+  // お世話操作
+  const btns = document.querySelectorAll('button[data-act]');
+  btns.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const act = b.dataset.act;
+      // 音符 +1
+      notes += 1;
+      localStorage.setItem(LS_KEY_NOTES, String(notes));
+      // 気分（表示だけの演出）
+      const moodText = {
+        meal:"おなかいっぱい！",
+        toilet:"すっきり！",
+        shower:"さっぱり！",
+        pet:"うれしい！"
+      }[act] || "ふつう";
+      moodEl.textContent = `状態：${moodText}`;
+      renderNotes();
+      // ちょっとアニメ
+      avatarEl.style.transform = "scale(1.04)";
+      setTimeout(()=>avatarEl.style.transform="",160);
+    });
+  });
+
+  // 演奏（WebAudio 原始実装）
+  btnPlay.addEventListener('click', async ()=>{
+    if (notes < need) return;
+
+    // 演奏後は音符を消費（作曲した感じを出す）
+    notes -= need;
+    if (notes < 0) notes = 0;
+    localStorage.setItem(LS_KEY_NOTES, String(notes));
+    renderNotes();
+
+    // 次の曲を抽選
+    currentSong = pickSong();
+
+    // 再生
+    await playPhrase(currentSong.seq);
+  });
+
+  // リセット
+  btnReset.addEventListener('click', ()=>{
+    notes = 0;
+    localStorage.setItem(LS_KEY_NOTES, "0");
+    renderNotes();
+  });
+
+  // 簡易シーケンサ： "C C G G A A G2" などを再生
+  async function playPhrase(seqStr){
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const unit = 0.25; // 1単位（秒）
+    let t = ctx.currentTime + 0.05;
+
+    const tokens = seqStr.trim().split(/\s+/);
+    for (const tok of tokens){
+      // 末尾に長さ（数字）が付けば ×length、無ければ1
+      const m = tok.match(/^([A-G])(\d+)?$/i);
+      if (!m){ t += unit; continue; }
+      const name = m[1].toUpperCase();
+      const mult = m[2] ? parseInt(m[2],10) : 1;
+      const freq = NOTE_FREQ[name] || 0;
+      const dur = unit * mult;
+
+      if (freq>0){
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.5, t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+        o.connect(g).connect(ctx.destination);
+        o.start(t);
+        o.stop(t+dur+0.02);
+      }
+      t += dur * 1.05; // ちょい間を空ける
+      await sleep(dur*1000*0.5); // 体感のため軽く待つ（音切れ防止用ではない）
+    }
+  }
+
+  function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+</script>
+</body>
+</html>
