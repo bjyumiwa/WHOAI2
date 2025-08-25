@@ -1,0 +1,98 @@
+<!-- FILE: /WHOAI2/after10_menu.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>つぎはどうする？ | WhoAI</title>
+<meta name="color-scheme" content="dark light" />
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+    background:#000 url("space_background.png") center/cover fixed no-repeat;
+    display:flex;align-items:center;justify-content:center;padding:24px
+  }
+  .card{
+    width:min(880px,94vw);background:rgba(0,0,0,.35);
+    backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:20px;padding:20px;display:grid;gap:16px;
+    grid-template-columns:140px 1fr;align-items:center
+  }
+  .avatarWrap{display:grid;place-items:center}
+  .avatar{
+    width:120px;height:120px;object-fit:contain;image-rendering:auto;
+    animation:float 4s ease-in-out infinite
+  }
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .name{
+    font-weight:700;font-size:20px;padding:6px 12px;border-radius:999px;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2)
+  }
+  .chip{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
+  .title{font-size:22px;margin:4px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn{
+    display:flex;gap:10px;align-items:center;justify-content:center;
+    padding:14px;border-radius:14px;cursor:pointer;text-decoration:none;color:#fff;
+    border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25)
+  }
+  .btn:hover{background:rgba(255,255,255,.08)}
+  .desc{font-size:13px;opacity:.9;margin:4px 0 0}
+  .footer{display:flex;justify-content:flex-end}
+  .small{font-size:12px;opacity:.8}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="avatarWrap">
+      <img id="avatar" class="avatar" alt="character" />
+    </div>
+
+    <section>
+      <div class="meta">
+        <div class="name" id="charName">（キャラ名）</div>
+        <div class="chip" id="colorChip">color: -</div>
+        <div class="chip">復活後：10回会話クリア！</div>
+      </div>
+      <h2 class="title">つぎはどうする？</h2>
+      <div class="grid">
+        <a class="btn" id="btnTalk" href="whoai_talk_evolved.html">
+          🗨️ <b>会話をつづける</b>
+        </a>
+        <a class="btn" id="btnCare" href="whoai_care_music.html">
+          🍼🎵 <b>お世話 / 曲づくり</b>
+        </a>
+      </div>
+      <p class="desc">※「お世話」をすると音符が集まります。音符がたまると、ランダムに「1フレーズ演奏」できるようになります。</p>
+      <div class="footer"><span class="small">WhoAI</span></div>
+    </section>
+  </main>
+
+<script>
+  // —— 既存仕様に合わせて localStorage から名前・色を取得 ——
+  const youName   = localStorage.getItem("yourName") || "あなた";
+  const charName  = localStorage.getItem("characterName") || "キャラ";
+  const color     = (localStorage.getItem("macaronColor") || "pink").toLowerCase();
+
+  // 表示
+  document.getElementById('charName').textContent = `${charName}`;
+  document.getElementById('colorChip').textContent = `color: ${color}`;
+
+  // 進化後キャラ画像（例：pink_closed.png）。フォールバックでタネ画像。
+  const candidates = [
+    `${color}_closed.png`,
+    `tane_${color}.png`
+  ];
+  (async ()=>{
+    for (const src of candidates){
+      const ok = await fetch(src,{method:'HEAD'}).then(r=>r.ok).catch(()=>false);
+      if(ok){ document.getElementById('avatar').src = src; return; }
+    }
+    document.getElementById('avatar').remove(); // 何も無ければ非表示
+  })();
+</script>
+</body>
+</html>
