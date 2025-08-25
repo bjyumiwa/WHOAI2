@@ -1,1 +1,106 @@
+<!-- FILE: /WHOAI2/about.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>この研究について | WhoAI 2</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;color:#fff;
+      background:#000 url("space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;padding:24px;text-align:left;
+    }
+    .card{
+      width:min(92vw,900px);background:rgba(0,0,0,.38);
+      border:1px solid rgba(255,255,255,.18);border-radius:20px;
+      backdrop-filter: blur(4px);
+      padding:22px 20px;
+    }
+    h1{margin:0 0 12px;font-size:clamp(22px,4.2vw,34px)}
+    p{line-height:1.9;margin:.8em 0}
+    .nav{display:flex;gap:10px;margin-top:16px}
+    .btn{
+      padding:.7rem 1.1rem;border-radius:12px;border:1px solid rgba(255,255,255,.22);
+      background:rgba(255,255,255,.08);color:#fff;text-decoration:none;font-weight:700
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="h">この研究について</h1>
+    <p id="p1">
+      WhoAI は、キャラクターを大切にお世話する過程を通じて生まれる「愛着」の力を探究する、研究・試作的なインタラクティブアプリです。  
+      ユーザーに寄り添い、励ましや心のよりどころとなるように成長していくキャラクターとの関係性を体験できます。  
+      また、キャラクターに「名前を付ける／付けない」といった選択が愛着形成にどのような影響を与えるのかも研究対象としています。  
+      育成と対話を重ねるなかで芽生える感情の動きを可視化し、人とAIの新しいつながりを問い直すことを目指しています。
+    </p>
+    <div class="nav">
+      <a class="btn" href="index.html" id="back">トップへ戻る</a>
+      <a class="btn" href="seed_select.html" id="try">体験をはじめる</a>
+    </div>
+  </div>
+
+  <script>
+    const I18N = {
+      "ja": {
+        h:"この研究について",
+        p1:`WhoAI は、キャラクターを大切にお世話する過程を通じて生まれる「愛着」の力を探究する、研究・試作的なインタラクティブアプリです。  
+ユーザーに寄り添い、励ましや心のよりどころとなるように成長していくキャラクターとの関係性を体験できます。  
+また、キャラクターに「名前を付ける／付けない」といった選択が愛着形成にどのような影響を与えるのかも研究対象としています。  
+育成と対話を重ねるなかで芽生える感情の動きを可視化し、人とAIの新しいつながりを問い直すことを目指しています。`,
+        back:"トップへ戻る", try:"体験をはじめる"
+      },
+      "en": {
+        h:"About this research",
+        p1:`WhoAI is a research-prototype interactive app that explores the power of “emotional attachment” formed through the act of caring for a character.  
+The character grows into a source of encouragement and emotional support, becoming a companion for the user.  
+The study also examines how the choice of naming—or not naming—a character influences the depth of attachment.  
+Through cycles of care and dialogue, WhoAI seeks to visualize subtle emotional shifts and re-frame new ways of connecting humans and AI.`,
+        back:"Back to top", try:"Start the experience"
+      },
+      "zh-CN": {
+        h:"关于本研究",
+        p1:`WhoAI 是一款研究/原型交互应用，探究在悉心照料角色的过程中产生的“情感依恋”力量。  
+角色会逐渐成长为陪伴、鼓励用户的心灵支撑。  
+研究还关注“是否为角色命名”对依恋形成的影响。  
+通过不断的养成与对话，WhoAI 旨在可视化这些情感波动，并重新思考人与AI的联结方式。`,
+        back:"返回首页", try:"开始体验"
+      },
+      "zh-TW": {
+        h:"關於本研究",
+        p1:`WhoAI 是一款研究/原型互動應用，探討在細心照顧角色過程中產生的「情感依戀」力量。  
+角色會逐漸成長為陪伴、鼓勵使用者的心靈依靠。  
+研究也關注「是否為角色命名」對依戀形成的影響。  
+透過持續的養成與對話，WhoAI 旨在可視化這些情感變化，並重新思考人與AI的連結方式。`,
+        back:"回到首頁", try:"開始體驗"
+      },
+      "ko": {
+        h:"연구 소개",
+        p1:`WhoAI는 캐릭터를 정성껏 돌보는 과정에서 형성되는 ‘애착’의 힘을 탐구하는 연구/프로토타입 인터랙티브 앱입니다.  
+캐릭터는 사용자를 격려하고 마음의 버팀목이 되도록 성장합니다.  
+또한 캐릭터에 이름을 붙이거나 붙이지 않는 선택이 애착 형성에 어떤 영향을 미치는지도 연구합니다.  
+돌봄과 대화를 거듭하며 나타나는 감정의 변화를 시각화하고, 인간과 AI의 새로운 연결 방식을 모색합니다.`,
+        back:"처음으로", try:"체험 시작"
+      }
+    };
+
+    function applyLang(lang){
+      const t = I18N[lang] || I18N.ja;
+      document.documentElement.lang = lang.startsWith('zh') ? 'zh' : lang;
+      h.textContent = t.h;
+      p1.textContent = ""; // 初期化
+      p1.insertAdjacentHTML("beforeend", t.p1.replace(/\n/g,"<br>"));
+      back.textContent = t.back; try.textContent = t.try;
+    }
+
+    const saved = localStorage.getItem('whoai_lang');
+    const browser = (navigator.language || 'ja').toLowerCase();
+    const fallback = ['ja','en','zh-cn','zh-tw','ko'].find(k=>browser.startsWith(k)) || 'ja';
+    applyLang(saved || fallback);
+  </script>
+</body>
+</html>
 
