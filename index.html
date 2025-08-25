@@ -1,100 +1,196 @@
-<!-- FILE: /WHOAI2/index.html -->
+<!-- FILE: /index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI 2 | Welcome</title>
-  <meta name="description" content="WHOAI2: 人工知能と人間の関係性を考える研究型アプリケーション" />
-  <!-- 404対策：簡易favicon -->
-  <link rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E🌙%3C/text%3E%3C/svg%3E" />
+  <title>WhoAI</title>
+  <meta name="color-scheme" content="dark light" />
+
   <style>
     :root{
-      --bg-blur: blur(3px);
-      --card-bg: rgba(0,0,0,.38);
-      --card-bd: rgba(255,255,255,.18);
-      --text:#fff;
-      --accent:#f7b0bf;
-      --accent-ink:#222;
+      --glass: rgba(0,0,0,.35);
+      --line : rgba(255,255,255,.25);
+      --text : #fff;
+      --accent: #ff7fb0;
     }
-    *{box-sizing:border-box}
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",system-ui,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif;
-      color:var(--text);
-      background:#000 center/cover fixed no-repeat;
-      background-image:url("space_background.png");
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      padding:24px;
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Sans", Meiryo, sans-serif;
+      color: var(--text);
+      background: #000 url("space_background.png") center/cover fixed no-repeat;
+      display: grid; place-items: center;
+      padding: 24px;
+    }
+    .wrap{
+      width:min(980px,92vw);
+      text-align:center;
+      display:flex; flex-direction:column; align-items:center; gap:22px;
     }
     .hero{
-      width:min(92vw, 860px);
-      text-align:center;
-      padding:32px 20px 28px;
-      background:linear-gradient(transparent,rgba(0,0,0,.25));
-      border-radius:20px;
+      width:min(640px,86vw); aspect-ratio: 4/3;
+      background: var(--glass);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
     }
-    .hero img#hero-ako{
-      display:block;
-      margin:0 auto 22px;
-      width:min(42vw,260px);
-      height:auto;
-      filter: drop-shadow(0 6px 18px rgba(0,0,0,.35));
+    .hero img{
+      max-width:70%; height:auto; display:block;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,.45));
+      user-select:none; -webkit-user-drag:none;
     }
     h1{
-      margin:0 0 14px;
-      font-size:clamp(28px,5vw,44px);
+      margin:0;
+      font-size: clamp(28px, 4.8vw, 48px);
       letter-spacing:.02em;
-      text-shadow:0 2px 10px rgba(0,0,0,.6);
+      text-shadow: 0 2px 10px rgba(0,0,0,.45);
     }
-    .lead{
-      margin:0 auto 20px;
-      width:min(90%, 740px);
-      font-size:clamp(15px,2.2vw,18px);
-      line-height:1.9;
-      text-shadow:0 1px 6px rgba(0,0,0,.55);
+    .desc{
+      margin:0;
+      font-size: clamp(14px, 1.8vw, 18px);
+      opacity:.95;
+      line-height:1.8;
+      text-shadow: 0 1px 8px rgba(0,0,0,.35);
     }
-    .cta{ display:flex;gap:10px;justify-content:center;flex-wrap:wrap }
-    .primary,.ghost{
-      padding:.9rem 1.3rem;border:0;border-radius:14px;cursor:pointer;
-      font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);transition:transform .06s ease;
-    }
-    .primary{ background:var(--accent); color:var(--accent-ink); }
-    .ghost{ background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.22) }
-    .primary:active,.ghost:active{ transform:translateY(1px) }
 
-    .lang{ margin-top:14px; font-size:14px; opacity:.95; user-select:none; }
-    .lang button{ background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer;padding:2px 4px;margin:0 2px }
-    .note{font-size:12px;opacity:.8;margin-top:10px}
+    .btns{display:flex; gap:12px; flex-wrap:wrap; justify-content:center}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:8px; padding:12px 18px; border-radius:999px;
+      text-decoration:none; font-weight:600;
+      border:1px solid var(--line); background: var(--glass);
+      backdrop-filter: blur(6px);
+      transition: transform .06s ease, background .2s ease;
+      will-change: transform;
+    }
+    .btn:active{ transform: translateY(1px) }
+    .btn.primary{ border-color: transparent; background: linear-gradient(135deg, #ff8fc0, #ff7fb0 40%, #ff9ed0); color:#1b0d14 }
+    .btn.secondary{ color:#fff }
+    .note{opacity:.85; font-size:12px; margin-top:-8px}
+
+    .langs{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
+    .lang{
+      background: var(--glass); border:1px solid var(--line);
+      padding:6px 10px; border-radius:999px; font-size:12px; text-decoration:none; color:#fff;
+    }
+    .lang.active{ outline:2px solid #fff; }
+    footer{opacity:.8; font-size:12px; margin-top:8px}
   </style>
 </head>
 <body>
-
-  <div class="hero" role="banner" aria-label="WhoAI 2 hero">
-    <!-- ★ キャラ画像追加 -->
-    <img id="hero-ako" src="ako.png?v=2" alt="アコーディオンを弾くキャラクター" />
-
-    <h1 id="t_title">WhoAIへようこそ</h1>
-    <p id="t_desc" class="lead">まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！</p>
-
-    <div class="cta">
-      <button id="t_start" class="primary" onclick="location.href='seed_select.html'">はじめる（タネを選ぶ）</button>
-      <button id="t_continue" class="ghost" style="display:none" onclick="continueFlow()">つづきから</button>
+  <main class="wrap">
+    <!-- 画像は任意。存在するものに差し替えてOK -->
+    <div class="hero" aria-hidden="true">
+      <img id="heroImg" src="tane_blue.png" alt="">
     </div>
 
-    <div class="lang" aria-label="language switch">
-      <button type="button" onclick="setLang('ja')">日本語</button> |
-      <button type="button" onclick="setLang('en')">English</button> |
-      <button type="button" onclick="setLang('zh-CN')">简体</button> |
-      <button type="button" onclick="setLang('zh-TW')">繁體</button> |
-      <button type="button" onclick="setLang('ko')">한국어</button>
-      <div class="note" id="t_note">言語設定は次回アクセス時も保持されます。</div>
+    <h1 id="t-title">WhoAIへようこそ</h1>
+    <p class="desc" id="t-desc">
+      まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！
+    </p>
+
+    <div class="btns">
+      <!-- フロー定義：index → fortune.html（※プロジェクト仕様） -->
+      <a id="t-start" class="btn primary" href="fortune.html">はじめる（タネを選ぶ）</a>
+      <a id="t-research" class="btn secondary" href="research.html" rel="noopener">この研究について</a>
     </div>
-  </div>
+
+    <div class="langs" role="group" aria-label="language switcher">
+      <a class="lang" data-lang="ja" href="#">日本語</a>
+      <a class="lang" data-lang="en" href="#">English</a>
+      <a class="lang" data-lang="zh-CN" href="#">简体</a>
+      <a class="lang" data-lang="zh-TW" href="#">繁體</a>
+      <a class="lang" data-lang="ko" href="#">한국어</a>
+    </div>
+    <p class="note" id="t-note">言語設定は次回アクセス時も保持されます。</p>
+
+    <footer>© WhoAI</footer>
+  </main>
 
   <script>
-    /* ここから下は既存のJSそのまま（省略可） */
+    // --- 多言語テキスト辞書 ---
+    const I18N = {
+      "ja": {
+        title: "WhoAIへようこそ",
+        desc: "まずはタネのタイプを選んで、名前を付けてから育てよう。ポイントが貯まるとマカロンで進化！",
+        start: "はじめる（タネを選ぶ）",
+        research: "この研究について",
+        note: "言語設定は次回アクセス時も保持されます。"
+      },
+      "en": {
+        title: "Welcome to WhoAI",
+        desc: "First, choose your seed type, give it a name, and raise it. Collect points to evolve with macarons!",
+        start: "Start (Choose a seed)",
+        research: "About this research",
+        note: "Your language preference is saved for your next visit."
+      },
+      "zh-CN": {
+        title: "欢迎来到 WhoAI",
+        desc: "首先选择种子类型，给它取名并开始养成。积分累积后即可用马卡龙进化！",
+        start: "开始（选择种子）",
+        research: "关于本研究",
+        note: "语言设置会在下次访问时保留。"
+      },
+      "zh-TW": {
+        title: "歡迎來到 WhoAI",
+        desc: "首先選擇種子類型，替它取名並開始養成。累積點數後即可用馬卡龍進化！",
+        start: "開始（選擇種子）",
+        research: "關於本研究",
+        note: "語言設定會在下次造訪時保留。"
+      },
+      "ko": {
+        title: "WhoAI에 오신 것을 환영합니다",
+        desc: "먼저 씨앗 타입을 선택하고 이름을 지어 키워 보세요. 포인트가 모이면 마카롱으로 진화합니다!",
+        start: "시작하기 (씨앗 선택)",
+        research: "연구 소개",
+        note: "언어 설정은 다음 방문 시에도 유지됩니다."
+      }
+    };
+
+    // --- 言語適用 ---
+    function applyLang(lang){
+      const t = I18N[lang] || I18N.ja;
+      document.documentElement.lang = lang.startsWith('zh') ? 'zh' : lang;
+      document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-desc').textContent = t.desc;
+      document.getElementById('t-start').textContent = t.start;
+      document.getElementById('t-research').textContent = t.research;
+      document.getElementById('t-note').textContent = t.note;
+
+      // アクティブ表示
+      document.querySelectorAll('.lang').forEach(a=>{
+        a.classList.toggle('active', a.dataset.lang === lang);
+      });
+    }
+
+    // --- 保存 & 初期化 ---
+    function setLang(lang){
+      localStorage.setItem('whoai_lang', lang);
+      applyLang(lang);
+    }
+    (function init(){
+      // 言語リンク
+      document.querySelectorAll('.lang').forEach(a=>{
+        a.addEventListener('click', e=>{
+          e.preventDefault();
+          setLang(a.dataset.lang);
+        });
+      });
+
+      // 既存設定 or ブラウザ言語から初期化
+      const saved = localStorage.getItem('whoai_lang');
+      const browser = (navigator.language || 'ja').toLowerCase();
+      const fallback = ['ja','en','zh-cn','zh-tw','ko'].find(k=>browser.startsWith(k)) || 'ja';
+      applyLang(saved || fallback);
+
+      // ヒーロー画像が無ければ非表示（デプロイ時の安全策）
+      const img = document.getElementById('heroImg');
+      if(img){
+        img.addEventListener('error', ()=>{ img.style.display='none'; });
+      }
+    })();
   </script>
 </body>
 </html>
