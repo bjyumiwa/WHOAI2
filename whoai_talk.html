@@ -1,4 +1,4 @@
-<!-- FILE: /whoai_talk.html -->
+<!-- FILE: /whoai_talk.html --> 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -59,7 +59,7 @@
     <span class="chip">turn: <span id="turnChip">0</span>/10</span>
   </div>
   <div class="title">会話</div>
-  <div class="subtitle">進化キャラで10回会話すると、復活の儀式 or アンケートへ</div>
+  <div class="subtitle" id="subtitle">進化キャラで10回会話すると、復活の儀式へ</div>
 
   <div class="hero">
     <img id="charImg" alt="進化後キャラ">
@@ -82,7 +82,7 @@
       </select>
       <label class="switch"><input type="checkbox" id="autoSend" checked> 自動送信</label>
     </div>
-    <div class="hint">※ 会話は localStorage に保存。10ターン到達で「復活の儀式」または「アンケート」へ。</div>
+    <div class="hint">※ 会話は localStorage に保存。10ターン到達で、（復活前）rebirth.html／（復活後）after10_menu.html に自動遷移します。</div>
   </div>
 
 <script>
@@ -90,7 +90,31 @@
   const TALK_ENDPOINT="https://macaron-one.vercel.app/api/talk";
   const WINDOW_N=12, TURN_LIMIT=10;
 
-  /* === 復活モード処理（既存仕様踏襲） === */
+  /* === 復活モード判定 ===
+     - URLパラメータ ?phase=revived で復活フラグをセット
+     - localStorage.whoai_phase が "revived" なら復活後
+  */
+  (function syncPhaseFromURL(){
+    const p = new URLSearchParams(location.search);
+    const ph = (p.get('phase')||'').toLowerCase();
+    if(ph==='revived'){ localStorage.setItem('whoai_phase','revived'); }
+  })();
+
+  function isRevived(){
+    return (localStorage.getItem('whoai_phase')||'').toLowerCase()==='revived';
+  }
+
+  // サブタイトルも状態に応じて出し分け
+  (function(){
+    const sub = document.getElementById('subtitle');
+    if(isRevived()){
+      sub.textContent = '復活後キャラで10回会話すると、分岐メニュー（会話／お世話＋曲）へ';
+    }else{
+      sub.textContent = '進化キャラで10回会話すると、復活の儀式へ';
+    }
+  })();
+
+  /* === 復活モード処理（既存仕様踏襲：keepの選択適用） === */
   const keepMode=localStorage.getItem("whoai_keep");
   if(keepMode==="appearance"){
     localStorage.removeItem("whoai_keep");
@@ -169,9 +193,12 @@
   async function talk(text){
     if(!text.trim())return;
     if(readTurn()>=TURN_LIMIT){
-      const phase = localStorage.getItem("whoai_phase") || "pre";
-      if(phase === "pre"){ setTimeout(()=>location.href='rebirth.html',900); }
-      else { setTimeout(()=>location.href='identity_check.html',900); }
+      // ここで分岐：復活前→rebirth.html / 復活後→after10_menu.html
+      if(isRevived()){
+        setTimeout(()=>location.href='after10_menu.html', 900);
+      }else{
+        setTimeout(()=>location.href='rebirth.html', 900);
+      }
       return;
     }
 
@@ -205,6 +232,15 @@
 
     const t=readTurn()+1;writeTurn(t);
     document.getElementById('turnChip').textContent=String(t);
+
+    // 10回に到達した直後も、ここで丁寧に遷移（返信を描画済み）
+    if(t>=TURN_LIMIT){
+      if(isRevived()){
+        setTimeout(()=>location.href='after10_menu.html', 900);
+      }else{
+        setTimeout(()=>location.href='rebirth.html', 900);
+      }
+    }
   }
 
   /* === 入力UI === */
